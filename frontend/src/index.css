@@ -1,0 +1,25 @@
+/* Use a better font across the application */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8f9fa !important; /* A light grey background to make cards pop */
+  color: #495057;
+}
+
+/* Make table headers bolder and slightly different color */
+.table thead th {
+  font-weight: 600;
+  color: #343a40;
+  border-bottom-width: 2px;
+}
+
+/* Style the page titles */
+h2, h3, h4, h5, h6 {
+  font-weight: 600;
+}
+
+/* Remove the default underline from NavLinks in the sidebar */
+.sidebar .nav-link {
+    text-decoration: none;
+}

@@ -1,0 +1,55 @@
+// src/assets/scss/_theme.scss
+
+// 1. Your Custom Theme Colors
+$teal: #008080;
+$gold: #FFD700;
+$black: #212529;
+$white: #ffffff;
+
+// 2. Override Bootstrap's theme colors
+$primary:   $teal;
+$secondary: #6c757d; // Default gray
+$success:   #198754;
+$info:      #0dcaf0;
+$warning:   $gold;
+$danger:    #dc3545;
+$light:     #f8f9fa;
+$dark:      $black;
+
+// 3. Create a color map for Bootstrap
+$theme-colors: (
+  "primary":    $primary,
+  "secondary":  $secondary,
+  "success":    $success,
+  "info":       $info,
+  "warning":    $warning,
+  "danger":     $danger,
+  "light":      $light,
+  "dark":       $dark,
+  "teal":       $teal,
+  "gold":       $gold
+);
+
+// 4. Import Bootstrap
+@import 'bootstrap/scss/bootstrap.scss';
+
+// 5. Custom Styles
+body {
+    background-color: #f4f7f6; // A very light gray background
+}
+
+.sidebar {
+    background-color: $black;
+    color: $white;
+    .nav-link {
+        color: rgba(255, 255, 255, 0.7);
+        &:hover {
+            color: $white;
+            background-color: lighten($black, 10%);
+        }
+        &.active {
+            color: $gold;
+            font-weight: bold;
+        }
+    }
+}
