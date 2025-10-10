@@ -7,7 +7,9 @@ import java.math.BigDecimal;
 public class InventoryItemRequest {
     private String name;
     private String sku;
-    private String category;
+
+    private Long categoryId;
+
     private String description;
     private Integer quantity;
     private Integer reorderLevel;

@@ -23,3 +23,30 @@ h2, h3, h4, h5, h6 {
 .sidebar .nav-link {
     text-decoration: none;
 }
+
+/* Styles for the new Inventory Card Grid */
+.inventory-card {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border: 1px solid #e9ecef;
+}
+
+.inventory-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.inventory-card-img {
+  height: 180px;
+  object-fit: cover; /* Ensures the image covers the area without distortion */
+  border-bottom: 1px solid #e9ecef;
+}
+
+.inventory-card-title {
+  font-weight: 600;
+  color: #343a40;
+  /* Truncate long titles */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

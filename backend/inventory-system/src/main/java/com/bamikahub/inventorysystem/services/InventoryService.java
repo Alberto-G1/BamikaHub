@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.math.BigDecimal;
 
 @Service
 public class InventoryService {
@@ -14,6 +17,7 @@ public class InventoryService {
     @Autowired private InventoryItemRepository itemRepository;
     @Autowired private StockTransactionRepository transactionRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private FileStorageService fileStorageService;
 
     @Transactional
     public StockTransaction recordStockTransaction(StockTransactionRequest request) {
@@ -28,22 +32,15 @@ public class InventoryService {
         int newQuantity;
 
         switch (request.getType()) {
-            case IN:
-            case RETURN:
-                newQuantity = previousQuantity + request.getQuantity();
-                break;
-            case OUT:
+            case IN, RETURN -> newQuantity = previousQuantity + request.getQuantity();
+            case OUT -> {
                 if (previousQuantity < request.getQuantity()) {
                     throw new RuntimeException("Insufficient stock for item: " + item.getName());
                 }
                 newQuantity = previousQuantity - request.getQuantity();
-                break;
-            case ADJUSTMENT:
-                // For adjustments, the request quantity is the new total quantity
-                newQuantity = request.getQuantity();
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported transaction type.");
+            }
+            case ADJUSTMENT -> newQuantity = request.getQuantity();
+            default -> throw new IllegalArgumentException("Unsupported transaction type.");
         }
 
         item.setQuantity(newQuantity);
@@ -60,5 +57,23 @@ public class InventoryService {
         transaction.setUser(currentUser);
 
         return transactionRepository.save(transaction);
+    }
+
+    @Transactional
+    public InventoryItem uploadItemImage(Long itemId, MultipartFile file) {
+        if (file.isEmpty() || file.getSize() > 5 * 1024 * 1024) { // 5MB limit
+            throw new RuntimeException("Invalid file: File is empty or exceeds 5MB limit.");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.equals("image/jpeg") && !contentType.equals("image/png") && !contentType.equals("image/gif"))) {
+            throw new RuntimeException("Invalid file type: Only JPG, PNG, and GIF are allowed.");
+        }
+
+        InventoryItem item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Inventory item not found"));
+
+        String filename = fileStorageService.storeItemImage(file);
+        item.setImageUrl("/uploads/item-images/" + filename);
+        return itemRepository.save(item);
     }
 }

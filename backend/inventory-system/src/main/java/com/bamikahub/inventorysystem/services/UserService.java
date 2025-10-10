@@ -186,28 +186,23 @@ public class UserService {
 
     @Transactional
     public UserProfileDto updateProfilePicture(MultipartFile file) {
-        // 1. Basic Validation
-        if (file.isEmpty() || file.getSize() > 2 * 1024 * 1024) { // 2MB limit
-            throw new RuntimeException("Invalid file: File is empty or exceeds 2MB limit.");
+        if (file.isEmpty() || file.getSize() > 5 * 1024 * 1024) {
+            throw new RuntimeException("Invalid file: File is empty or exceeds 5MB limit.");
         }
         String contentType = file.getContentType();
         if (contentType == null || (!contentType.equals("image/jpeg") && !contentType.equals("image/png"))) {
             throw new RuntimeException("Invalid file type: Only JPEG and PNG are allowed.");
         }
 
-        // 2. Get current user
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new RuntimeException("Authenticated user not found."));
 
-        // 3. Store the file and get the new filename
-        String filename = fileStorageService.store(file);
+        // Call the correct, specific method from the storage service
+        String filename = fileStorageService.storeProfilePicture(file);
+        user.setProfilePictureUrl("/uploads/profile-pictures/" + filename);
 
-        // 4. Update the user record with the URL path
-        // We'll serve it from /uploads/{filename}
-        user.setProfilePictureUrl("/uploads/" + filename);
         userRepository.save(user);
-
         return UserProfileDto.fromEntity(user);
     }
 

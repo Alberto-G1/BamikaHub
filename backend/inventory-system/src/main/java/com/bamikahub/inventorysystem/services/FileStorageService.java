@@ -15,42 +15,48 @@ import java.util.UUID;
 @Service
 public class FileStorageService {
 
-    private final Path rootLocation;
+    private final Path profilePicLocation;
+    private final Path itemImageLocation;
 
-    public FileStorageService(@Value("${file.upload-dir}") String uploadDir) {
-        this.rootLocation = Paths.get(uploadDir).toAbsolutePath().normalize(); // <-- MAKE ABSOLUTE AND NORMALIZE
+    public FileStorageService(@Value("${file.upload-dir.profile-pictures}") String profileUploadDir,
+                              @Value("${file.upload-dir.item-images}") String itemUploadDir) {
+        this.profilePicLocation = Paths.get(profileUploadDir).toAbsolutePath().normalize();
+        this.itemImageLocation = Paths.get(itemUploadDir).toAbsolutePath().normalize();
         try {
-            Files.createDirectories(rootLocation);
+            Files.createDirectories(profilePicLocation);
+            Files.createDirectories(itemImageLocation);
         } catch (IOException e) {
-            throw new RuntimeException("Could not initialize storage location", e);
+            throw new RuntimeException("Could not initialize storage locations", e);
         }
     }
 
-    public String store(MultipartFile file) {
-        // Sanitize filename
+    private String store(MultipartFile file, Path location) {
         String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
 
         if (file.isEmpty()) {
             throw new RuntimeException("Failed to store empty file " + originalFilename);
         }
         if (originalFilename.contains("..")) {
-            // This is a security check for path traversal
             throw new RuntimeException("Cannot store file with relative path outside current directory " + originalFilename);
         }
 
-        // Create a unique filename
         String extension = StringUtils.getFilenameExtension(originalFilename);
         String filename = UUID.randomUUID().toString() + "." + extension;
 
         try {
-            Path destinationFile = this.rootLocation.resolve(filename);
-
-            // This is a simpler and more robust way to copy
+            Path destinationFile = location.resolve(filename);
             Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
-
             return filename;
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file " + originalFilename, e);
         }
+    }
+
+    public String storeProfilePicture(MultipartFile file) {
+        return store(file, this.profilePicLocation);
+    }
+
+    public String storeItemImage(MultipartFile file) {
+        return store(file, this.itemImageLocation);
     }
 }
