@@ -21,8 +21,9 @@ public class InventoryItem {
     @Column(unique = true, nullable = false)
     private String sku;
 
-    @Column(nullable = false)
-    private String category; // Could be a separate entity in the future
+    @ManyToOne(fetch = FetchType.EAGER) // Eager fetch for easier display
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     @Lob // For longer text
     private String description;
@@ -35,6 +36,9 @@ public class InventoryItem {
 
     @Column(nullable = false, precision = 19, scale = 0) // UGX has no decimals
     private BigDecimal unitPrice;
+
+    // NEW: Field to store the path to the image
+    private String imageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id")

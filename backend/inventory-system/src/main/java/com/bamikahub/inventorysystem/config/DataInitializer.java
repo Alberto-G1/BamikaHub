@@ -32,37 +32,44 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
 
         // Step 1: Initialize all core system statuses if they don't exist.
-        // This runs independently to ensure statuses are always available.
         initializeStatuses();
 
         // Step 2: Initialize roles, permissions, and the admin user ONLY if no users exist.
-        // This prevents the initializer from running again on subsequent startups.
         if (userRepository.count() == 0) {
             System.out.println("No users found. Initializing default roles, permissions, and admin user...");
 
-            // Create Permissions
+            // Create all planned permissions for the entire system
             List<String> permissionNames = Arrays.asList(
+                    // User & Role Management
                     "USER_CREATE", "USER_READ", "USER_UPDATE", "USER_DELETE", "USER_APPROVE",
                     "ROLE_CREATE", "ROLE_READ", "ROLE_UPDATE", "ROLE_DELETE",
+                    // Inventory Management
                     "ITEM_CREATE", "ITEM_READ", "ITEM_UPDATE", "ITEM_DELETE",
-                    "SUPPLIER_CREATE", "SUPPLIER_READ", "SUPPLIER_UPDATE", "SUPPLIER_DELETE"
+                    "SUPPLIER_CREATE", "SUPPLIER_READ", "SUPPLIER_UPDATE", "SUPPLIER_DELETE",
+                    // Operations Management (Future)
+                    "PROJECT_CREATE", "PROJECT_READ", "PROJECT_UPDATE", "PROJECT_DELETE", "PROJECT_ASSIGN",
+                    "FIELD_REPORT_SUBMIT", "FIELD_REPORT_READ",
+                    // Finance Management (Future)
+                    "REQUISITION_CREATE", "REQUISITION_APPROVE", "FINANCE_READ",
+                    // Technical Support (Future)
+                    "TICKET_CREATE", "TICKET_MANAGE"
             );
-            List<Permission> allPermissions = permissionNames.stream().map(this::createPermission).collect(Collectors.toList());
+            List<Permission> allPermissions = permissionNames.stream().map(this::createPermissionIfNotFound).collect(Collectors.toList());
+            Set<Permission> allPermissionsSet = new HashSet<>(allPermissions);
 
-            // Create Roles and assign permissions
-            createRole("Admin", new HashSet<>(allPermissions));
+            // Create new, specific roles based on the concept note
+            createRole("Admin", allPermissionsSet);
 
-            Set<Permission> managerPermissions = allPermissions.stream()
-                    .filter(p -> !p.getName().startsWith("ROLE_"))
-                    .collect(Collectors.toSet());
-            createRole("Manager", managerPermissions);
+            createRole("Finance Manager", filterPermissions(allPermissionsSet, "FINANCE_READ", "REQUISITION_APPROVE"));
 
-            Set<Permission> staffPermissions = allPermissions.stream()
-                    .filter(p -> p.getName().endsWith("_READ") || p.getName().equals("ITEM_UPDATE"))
-                    .collect(Collectors.toSet());
-            createRole("Staff", staffPermissions);
+            createRole("Inventory & Operations Manager", filterPermissions(allPermissionsSet, "ITEM_", "SUPPLIER_", "PROJECT_", "FIELD_REPORT_READ"));
 
-            // Create Admin User
+            createRole("Field Engineer (Civil)", filterPermissions(allPermissionsSet, "ITEM_READ", "FIELD_REPORT_SUBMIT", "REQUISITION_CREATE"));
+
+            createRole("Technical Support IT", filterPermissions(allPermissionsSet, "TICKET_MANAGE", "USER_READ"));
+
+
+            // Create the primary Admin User
             Role adminRole = roleRepository.findByName("Admin").orElseThrow(() -> new RuntimeException("CRITICAL: Admin role not found during initialization."));
             Status activeStatus = statusRepository.findByName("ACTIVE").orElseThrow(() -> new RuntimeException("CRITICAL: ACTIVE status not found during initialization."));
 
@@ -80,8 +87,14 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    // Helper to filter permissions by prefixes or exact names
+    private Set<Permission> filterPermissions(Set<Permission> allPermissions, String... namesOrPrefixes) {
+        return allPermissions.stream()
+                .filter(p -> Arrays.stream(namesOrPrefixes).anyMatch(prefix -> p.getName().startsWith(prefix)))
+                .collect(Collectors.toSet());
+    }
+
     private void initializeStatuses() {
-        // Use a helper method to keep the run() method clean
         createStatus("PENDING", "#FFC107");
         createStatus("ACTIVE", "#28A745");
         createStatus("SUSPENDED", "#DC3545");
@@ -89,7 +102,6 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Status createStatus(String name, String color) {
-        // findByName().orElseGet() is a clean way to "create if not exists"
         return statusRepository.findByName(name).orElseGet(() -> {
             System.out.println("Creating status: " + name);
             Status newStatus = new Status();
@@ -99,18 +111,21 @@ public class DataInitializer implements CommandLineRunner {
         });
     }
 
-    private Permission createPermission(String name) {
-        // Assuming permissions are created from scratch every time this block runs
-        Permission permission = new Permission();
-        permission.setName(name);
-        return permissionRepository.save(permission);
+    private Permission createPermissionIfNotFound(String name) {
+        return permissionRepository.findByName(name).orElseGet(() -> {
+            Permission permission = new Permission();
+            permission.setName(name);
+            return permissionRepository.save(permission);
+        });
     }
 
     private void createRole(String name, Set<Permission> permissions) {
-        // Assuming roles are created from scratch every time this block runs
-        Role role = new Role();
-        role.setName(name);
-        role.setPermissions(permissions);
-        roleRepository.save(role);
+        roleRepository.findByName(name).orElseGet(() -> {
+            System.out.println("Creating role: " + name);
+            Role role = new Role();
+            role.setName(name);
+            role.setPermissions(permissions);
+            return roleRepository.save(role);
+        });
     }
 }

@@ -1,4 +1,5 @@
 package com.bamikahub.inventorysystem.services;
+
 import com.bamikahub.inventorysystem.dao.RoleRepository;
 import com.bamikahub.inventorysystem.dao.StatusRepository;
 import com.bamikahub.inventorysystem.dao.UserRepository;
@@ -17,29 +18,26 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.bamikahub.inventorysystem.models.User;
 import org.springframework.transaction.annotation.Transactional;
-
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
-    // ... Autowire repositories, passwordEncoder, authManager, jwtUtil ...
-    @Autowired AuthenticationManager authenticationManager;
-    @Autowired UserRepository userRepository;
-    @Autowired RoleRepository roleRepository;
-    @Autowired StatusRepository statusRepository;
-    @Autowired PasswordEncoder encoder;
-    @Autowired JwtUtil jwtUtil;
+
+    @Autowired private AuthenticationManager authenticationManager;
+    @Autowired private UserRepository userRepository;
+    @Autowired private RoleRepository roleRepository;
+    @Autowired private StatusRepository statusRepository;
+    @Autowired private PasswordEncoder encoder;
+    @Autowired private JwtUtil jwtUtil;
 
     @Transactional
     public JwtResponse loginUser(AuthRequest authRequest) {
-        // ... (authentication logic)
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword()));
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtil.generateToken(authentication);
 
@@ -48,7 +46,6 @@ public class AuthService {
         User userEntity = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found after authentication"));
 
-        // Update last login time
         userEntity.setLastLoginAt(LocalDateTime.now());
         userRepository.save(userEntity);
 
@@ -72,22 +69,25 @@ public class AuthService {
         );
     }
 
+    @Transactional
     public User registerUser(RegisterRequest registerRequest) {
         if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
             throw new RuntimeException("Error: Email is already in use!");
         }
 
         User user = new User();
-
         user.setFirstName(registerRequest.getFirstName());
         user.setLastName(registerRequest.getLastName());
         user.setUsername(registerRequest.getUsername());
         user.setEmail(registerRequest.getEmail());
         user.setPassword(encoder.encode(registerRequest.getPassword()));
 
-        // New users get default "Staff" role and "PENDING" status
-        Role userRole = roleRepository.findByName("Staff")
+        // v-- THIS IS THE FIX --v
+        // Change "Staff" to the new default role "Field Engineer (Civil)"
+        Role userRole = roleRepository.findByName("Field Engineer (Civil)")
                 .orElseThrow(() -> new RuntimeException("Error: Default Role not found."));
+        // ^-- THIS IS THE FIX --^
+
         Status pendingStatus = statusRepository.findByName("PENDING")
                 .orElseThrow(() -> new RuntimeException("Error: Default Status not found."));
 
@@ -97,5 +97,3 @@ public class AuthService {
         return userRepository.save(user);
     }
 }
-
-

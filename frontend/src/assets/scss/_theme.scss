@@ -1,17 +1,17 @@
 // src/assets/scss/_theme.scss
 
-// 1. Your Custom Theme Colors
-$teal: #008080;
-$gold: #FFD700;
+// 1. Your Custom Theme Colors from the Logo
+$gold: #fecb00; // A vibrant gold from the logo
+$light-blue: #00a8e8; // A vibrant light blue from the logo
 $black: #212529;
 $white: #ffffff;
 
 // 2. Override Bootstrap's theme colors
-$primary:   $teal;
-$secondary: #6c757d; // Default gray
+$primary:   $light-blue; // Let's make the light blue the primary action color
+$secondary: #6c757d; 
 $success:   #198754;
-$info:      #0dcaf0;
-$warning:   $gold;
+$info:      #0dcaf0; 
+$warning:   $gold; // Gold is a perfect warning color
 $danger:    #dc3545;
 $light:     #f8f9fa;
 $dark:      $black;
@@ -26,29 +26,25 @@ $theme-colors: (
   "danger":     $danger,
   "light":      $light,
   "dark":       $dark,
-  "teal":       $teal,
-  "gold":       $gold
+  "gold":       $gold,
+  "light-blue": $light-blue
 );
 
 // 4. Import Bootstrap
 @import 'bootstrap/scss/bootstrap.scss';
 
-// 5. Custom Styles
-body {
-    background-color: #f4f7f6; // A very light gray background
-}
-
+// 5. Custom Styles for Bamika Engineering Theme
 .sidebar {
-    background-color: $black;
+    background-color: $dark;
     color: $white;
     .nav-link {
         color: rgba(255, 255, 255, 0.7);
-        &:hover {
+        &:hover, &.active {
             color: $white;
-            background-color: lighten($black, 10%);
+            background-color: lighten($dark, 10%);
         }
         &.active {
-            color: $gold;
+            color: $gold; // Active links will be gold
             font-weight: bold;
         }
     }
