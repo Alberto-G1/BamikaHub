@@ -26,6 +26,10 @@ import InventoryPage from './pages/InventoryPage.jsx';
 import InventoryForm from './pages/InventoryForm.jsx';
 import ItemDetailsPage from './pages/ItemDetailsPage.jsx';
 import TransactionHistoryPage from './pages/TransactionHistoryPage.jsx';
+import ProjectPage from './pages/ProjectPage.jsx';
+import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
+import ProjectForm from './pages/ProjectForm.jsx';
+
 
 function App() {
     return (
@@ -72,6 +76,10 @@ function App() {
                         <Route path="inventory/transactions" element={<ProtectedRoute requiredPermission="ITEM_READ"><TransactionHistoryPage /></ProtectedRoute>} />
                         <Route path="suppliers" element={<ProtectedRoute requiredPermission="SUPPLIER_READ"><SupplierPage /></ProtectedRoute>} />
                         <Route path="categories" element={<ProtectedRoute requiredPermission="ITEM_READ"><CategoryManagementPage /></ProtectedRoute>} />
+                        <Route path="projects" element={<ProtectedRoute requiredPermission="PROJECT_READ"><ProjectPage /></ProtectedRoute>} />
+                        <Route path="projects/:id" element={<ProtectedRoute requiredPermission="PROJECT_READ"><ProjectDetailsPage /></ProtectedRoute>} />
+                        <Route path="projects/new" element={<ProtectedRoute requiredPermission="PROJECT_CREATE"><ProjectForm /></ProtectedRoute>} />
+                        <Route path="projects/edit/:id" element={<ProtectedRoute requiredPermission="PROJECT_UPDATE"><ProjectForm /></ProtectedRoute>} />
                     </Route>
                     
                     {/* Catch-all Route for 404 Not Found */}

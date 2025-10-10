@@ -7,7 +7,8 @@ import {
     FaBoxes, 
     FaHistory, 
     FaTruck,
-    FaTags // <-- Import the new icon for Categories
+    FaTags,
+    FaProjectDiagram
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
 import logo from '../../assets/logo/logo2.png';
@@ -67,6 +68,13 @@ const Sidebar = () => {
                     <li className="nav-item">
                         <NavLink to="/categories" className="nav-link">
                            <FaTags className="me-2" /> Categories
+                        </NavLink>
+                    </li>
+                )}
+                {hasPermission('PROJECT_READ') && (
+                    <li className="nav-item">
+                        <NavLink to="/projects" className="nav-link">
+                           <FaProjectDiagram className="me-2" /> Projects
                         </NavLink>
                     </li>
                 )}
