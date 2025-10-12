@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -47,10 +48,13 @@ public class Project {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "project_engineers",
-            joinColumns = @JoinColumn(name = "project_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
+            joinColumns = @JoinColumn(name = "project_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id")
     )
-    private Set<User> assignedEngineers;
+    private Set<User> assignedEngineers = new HashSet<>();
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean isArchived = false;
 
     @CreationTimestamp
     @Column(updatable = false)

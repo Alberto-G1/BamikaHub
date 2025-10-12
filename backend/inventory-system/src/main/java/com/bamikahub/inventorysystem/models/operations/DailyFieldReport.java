@@ -46,6 +46,8 @@ public class DailyFieldReport {
 
     private String weatherConditions;
 
+    private String reportFileUrl;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
