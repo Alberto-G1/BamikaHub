@@ -6,7 +6,6 @@ import api from '../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext.jsx';
 
-// Helper to get a color for the requisition status
 const getStatusBadge = (status) => {
     switch (status) {
         case 'PENDING': return <Badge bg="warning" text="dark">Pending</Badge>;
@@ -43,6 +42,7 @@ const RequisitionPage = () => {
 
     const filteredRequisitions = useMemo(() => {
         if (!requisitions) return [];
+        if (activeTab === 'ALL') return requisitions;
         return requisitions.filter(req => req.status === activeTab);
     }, [requisitions, activeTab]);
 
@@ -62,10 +62,12 @@ const RequisitionPage = () => {
             </Card.Header>
             <Card.Body>
                 <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-3">
+                    <Tab eventKey="ALL" title={`All (${requisitions.length})`} />
                     <Tab eventKey="PENDING" title={`Pending (${requisitions.filter(r=>r.status === 'PENDING').length})`} />
                     <Tab eventKey="APPROVED_BY_FINANCE" title={`Approved (${requisitions.filter(r=>r.status === 'APPROVED_BY_FINANCE').length})`} />
-                    <Tab eventKey="REJECTED" title={`Rejected (${requisitions.filter(r=>r.status === 'REJECTED').length})`} />
                     <Tab eventKey="FULFILLED" title={`Fulfilled (${requisitions.filter(r=>r.status === 'FULFILLED').length})`} />
+                    <Tab eventKey="REJECTED" title={`Rejected (${requisitions.filter(r=>r.status === 'REJECTED').length})`} />
+                    <Tab eventKey="CLOSED" title={`Closed (${requisitions.filter(r=>r.status === 'CLOSED').length})`} />
                 </Tabs>
                 
                 <Table striped bordered hover responsive>
@@ -82,7 +84,14 @@ const RequisitionPage = () => {
                     <tbody>
                         {filteredRequisitions.map(req => (
                             <tr key={req.id}>
-                                <td>REQ-{String(req.id).padStart(4, '0')}</td>
+                                <td>
+                                    REQ-{String(req.id).padStart(4, '0')}
+                                    {req.submissionCount > 1 && req.status === 'PENDING' && (
+                                        <Badge pill bg="info" className="ms-2" title={`Resubmitted ${req.submissionCount - 1} time(s)`}>
+                                            Resubmitted
+                                        </Badge>
+                                    )}
+                                </td>
                                 <td>{req.project?.name || 'N/A'}</td>
                                 <td>{req.requestedBy?.username || 'N/A'}</td>
                                 <td>{new Date(req.dateNeeded).toLocaleDateString()}</td>

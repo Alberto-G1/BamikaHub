@@ -7,6 +7,7 @@ import com.bamikahub.inventorysystem.models.Requisition;
 import com.bamikahub.inventorysystem.services.FinanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -62,5 +63,19 @@ public class RequisitionController {
     @PreAuthorize("hasAuthority('REQUISITION_APPROVE')") // Finance Manager can close
     public Requisition closeRequisition(@PathVariable Long id, @RequestBody ApprovalRequest request) {
         return financeService.closeRequisition(id, request.getNotes());
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('REQUISITION_CREATE')") // Users who can create can also edit
+    public Requisition updateRequisition(@PathVariable Long id, @RequestBody RequisitionRequest request) {
+        return financeService.updateRequisition(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('REQUISITION_CREATE') or hasAuthority('REQUISITION_APPROVE')") // Requester or Admin/Manager can delete
+    public ResponseEntity<Void> deleteRequisition(@PathVariable Long id) {
+        // Add security check in service to ensure only owner or admin can delete
+        requisitionRepository.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 }
