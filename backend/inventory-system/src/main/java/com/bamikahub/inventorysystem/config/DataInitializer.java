@@ -1,13 +1,13 @@
 package com.bamikahub.inventorysystem.config;
 
-import com.bamikahub.inventorysystem.dao.PermissionRepository;
-import com.bamikahub.inventorysystem.dao.RoleRepository;
-import com.bamikahub.inventorysystem.dao.StatusRepository;
-import com.bamikahub.inventorysystem.dao.UserRepository;
-import com.bamikahub.inventorysystem.models.Permission;
-import com.bamikahub.inventorysystem.models.Role;
-import com.bamikahub.inventorysystem.models.Status;
-import com.bamikahub.inventorysystem.models.User;
+import com.bamikahub.inventorysystem.dao.user.PermissionRepository;
+import com.bamikahub.inventorysystem.dao.user.RoleRepository;
+import com.bamikahub.inventorysystem.dao.user.StatusRepository;
+import com.bamikahub.inventorysystem.dao.user.UserRepository;
+import com.bamikahub.inventorysystem.models.user.Permission;
+import com.bamikahub.inventorysystem.models.user.Role;
+import com.bamikahub.inventorysystem.models.user.Status;
+import com.bamikahub.inventorysystem.models.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;

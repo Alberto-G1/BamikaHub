@@ -4,35 +4,48 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Layout & Core Pages
+// --- CORE & LAYOUT ---
 import MainLayout from './components/layout/MainLayout.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx';
+
+// --- AUTH PAGES ---
 import Login from './pages/auth/Login.jsx';
 import Register from './pages/auth/Register.jsx';
-import Dashboard from './pages/Dashboard.jsx';
-import NotFoundPage from './pages/NotFoundPage.jsx'; // <-- IMPORT THE NEW 404 PAGE
 
-// Management Pages
-import UserManagement from './pages/UserManagement.jsx';
-import UserForm from './pages/UserForm.jsx';
-import DeactivatedUsers from './pages/DeactivatedUsers.jsx';
-import RoleManagement from './pages/RoleManagement.jsx';
-import RoleForm from './pages/RoleForm.jsx';
-import ProfileViewPage from './pages/ProfileViewPage.jsx';
-import ProfileEditPage from './pages/ProfileEditPage.jsx';
-import SupplierPage from './pages/SupplierPage.jsx';
-import CategoryManagementPage from './pages/CategoryManagement.jsx';
-import InventoryPage from './pages/InventoryPage.jsx';
-import InventoryForm from './pages/InventoryForm.jsx';
-import ItemDetailsPage from './pages/ItemDetailsPage.jsx';
-import TransactionHistoryPage from './pages/TransactionHistoryPage.jsx';
-import ProjectPage from './pages/ProjectPage.jsx';
-import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
-import ProjectForm from './pages/ProjectForm.jsx';
+// --- DASHBOARD PAGE ---
+import Dashboard from './pages/dashboard/Dashboard.jsx';
 
-import RequisitionPage from './pages/RequisitionPage.jsx';
-import RequisitionForm from './pages/RequisitionForm.jsx';
-import RequisitionDetailsPage from './pages/RequisitionDetailsPage.jsx';
+// --- USER & PROFILE PAGES ---
+import UserManagement from './pages/user/UserManagement.jsx';
+import UserForm from './pages/user/UserForm.jsx';
+import DeactivatedUsers from './pages/user/DeactivatedUsers.jsx';
+import ProfileViewPage from './pages/user/ProfileViewPage.jsx';
+import ProfileEditPage from './pages/user/ProfileEditPage.jsx';
+
+// --- ROLES & PERMISSIONS PAGES ---
+import RoleManagement from './pages/roles/RoleManagement.jsx';
+import RoleForm from './pages/roles/RoleForm.jsx';
+
+// --- INVENTORY PAGES ---
+import InventoryPage from './pages/inventory/InventoryPage.jsx';
+import InventoryForm from './pages/inventory/InventoryForm.jsx';
+import ItemDetailsPage from './pages/inventory/ItemDetailsPage.jsx';
+import CategoryManagementPage from './pages/inventory/CategoryManagement.jsx';
+import TransactionHistoryPage from './pages/inventory/TransactionHistoryPage.jsx';
+
+// --- SUPPLIERS PAGE ---
+import SupplierPage from './pages/suppliers/SupplierPage.jsx';
+
+// --- OPERATIONS (PROJECTS) PAGES ---
+import ProjectPage from './pages/operations/ProjectPage.jsx';
+import ProjectDetailsPage from './pages/operations/ProjectDetailsPage.jsx';
+import ProjectForm from './pages/operations/ProjectForm.jsx';
+
+// --- FINANCE (REQUISITIONS) PAGES ---
+import RequisitionPage from './pages/finance/RequisitionPage.jsx';
+import RequisitionForm from './pages/finance/RequisitionForm.jsx';
+import RequisitionDetailsPage from './pages/finance/RequisitionDetailsPage.jsx';
 
 
 function App() {
