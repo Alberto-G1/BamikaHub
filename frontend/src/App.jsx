@@ -30,6 +30,10 @@ import ProjectPage from './pages/ProjectPage.jsx';
 import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
 import ProjectForm from './pages/ProjectForm.jsx';
 
+import RequisitionPage from './pages/RequisitionPage.jsx';
+import RequisitionForm from './pages/RequisitionForm.jsx';
+import RequisitionDetailsPage from './pages/RequisitionDetailsPage.jsx';
+
 
 function App() {
     return (
@@ -80,6 +84,9 @@ function App() {
                         <Route path="projects/:id" element={<ProtectedRoute requiredPermission="PROJECT_READ"><ProjectDetailsPage /></ProtectedRoute>} />
                         <Route path="projects/new" element={<ProtectedRoute requiredPermission="PROJECT_CREATE"><ProjectForm /></ProtectedRoute>} />
                         <Route path="projects/edit/:id" element={<ProtectedRoute requiredPermission="PROJECT_UPDATE"><ProjectForm /></ProtectedRoute>} />
+                        <Route path="requisitions" element={<ProtectedRoute><RequisitionPage /></ProtectedRoute>} />
+                        <Route path="requisitions/new" element={<ProtectedRoute requiredPermission="REQUISITION_CREATE"><RequisitionForm /></ProtectedRoute>} />
+                        <Route path="requisitions/:id" element={<ProtectedRoute><RequisitionDetailsPage /></ProtectedRoute>} />
                     </Route>
                     
                     {/* Catch-all Route for 404 Not Found */}

@@ -1,0 +1,66 @@
+package com.bamikahub.inventorysystem.controllers;
+
+import com.bamikahub.inventorysystem.dao.RequisitionRepository;
+import com.bamikahub.inventorysystem.dto.ApprovalRequest;
+import com.bamikahub.inventorysystem.dto.RequisitionRequest;
+import com.bamikahub.inventorysystem.models.Requisition;
+import com.bamikahub.inventorysystem.services.FinanceService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/requisitions")
+@CrossOrigin(origins = "*", maxAge = 3600)
+public class RequisitionController {
+
+    @Autowired private FinanceService financeService;
+    @Autowired private RequisitionRepository requisitionRepository;
+
+    @PostMapping
+    @PreAuthorize("hasAuthority('REQUISITION_CREATE')")
+    public Requisition submitRequisition(@RequestBody RequisitionRequest request) {
+        return financeService.createRequisition(request);
+    }
+
+    @GetMapping
+    @PreAuthorize("isAuthenticated()") // Any logged-in user can view requisitions
+    public List<Requisition> getAllRequisitions() {
+        return requisitionRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public Requisition getRequisitionById(@PathVariable Long id) {
+        return requisitionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Requisition not found"));
+    }
+
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAuthority('REQUISITION_APPROVE')")
+    public Requisition approveRequisition(@PathVariable Long id, @RequestBody ApprovalRequest request) {
+        return financeService.approveRequisition(id, request.getNotes());
+    }
+
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasAuthority('REQUISITION_APPROVE')") // Same permission to approve/reject
+    public Requisition rejectRequisition(@PathVariable Long id, @RequestBody ApprovalRequest request) {
+        return financeService.rejectRequisition(id, request.getNotes());
+    }
+
+    // Permission can be ITEM_UPDATE as Inventory Manager handles this
+    @PostMapping("/{id}/fulfill")
+    @PreAuthorize("hasAuthority('ITEM_UPDATE')")
+    public Requisition fulfillRequisition(@PathVariable Long id, @RequestBody ApprovalRequest request) {
+        return financeService.fulfillRequisition(id, request.getNotes());
+    }
+
+    @PostMapping("/{id}/close")
+    @PreAuthorize("hasAuthority('REQUISITION_APPROVE')") // Finance Manager can close
+    public Requisition closeRequisition(@PathVariable Long id, @RequestBody ApprovalRequest request) {
+        return financeService.closeRequisition(id, request.getNotes());
+    }
+}
