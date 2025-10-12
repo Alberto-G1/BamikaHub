@@ -1,10 +1,10 @@
 package com.bamikahub.inventorysystem.services;
 
-import com.bamikahub.inventorysystem.dao.InventoryItemRepository;
-import com.bamikahub.inventorysystem.dao.SupplierRepository;
-import com.bamikahub.inventorysystem.dao.UserRepository;
+import com.bamikahub.inventorysystem.dao.inventory.InventoryItemRepository;
+import com.bamikahub.inventorysystem.dao.inventory.SupplierRepository;
+import com.bamikahub.inventorysystem.dao.user.UserRepository;
 import com.bamikahub.inventorysystem.dto.DashboardSummaryDto;
-import com.bamikahub.inventorysystem.models.InventoryItem;
+import com.bamikahub.inventorysystem.models.inventory.InventoryItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

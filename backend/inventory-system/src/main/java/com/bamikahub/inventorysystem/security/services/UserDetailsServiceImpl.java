@@ -1,7 +1,7 @@
 package com.bamikahub.inventorysystem.security.services;
 
-import com.bamikahub.inventorysystem.dao.UserRepository;
-import com.bamikahub.inventorysystem.models.User;
+import com.bamikahub.inventorysystem.dao.user.UserRepository;
+import com.bamikahub.inventorysystem.models.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
