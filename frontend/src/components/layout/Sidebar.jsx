@@ -8,7 +8,8 @@ import {
     FaHistory, 
     FaTruck,
     FaTags,
-    FaProjectDiagram
+    FaProjectDiagram,
+    FaMoneyCheckAlt
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
 import logo from '../../assets/logo/logo2.png';
@@ -78,6 +79,13 @@ const Sidebar = () => {
                         </NavLink>
                     </li>
                 )}
+                {hasPermission('REQUISITION_CREATE') || hasPermission('REQUISITION_APPROVE') ? (
+                    <li className="nav-item">
+                        <NavLink to="/requisitions" className="nav-link">
+                        <FaMoneyCheckAlt className="me-2" /> Requisitions
+                        </NavLink>
+                    </li>
+                ) : null}
             </ul>
         </div>
     );
