@@ -65,4 +65,8 @@ public class Requisition {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    // NEW FIELD: Tracks how many times a requisition has been submitted/resubmitted
+    @Column(columnDefinition = "int default 1")
+    private int submissionCount = 1;
 }

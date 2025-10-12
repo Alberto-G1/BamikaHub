@@ -87,6 +87,7 @@ function App() {
                         <Route path="requisitions" element={<ProtectedRoute><RequisitionPage /></ProtectedRoute>} />
                         <Route path="requisitions/new" element={<ProtectedRoute requiredPermission="REQUISITION_CREATE"><RequisitionForm /></ProtectedRoute>} />
                         <Route path="requisitions/:id" element={<ProtectedRoute><RequisitionDetailsPage /></ProtectedRoute>} />
+                        <Route path="requisitions/edit/:id" element={<ProtectedRoute requiredPermission="REQUISITION_CREATE"><RequisitionForm /></ProtectedRoute>} />
                     </Route>
                     
                     {/* Catch-all Route for 404 Not Found */}

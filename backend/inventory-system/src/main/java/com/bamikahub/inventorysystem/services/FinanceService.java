@@ -1,6 +1,7 @@
 package com.bamikahub.inventorysystem.services;
 
 import com.bamikahub.inventorysystem.dao.ProjectRepository;
+import com.bamikahub.inventorysystem.dao.RequisitionItemRepository;
 import com.bamikahub.inventorysystem.dao.RequisitionRepository;
 import com.bamikahub.inventorysystem.dao.UserRepository;
 import com.bamikahub.inventorysystem.dto.RequisitionRequest;
@@ -24,6 +25,8 @@ public class FinanceService {
     @Autowired private RequisitionRepository requisitionRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private ProjectRepository projectRepository;
+    @Autowired private RequisitionItemRepository requisitionItemRepository; // <-- Inject this
+
 
     @Transactional
     public Requisition createRequisition(RequisitionRequest request) {
@@ -134,6 +137,60 @@ public class FinanceService {
 
         requisition.setStatus(Requisition.RequisitionStatus.CLOSED);
         requisition.setApprovalNotes(requisition.getApprovalNotes() + "\nClosed: " + notes);
+
+        return requisitionRepository.save(requisition);
+    }
+
+
+    // NEW METHOD: Update an existing requisition
+    @Transactional
+    public Requisition updateRequisition(Long requisitionId, RequisitionRequest request) {
+        Requisition requisition = requisitionRepository.findById(requisitionId)
+                .orElseThrow(() -> new RuntimeException("Requisition not found."));
+
+        // Business Rule: Can only edit if PENDING or REJECTED
+        if (requisition.getStatus() != Requisition.RequisitionStatus.PENDING && requisition.getStatus() != Requisition.RequisitionStatus.REJECTED) {
+            throw new IllegalStateException("Requisition cannot be edited in its current state.");
+        }
+
+        // Security Rule: Ensure the person editing is the original requester
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!requisition.getRequestedBy().getEmail().equals(currentUserEmail)) {
+            throw new SecurityException("You are not authorized to edit this requisition.");
+        }
+
+        // If it was rejected, we are now resubmitting it
+        if (requisition.getStatus() == Requisition.RequisitionStatus.REJECTED) {
+            requisition.setStatus(Requisition.RequisitionStatus.PENDING);
+            requisition.setSubmissionCount(requisition.getSubmissionCount() + 1);
+            // Clear previous rejection notes for a clean slate
+            requisition.setApprovedBy(null);
+            requisition.setApprovedAt(null);
+            requisition.setApprovalNotes(null);
+        }
+
+        // Update main details
+        Project project = projectRepository.findById(request.getProjectId())
+                .orElseThrow(() -> new RuntimeException("Project not found."));
+        requisition.setProject(project);
+        requisition.setDateNeeded(request.getDateNeeded());
+        requisition.setJustification(request.getJustification());
+
+        // Clear old items and add the new/updated ones
+        requisitionItemRepository.deleteAll(requisition.getItems());
+        requisition.getItems().clear();
+
+        List<RequisitionItem> newItems = request.getItems().stream().map(itemDto -> {
+            RequisitionItem item = new RequisitionItem();
+            item.setItemName(itemDto.getItemName());
+            item.setDescription(itemDto.getDescription());
+            item.setQuantity(itemDto.getQuantity());
+            item.setUnitOfMeasure(itemDto.getUnitOfMeasure());
+            item.setEstimatedUnitCost(itemDto.getEstimatedUnitCost());
+            item.setRequisition(requisition);
+            return item;
+        }).collect(Collectors.toList());
+        requisition.getItems().addAll(newItems);
 
         return requisitionRepository.save(requisition);
     }

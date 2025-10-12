@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Card, Row, Col, Button, Spinner, Badge, Table, Form, ListGroup } from 'react-bootstrap';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaTrash } from 'react-icons/fa';
 import api from '../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext.jsx';
 
-// Helper to get a color for the requisition status
 const getStatusBadge = (status) => {
     switch (status) {
         case 'PENDING': return <Badge bg="warning" text="dark">Pending Approval</Badge>;
@@ -18,21 +17,17 @@ const getStatusBadge = (status) => {
     }
 };
 
-// Reusable currency formatter for UGX
 const formatCurrency = (amount) => {
     if (amount === null || amount === undefined || isNaN(amount)) return 'USh 0';
     return new Intl.NumberFormat('en-UG', {
-        style: 'currency',
-        currency: 'UGX',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        style: 'currency', currency: 'UGX', minimumFractionDigits: 0, maximumFractionDigits: 0,
     }).format(amount);
 };
 
 const RequisitionDetailsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { hasPermission } = useAuth();
+    const { user, hasPermission } = useAuth();
     const [requisition, setRequisition] = useState(null);
     const [loading, setLoading] = useState(true);
     const [notes, setNotes] = useState('');
@@ -73,12 +68,34 @@ const RequisitionDetailsPage = () => {
         }
     };
     
-    if (loading) return (
-        <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
-            <Spinner animation="border" />
-        </div>
-    );
+    const handleDelete = async () => {
+        const toastId = toast.error(
+            <div>
+                <p><strong>Permanently delete this requisition?</strong></p>
+                <p className="small text-muted">This action cannot be undone.</p>
+                <div className="mt-2">
+                    <Button variant="danger" size="sm" className="me-2" onClick={async () => {
+                        try {
+                            await api.delete(`/requisitions/${id}`);
+                            toast.warn("Requisition has been deleted.");
+                            navigate('/requisitions');
+                        } catch (error) {
+                            toast.error(error.response?.data?.message || "Failed to delete requisition.");
+                        }
+                        toast.dismiss(toastId);
+                    }}>
+                        Confirm Delete
+                    </Button>
+                    <Button variant="light" size="sm" onClick={() => toast.dismiss(toastId)}>
+                        Cancel
+                    </Button>
+                </div>
+            </div>,
+            { autoClose: false, closeOnClick: false, position: "top-center", theme: "colored" }
+        );
+    };
 
+    if (loading) return <Spinner animation="border" />;
     if (!requisition) return null;
 
     const totalEstimatedCost = requisition.items.reduce((acc, item) => {
@@ -158,18 +175,34 @@ const RequisitionDetailsPage = () => {
              </Card>
         );
     };
-
     return (
         <Container>
-             <Button variant="outline-secondary" size="sm" className="mb-3" onClick={() => navigate('/requisitions')}>
+            <Button variant="outline-secondary" size="sm" className="mb-3" onClick={() => navigate('/requisitions')}>
                 <FaArrowLeft className="me-2" /> Back to Requisitions
             </Button>
             <Row>
                 <Col md={8}>
                     <Card className="shadow-sm">
-                        <Card.Header className="d-flex justify-content-between align-items-center">
-                            <h3>Requisition REQ-{String(requisition.id).padStart(4, '0')}</h3>
-                            {getStatusBadge(requisition.status)}
+                        <Card.Header>
+                            <div className="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h3>Requisition REQ-{String(requisition.id).padStart(4, '0')}</h3>
+                                    {requisition.submissionCount > 1 && <Badge bg="info" className="me-2">Resubmitted</Badge>}
+                                    {getStatusBadge(requisition.status)}
+                                </div>
+                                <div>
+                                    {user && requisition.requestedBy.id === user.id && ['PENDING', 'REJECTED'].includes(requisition.status) && (
+                                        <Button variant="outline-warning" size="sm" className="me-2" onClick={() => navigate(`/requisitions/edit/${id}`)} title="Edit Requisition">
+                                            <FaEdit />
+                                        </Button>
+                                    )}
+                                    {user && ((requisition.requestedBy.id === user.id && requisition.status === 'PENDING') || hasPermission('REQUISITION_APPROVE')) && (
+                                        <Button variant="outline-danger" size="sm" onClick={handleDelete} title="Delete Requisition">
+                                            <FaTrash />
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
                         </Card.Header>
                         <Card.Body>
                             <ListGroup variant="flush" className="mb-3">

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Form, Button, Card, Container, Spinner, Row, Col, InputGroup, CloseButton } from 'react-bootstrap';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Form, Button, Card, Container, Spinner, Row, Col, CloseButton } from 'react-bootstrap';
 import api from '../api/api.js';
 import { toast } from 'react-toastify';
 
 const RequisitionForm = () => {
+    const { id } = useParams();
     const navigate = useNavigate();
+    const isEditMode = Boolean(id);
     const [loading, setLoading] = useState(true);
 
     const [projects, setProjects] = useState([]);
@@ -17,19 +19,45 @@ const RequisitionForm = () => {
     ]);
 
     useEffect(() => {
-        const fetchProjects = async () => {
-            setLoading(true);
+        const fetchSupportData = async () => {
             try {
                 const res = await api.get('/projects');
                 setProjects(res.data);
             } catch (error) {
                 toast.error("Failed to load projects list.");
-            } finally {
-                setLoading(false);
             }
         };
-        fetchProjects();
-    }, []);
+        
+        const fetchRequisitionData = async () => {
+            if (isEditMode) {
+                try {
+                    const res = await api.get(`/requisitions/${id}`);
+                    const req = res.data;
+                    setProjectId(req.project.id);
+                    setDateNeeded(req.dateNeeded);
+                    setJustification(req.justification);
+                    setItems(req.items.map(item => ({
+                        itemName: item.itemName || '',
+                        description: item.description || '',
+                        quantity: item.quantity || 1,
+                        unitOfMeasure: item.unitOfMeasure || 'pieces',
+                        estimatedUnitCost: item.estimatedUnitCost || ''
+                    })));
+                } catch (error) {
+                    toast.error("Failed to load requisition data for editing.");
+                    navigate('/requisitions');
+                }
+            }
+        };
+
+        const loadAll = async () => {
+            setLoading(true);
+            await fetchSupportData();
+            await fetchRequisitionData();
+            setLoading(false);
+        };
+        loadAll();
+    }, [id, isEditMode, navigate]);
 
     const handleItemChange = (index, event) => {
         const values = [...items];
@@ -52,20 +80,25 @@ const RequisitionForm = () => {
         const payload = { projectId, dateNeeded, justification, items };
 
         try {
-            await api.post('/requisitions', payload);
-            toast.success("Requisition submitted successfully!");
+            if (isEditMode) {
+                await api.put(`/requisitions/${id}`, payload);
+                toast.success("Requisition updated and resubmitted successfully!");
+            } else {
+                await api.post('/requisitions', payload);
+                toast.success("Requisition submitted successfully!");
+            }
             navigate('/requisitions');
         } catch (err) {
-            toast.error(err.response?.data?.message || "Failed to submit requisition.");
+            toast.error(err.response?.data?.message || "Failed to save requisition.");
         }
     };
-
+    
     if (loading) return <Spinner animation="border" />;
 
     return (
         <Container>
             <Card className="shadow-sm">
-                <Card.Header as="h3">Create New Requisition</Card.Header>
+                <Card.Header as="h3">{isEditMode ? 'Edit & Resubmit Requisition' : 'Create New Requisition'}</Card.Header>
                 <Card.Body>
                     <Form onSubmit={handleSubmit}>
                         <Row>
@@ -89,9 +122,9 @@ const RequisitionForm = () => {
                         <h5>Items Requested</h5>
                         {items.map((item, index) => (
                             <Card key={index} className="mb-3 bg-light">
-                                <Card.Body>
-                                    <Row>
-                                        <Col xs={11}>
+                                <Card.Body className="p-2">
+                                    <Row className="align-items-center">
+                                        <Col>
                                             <Form.Group className="mb-2">
                                                 <Form.Label>Item Name</Form.Label>
                                                 <Form.Control type="text" name="itemName" value={item.itemName} onChange={e => handleItemChange(index, e)} required />
@@ -99,7 +132,7 @@ const RequisitionForm = () => {
                                             <Row>
                                                 <Col md={4}><Form.Group className="mb-2">
                                                     <Form.Label>Quantity</Form.Label>
-                                                    <Form.Control type="number" name="quantity" value={item.quantity} onChange={e => handleItemChange(index, e)} required min="0.1" step="0.01"/>
+                                                    <Form.Control type="number" name="quantity" value={item.quantity} onChange={e => handleItemChange(index, e)} required min="0.01" step="0.01"/>
                                                 </Form.Group></Col>
                                                 <Col md={4}><Form.Group className="mb-2">
                                                     <Form.Label>Unit of Measure</Form.Label>
@@ -111,17 +144,17 @@ const RequisitionForm = () => {
                                                 </Form.Group></Col>
                                             </Row>
                                         </Col>
-                                        <Col xs={1} className="d-flex align-items-center justify-content-center">
-                                            {items.length > 1 && <CloseButton onClick={() => handleRemoveItem(index)} />}
+                                        <Col xs="auto" className="d-flex align-items-center">
+                                            {items.length > 1 && <CloseButton onClick={() => handleRemoveItem(index)} title="Remove Item" />}
                                         </Col>
                                     </Row>
                                 </Card.Body>
                             </Card>
                         ))}
-                        <Button variant="outline-secondary" onClick={handleAddItem}>Add Another Item</Button>
+                        <Button variant="outline-secondary" size="sm" onClick={handleAddItem} className="mb-3">Add Another Item</Button>
 
-                        <div className="mt-4">
-                            <Button variant="primary" type="submit">Submit Requisition</Button>
+                        <div className="mt-4 border-top pt-3">
+                            <Button variant="primary" type="submit">{isEditMode ? 'Update & Resubmit' : 'Submit Requisition'}</Button>
                             <Button variant="secondary" className="ms-2" onClick={() => navigate('/requisitions')}>Cancel</Button>
                         </div>
                     </Form>
