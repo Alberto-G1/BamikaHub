@@ -7,6 +7,7 @@ import com.bamikahub.inventorysystem.services.operations.OperationsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -20,8 +21,9 @@ public class FieldReportController {
 
     @PostMapping("/field-daily")
     @PreAuthorize("hasAuthority('FIELD_REPORT_SUBMIT')")
-    public DailyFieldReport submitDailyReport(@RequestBody DailyFieldReportRequest request) {
-        return operationsService.submitFieldReport(request);
+    public DailyFieldReport submitDailyReport(@RequestPart("reportData") String reportDataJson,
+                                              @RequestPart(value = "file", required = false) MultipartFile file) {
+        return operationsService.submitFieldReport(reportDataJson, file);
     }
 
     @GetMapping("/project/{projectId}")
