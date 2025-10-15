@@ -1,11 +1,10 @@
 package com.bamikahub.inventorysystem.models.operations;
 
 import com.bamikahub.inventorysystem.models.user.User;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,7 +12,6 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "daily_field_reports")
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class DailyFieldReport {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,6 +19,7 @@ public class DailyFieldReport {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "project_id")
+    @JsonIgnore
     private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)

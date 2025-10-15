@@ -54,6 +54,7 @@ public class Requisition {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by_user_id")
     private User approvedBy;
+
     private LocalDateTime approvedAt;
     private String approvalNotes;
 

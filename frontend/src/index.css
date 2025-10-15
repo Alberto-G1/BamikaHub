@@ -50,3 +50,34 @@ h2, h3, h4, h5, h6 {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.gallery-image-container {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden; /* Ensures the overlay doesn't spill out */
+}
+
+.gallery-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0; /* Hidden by default */
+  transition: opacity 0.2s ease-in-out;
+}
+
+.gallery-image-container:hover .gallery-image-overlay {
+  opacity: 1; /* Show on hover */
+}
+
+.delete-icon-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+}

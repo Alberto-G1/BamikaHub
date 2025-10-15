@@ -22,33 +22,32 @@ public class OperationsService {
 
     @Autowired private DailyFieldReportRepository reportRepository;
     @Autowired private ProjectRepository projectRepository;
+    @Autowired private ProjectImageRepository imageRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private FileStorageService fileStorageService;
-    @Autowired private ProjectImageRepository imageRepository;
 
-    // Replace the old, incomplete submitFieldReport method with this one.
     @Transactional
     public DailyFieldReport submitFieldReport(String requestJson, MultipartFile file) {
-        // Step 1: Deserialize the JSON string into our DTO
         DailyFieldReportRequest request;
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.findAndRegisterModules(); // Needed for JavaTime types like LocalDate
+            objectMapper.findAndRegisterModules();
             request = objectMapper.readValue(requestJson, DailyFieldReportRequest.class);
         } catch (Exception e) {
             throw new RuntimeException("Could not parse report data JSON.", e);
         }
 
-        // Step 2: Get the currently authenticated user
-        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("Current user not found."));
-
-        // Step 3: Get the associated project
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found."));
 
-        // Step 4: Create and populate the new DailyFieldReport entity
+        // THE FIX: Prevent submission on archived projects
+        if (project.isArchived()) {
+            throw new IllegalStateException("Cannot submit reports for an archived project.");
+        }
+
+        User currentUser = userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName())
+                .orElseThrow(() -> new RuntimeException("Current user not found."));
+
         DailyFieldReport report = new DailyFieldReport();
         report.setProject(project);
         report.setSubmittedBy(currentUser);
@@ -58,14 +57,6 @@ public class OperationsService {
         report.setChallengesFaced(request.getChallengesFaced());
         report.setWeatherConditions(request.getWeatherConditions());
 
-        // Handle optional Site association
-        if (request.getSiteId() != null) {
-            // This requires a SiteRepository. Assuming you'll create one.
-            // Site site = siteRepository.findById(request.getSiteId()).orElse(null);
-            // report.setSite(site);
-        }
-
-        // Step 5: Handle the optional file upload
         if (file != null && !file.isEmpty()) {
             // For better organization, let's create a new storage location for reports
             // You will need to add this property to application.properties and the FileStorageService constructor
@@ -73,17 +64,14 @@ public class OperationsService {
             report.setReportFileUrl("/uploads/item-images/" + filename); // Update this path later if you create a dedicated folder
         }
 
-        // Step 6: Save the report to the database
         return reportRepository.save(report);
     }
 
-    // METHOD: Archive a project
     @Transactional
     public void archiveProject(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found."));
 
-        // Business Rule: Only COMPLETED projects can be archived
         if (project.getStatus() != Project.ProjectStatus.COMPLETED) {
             throw new IllegalStateException("Only completed projects can be archived.");
         }
@@ -91,21 +79,50 @@ public class OperationsService {
         projectRepository.save(project);
     }
 
-    // METHOD: Add an image to a project's gallery
     @Transactional
     public ProjectImage addImageToProjectGallery(Long projectId, String description, MultipartFile file) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found."));
 
-        // Validation for image file (size, type) would go here
+        // THE FIX: Prevent upload on archived projects
+        if (project.isArchived()) {
+            throw new IllegalStateException("Cannot add images to an archived project gallery.");
+        }
 
-        String filename = fileStorageService.storeItemImage(file); // Reusing item image storage logic
+        // ... (validation for image file) ...
 
+        String filename = fileStorageService.storeItemImage(file);
         ProjectImage projectImage = new ProjectImage();
         projectImage.setProject(project);
         projectImage.setDescription(description);
-        projectImage.setImageUrl("/uploads/item-images/" + filename); // Use appropriate path
+        projectImage.setImageUrl("/uploads/item-images/" + filename);
 
         return imageRepository.save(projectImage);
+    }
+
+    // NEW METHOD: Delete an image from a project's gallery
+    @Transactional
+    public void deleteImageFromProjectGallery(Long projectId, Long imageId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found."));
+
+        // Security check: cannot modify an archived project
+        if (project.isArchived()) {
+            throw new IllegalStateException("Cannot delete images from an archived project gallery.");
+        }
+
+        ProjectImage image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new RuntimeException("Image not found in gallery."));
+
+        // Verify the image belongs to the correct project before deleting
+        if (!image.getProject().getId().equals(projectId)) {
+            throw new SecurityException("Image does not belong to the specified project.");
+        }
+
+        // TODO: Add logic here to delete the actual file from the filesystem
+        // File fileToDelete = new File(uploadDir + image.getImageUrl());
+        // fileToDelete.delete();
+
+        imageRepository.delete(image);
     }
 }

@@ -104,4 +104,11 @@ public class ProjectController {
                                         @RequestPart("file") MultipartFile file) {
         return operationsService.addImageToProjectGallery(id, description, file);
     }
+
+    @DeleteMapping("/{projectId}/gallery/{imageId}")
+    @PreAuthorize("hasAuthority('PROJECT_DELETE')") // Reuse a high-level permission for deletion
+    public ResponseEntity<Void> deleteGalleryImage(@PathVariable Long projectId, @PathVariable Long imageId) {
+        operationsService.deleteImageFromProjectGallery(projectId, imageId);
+        return ResponseEntity.ok().build();
+    }
 }
