@@ -1,4 +1,3 @@
-// security/jwt/JwtUtil.java
 package com.bamikahub.inventorysystem.security.jwt;
 
 import io.jsonwebtoken.*;

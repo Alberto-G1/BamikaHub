@@ -97,8 +97,14 @@ public class FinanceService {
         Requisition requisition = requisitionRepository.findById(requisitionId)
                 .orElseThrow(() -> new RuntimeException("Requisition not found."));
 
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User rejecter = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new RuntimeException("Rejecter not found."));
+
         requisition.setStatus(Requisition.RequisitionStatus.REJECTED);
         requisition.setApprovalNotes(reason);
+        requisition.setApprovedBy(rejecter); // Set who rejected it
+        requisition.setApprovedAt(LocalDateTime.now()); // Set when it was rejected
 
         return requisitionRepository.save(requisition);
     }
@@ -171,35 +177,40 @@ public class FinanceService {
         Requisition requisition = requisitionRepository.findById(requisitionId)
                 .orElseThrow(() -> new RuntimeException("Requisition not found."));
 
-        // Business Rule: Can only edit if PENDING or REJECTED
         if (requisition.getStatus() != Requisition.RequisitionStatus.PENDING && requisition.getStatus() != Requisition.RequisitionStatus.REJECTED) {
             throw new IllegalStateException("Requisition cannot be edited in its current state.");
         }
 
-        // Security Rule: Ensure the person editing is the original requester
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!requisition.getRequestedBy().getEmail().equals(currentUserEmail)) {
             throw new SecurityException("You are not authorized to edit this requisition.");
         }
 
-        // If it was rejected, we are now resubmitting it
         if (requisition.getStatus() == Requisition.RequisitionStatus.REJECTED) {
-            requisition.setStatus(Requisition.RequisitionStatus.PENDING);
-            requisition.setSubmissionCount(requisition.getSubmissionCount() + 1);
-            // Clear previous rejection notes for a clean slate
+            String rejectionReason = requisition.getApprovalNotes();
+            String history = requisition.getNotesHistory() != null ? requisition.getNotesHistory() : "";
+
+            // Add a null check for the user who rejected it.
+            String rejectedByUsername = (requisition.getApprovedBy() != null) ? requisition.getApprovedBy().getUsername() : "System";
+
+            requisition.setNotesHistory(
+                    "Rejected on " + LocalDateTime.now().toString() + " by " + rejectedByUsername +
+                            " with reason: '" + rejectionReason + "'\n---\n" + history
+            );
+
             requisition.setApprovedBy(null);
             requisition.setApprovedAt(null);
             requisition.setApprovalNotes(null);
+            requisition.setStatus(Requisition.RequisitionStatus.PENDING);
+            requisition.setSubmissionCount(requisition.getSubmissionCount() + 1);
         }
 
-        // Update main details
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found."));
         requisition.setProject(project);
         requisition.setDateNeeded(request.getDateNeeded());
         requisition.setJustification(request.getJustification());
 
-        // Clear old items and add the new/updated ones
         requisitionItemRepository.deleteAll(requisition.getItems());
         requisition.getItems().clear();
 

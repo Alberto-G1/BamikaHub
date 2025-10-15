@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Card, Row, Col, Button, Spinner, Badge, Table, Form, ListGroup } from 'react-bootstrap';
-import { FaArrowLeft, FaEdit, FaTrash } from 'react-icons/fa';
-import api from '../../api/api.js';
+import { Container, Card, Row, Col, Button, Spinner, Badge, Table, Form, ListGroup, Alert } from 'react-bootstrap';
+import { FaArrowLeft, FaEdit, FaTrash, FaHistory } from 'react-icons/fa';import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
 import FulfillmentModal from '../../components/finance/FulfillmentModal.jsx';
@@ -120,11 +119,21 @@ const RequisitionDetailsPage = () => {
 
     const renderActionCard = () => {
         // Finance Manager sees Approve/Reject for PENDING requisitions
-        if (hasPermission('REQUISITION_APPROVE') && requisition.status === 'PENDING') {
+       if (hasPermission('REQUISITION_APPROVE') && requisition.status === 'PENDING') {
             return (
                 <Card className="shadow-sm">
                     <Card.Header as="h5">Approval Action</Card.Header>
                     <Card.Body>
+                        {requisition.submissionCount > 1 && requisition.notesHistory && (
+                            <Alert variant="warning">
+                                <Alert.Heading><FaHistory className="me-2" /> Resubmission History</Alert.Heading>
+                                <p className="mb-1 small">This requisition was previously rejected. Review the reason below before approving.</p>
+                                <hr />
+                                <pre style={{ whiteSpace: 'pre-wrap', fontSize: '0.8rem', maxHeight: '150px', overflowY: 'auto' }}>
+                                    {requisition.notesHistory}
+                                </pre>
+                            </Alert>
+                        )}
                         <Form.Group className="mb-3">
                             <Form.Label>Notes / Reason for Rejection</Form.Label>
                             <Form.Control as="textarea" rows={4} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Required for rejection..."/>
