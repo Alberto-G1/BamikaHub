@@ -56,7 +56,11 @@ public class Requisition {
     private User approvedBy;
 
     private LocalDateTime approvedAt;
+
     private String approvalNotes;
+
+    @Lob
+    private String notesHistory;
 
     // One Requisition has many Items
     @OneToMany(mappedBy = "requisition", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)

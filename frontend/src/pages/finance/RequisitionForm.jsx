@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Form, Button, Card, Container, Spinner, Row, Col, CloseButton } from 'react-bootstrap';
+import { Form, Button, Card, Container, Spinner, Row, Col, CloseButton, Alert } from 'react-bootstrap';
+import { FaInfoCircle } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 
@@ -17,6 +18,9 @@ const RequisitionForm = () => {
     const [items, setItems] = useState([
         { itemName: '', description: '', quantity: 1, unitOfMeasure: 'pieces', estimatedUnitCost: '' }
     ]);
+    
+    // NEW: State to hold the rejection reason
+    const [rejectionNotes, setRejectionNotes] = useState(null);
 
     useEffect(() => {
         const fetchSupportData = async () => {
@@ -43,6 +47,12 @@ const RequisitionForm = () => {
                         unitOfMeasure: item.unitOfMeasure || 'pieces',
                         estimatedUnitCost: item.estimatedUnitCost || ''
                     })));
+
+                    // THE FIX: If the requisition was rejected, capture the notes
+                    if (req.status === 'REJECTED') {
+                        setRejectionNotes(req.approvalNotes);
+                    }
+
                 } catch (error) {
                     toast.error("Failed to load requisition data for editing.");
                     navigate('/requisitions');
@@ -100,6 +110,19 @@ const RequisitionForm = () => {
             <Card className="shadow-sm">
                 <Card.Header as="h3">{isEditMode ? 'Edit & Resubmit Requisition' : 'Create New Requisition'}</Card.Header>
                 <Card.Body>
+                    
+                    {/* THE FIX: Display the rejection reason if it exists */}
+                    {rejectionNotes && (
+                        <Alert variant="danger">
+                            <Alert.Heading><FaInfoCircle className="me-2" />This requisition was rejected.</Alert.Heading>
+                            <p><strong>Reason:</strong> {rejectionNotes}</p>
+                            <hr />
+                            <p className="mb-0">
+                                Please review the feedback, make the necessary changes below, and resubmit.
+                            </p>
+                        </Alert>
+                    )}
+
                     <Form onSubmit={handleSubmit}>
                         <Row>
                             <Col md={8}><Form.Group className="mb-3">
