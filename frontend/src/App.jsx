@@ -41,6 +41,7 @@ import SupplierPage from './pages/suppliers/SupplierPage.jsx';
 import ProjectPage from './pages/operations/ProjectPage.jsx';
 import ProjectDetailsPage from './pages/operations/ProjectDetailsPage.jsx';
 import ProjectForm from './pages/operations/ProjectForm.jsx';
+import ArchivedProjectsPage from './pages/operations/ArchivedProjectsPage.jsx'; // <-- THE MISSING IMPORT
 
 // --- FINANCE (REQUISITIONS) PAGES ---
 import RequisitionPage from './pages/finance/RequisitionPage.jsx';
@@ -93,10 +94,15 @@ function App() {
                         <Route path="inventory/transactions" element={<ProtectedRoute requiredPermission="ITEM_READ"><TransactionHistoryPage /></ProtectedRoute>} />
                         <Route path="suppliers" element={<ProtectedRoute requiredPermission="SUPPLIER_READ"><SupplierPage /></ProtectedRoute>} />
                         <Route path="categories" element={<ProtectedRoute requiredPermission="ITEM_READ"><CategoryManagementPage /></ProtectedRoute>} />
+                        
+                        {/* Operations Management */}
                         <Route path="projects" element={<ProtectedRoute requiredPermission="PROJECT_READ"><ProjectPage /></ProtectedRoute>} />
                         <Route path="projects/:id" element={<ProtectedRoute requiredPermission="PROJECT_READ"><ProjectDetailsPage /></ProtectedRoute>} />
                         <Route path="projects/new" element={<ProtectedRoute requiredPermission="PROJECT_CREATE"><ProjectForm /></ProtectedRoute>} />
                         <Route path="projects/edit/:id" element={<ProtectedRoute requiredPermission="PROJECT_UPDATE"><ProjectForm /></ProtectedRoute>} />
+                        <Route path="projects/archived" element={<ProtectedRoute requiredPermission="PROJECT_READ"><ArchivedProjectsPage /></ProtectedRoute>} /> {/* <-- THE MISSING ROUTE */}
+
+                        {/* Finance Management */}
                         <Route path="requisitions" element={<ProtectedRoute><RequisitionPage /></ProtectedRoute>} />
                         <Route path="requisitions/new" element={<ProtectedRoute requiredPermission="REQUISITION_CREATE"><RequisitionForm /></ProtectedRoute>} />
                         <Route path="requisitions/:id" element={<ProtectedRoute><RequisitionDetailsPage /></ProtectedRoute>} />
