@@ -9,7 +9,8 @@ import {
     FaTruck,
     FaTags,
     FaProjectDiagram,
-    FaMoneyCheckAlt
+    FaMoneyCheckAlt,
+    FaTicketAlt
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
 import logo from '../../assets/logo/logo2.png';
@@ -86,6 +87,13 @@ const Sidebar = () => {
                         </NavLink>
                     </li>
                 ) : null}
+                <li className="nav-item mt-2"><small>Support</small></li>
+                {/* v-- ADD THIS LINK --v */}
+                <li className="nav-item">
+                    <NavLink to="/support/tickets" className="nav-link">
+                    <FaTicketAlt className="me-2" /> Support Tickets
+                    </NavLink>
+                </li>
             </ul>
         </div>
     );

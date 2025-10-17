@@ -48,6 +48,10 @@ import RequisitionPage from './pages/finance/RequisitionPage.jsx';
 import RequisitionForm from './pages/finance/RequisitionForm.jsx';
 import RequisitionDetailsPage from './pages/finance/RequisitionDetailsPage.jsx';
 
+// --- SUPPORT TICKETS PAGES ---
+import SupportTicketPage from './pages/support/SupportTicketPage.jsx';
+import TicketDetailsPage from './pages/support/TicketDetailsPage.jsx';
+
 
 function App() {
     return (
@@ -107,6 +111,10 @@ function App() {
                         <Route path="requisitions/new" element={<ProtectedRoute requiredPermission="REQUISITION_CREATE"><RequisitionForm /></ProtectedRoute>} />
                         <Route path="requisitions/:id" element={<ProtectedRoute><RequisitionDetailsPage /></ProtectedRoute>} />
                         <Route path="requisitions/edit/:id" element={<ProtectedRoute requiredPermission="REQUISITION_CREATE"><RequisitionForm /></ProtectedRoute>} />
+
+                        {/* Support Tickets */}
+                        <Route path="support/tickets" element={<ProtectedRoute><SupportTicketPage /></ProtectedRoute>} />
+                        <Route path="support/tickets/:id" element={<ProtectedRoute><TicketDetailsPage /></ProtectedRoute>} />
                     </Route>
                     
                     {/* Catch-all Route for 404 Not Found */}
