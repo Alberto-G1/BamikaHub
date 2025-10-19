@@ -52,6 +52,10 @@ import RequisitionDetailsPage from './pages/finance/RequisitionDetailsPage.jsx';
 import SupportTicketPage from './pages/support/SupportTicketPage.jsx';
 import TicketDetailsPage from './pages/support/TicketDetailsPage.jsx';
 
+// --- REPORTS PAGES ---
+import ReportsPage from './pages/reporting/ReportsPage.jsx';
+import InventoryValuationReport from './pages/reporting/InventoryValuationReport.jsx';
+
 
 function App() {
     return (
@@ -115,6 +119,10 @@ function App() {
                         {/* Support Tickets */}
                         <Route path="support/tickets" element={<ProtectedRoute><SupportTicketPage /></ProtectedRoute>} />
                         <Route path="support/tickets/:id" element={<ProtectedRoute><TicketDetailsPage /></ProtectedRoute>} />
+
+                        {/* Reports & Analytics */}
+                        <Route path="reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+                        <Route path="reports/inventory-valuation" element={<ProtectedRoute><InventoryValuationReport /></ProtectedRoute>} />
                     </Route>
                     
                     {/* Catch-all Route for 404 Not Found */}
