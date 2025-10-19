@@ -27,6 +27,9 @@ import ProfileEditPage from './pages/user/ProfileEditPage.jsx';
 import RoleManagement from './pages/roles/RoleManagement.jsx';
 import RoleForm from './pages/roles/RoleForm.jsx';
 
+// --- NOTIFICATIONS ---
+import NotificationsPage from './pages/notifications/NotificationsPage.jsx';
+
 // --- INVENTORY PAGES ---
 import InventoryPage from './pages/inventory/InventoryPage.jsx';
 import InventoryForm from './pages/inventory/InventoryForm.jsx';
@@ -147,6 +150,9 @@ function App() {
                         {/* Support Reports */}
                         <Route path="reports/support/sla-compliance" element={<ProtectedRoute requiredPermission="TICKET_MANAGE"><SlaComplianceReport /></ProtectedRoute>} />
                         <Route path="reports/support/ticket-trends" element={<ProtectedRoute requiredPermission="TICKET_MANAGE"><CompletionTrendsReport /></ProtectedRoute>} />
+                        
+                        {/* Notifications */}
+                        <Route path="notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
                         
                         {/* Audit Trail */}
                         <Route path="audit-trail" element={<ProtectedRoute requiredPermission="AUDIT_READ"><AuditLogPage /></ProtectedRoute>} />
