@@ -55,6 +55,10 @@ import TicketDetailsPage from './pages/support/TicketDetailsPage.jsx';
 // --- REPORTS PAGES ---
 import ReportsPage from './pages/reporting/ReportsPage.jsx';
 import InventoryValuationReport from './pages/reporting/InventoryValuationReport.jsx';
+import ProjectPerformanceReport from './pages/reporting/ProjectPerformanceReport.jsx';
+import CompletionTrendsReport from './pages/reporting/CompletionTrendsReport.jsx';
+import BudgetVsActualReport from './pages/reporting/BudgetVsActualReport.jsx';
+import SlaComplianceReport from './pages/reporting/SlaComplianceReport.jsx';
 
 
 function App() {
@@ -122,7 +126,24 @@ function App() {
 
                         {/* Reports & Analytics */}
                         <Route path="reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-                        <Route path="reports/inventory-valuation" element={<ProtectedRoute><InventoryValuationReport /></ProtectedRoute>} />
+                        
+                        {/* Operations Reports */}
+                        <Route path="reports/operations/project-performance" element={<ProtectedRoute requiredPermission="PROJECT_READ"><ProjectPerformanceReport /></ProtectedRoute>} />
+                        <Route path="reports/operations/project-delays" element={<ProtectedRoute requiredPermission="PROJECT_READ"><ProjectPerformanceReport /></ProtectedRoute>} />
+                        <Route path="reports/operations/completion-trends" element={<ProtectedRoute requiredPermission="PROJECT_READ"><CompletionTrendsReport /></ProtectedRoute>} />
+                        
+                        {/* Finance Reports */}
+                        <Route path="reports/finance/budget-vs-actual" element={<ProtectedRoute requiredPermission="FINANCE_READ"><BudgetVsActualReport /></ProtectedRoute>} />
+                        <Route path="reports/finance/requisitions-status" element={<ProtectedRoute requiredPermission="FINANCE_READ"><BudgetVsActualReport /></ProtectedRoute>} />
+                        <Route path="reports/finance/expenditure-trends" element={<ProtectedRoute requiredPermission="FINANCE_READ"><CompletionTrendsReport /></ProtectedRoute>} />
+                        
+                        {/* Inventory Reports */}
+                        <Route path="reports/inventory-valuation" element={<ProtectedRoute requiredPermission="ITEM_READ"><InventoryValuationReport /></ProtectedRoute>} />
+                        <Route path="reports/inventory/stock-movement" element={<ProtectedRoute requiredPermission="ITEM_READ"><InventoryValuationReport /></ProtectedRoute>} />
+                        
+                        {/* Support Reports */}
+                        <Route path="reports/support/sla-compliance" element={<ProtectedRoute requiredPermission="TICKET_MANAGE"><SlaComplianceReport /></ProtectedRoute>} />
+                        <Route path="reports/support/ticket-trends" element={<ProtectedRoute requiredPermission="TICKET_MANAGE"><CompletionTrendsReport /></ProtectedRoute>} />
                     </Route>
                     
                     {/* Catch-all Route for 404 Not Found */}
