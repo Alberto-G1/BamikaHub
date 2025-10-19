@@ -24,8 +24,11 @@ const BudgetVsActualReport = () => {
     });
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        const sanitized = Object.fromEntries(
+            Object.entries(filters).filter(([_, v]) => v !== '')
+        );
+        fetchData(sanitized);
+    }, [filters]);
 
     const fetchData = async (params = {}) => {
         setLoading(true);
@@ -44,17 +47,8 @@ const BudgetVsActualReport = () => {
         setFilters(prev => ({ ...prev, [name]: value }));
     };
 
-    const applyFilters = (e) => {
-        e.preventDefault();
-        const sanitized = Object.fromEntries(
-            Object.entries(filters).filter(([_, v]) => v !== '')
-        );
-        fetchData(sanitized);
-    };
-
     const resetFilters = () => {
         setFilters({ startDate: '', endDate: '', projectId: '', status: '' });
-        fetchData();
     };
 
     const getStatusBadge = (status) => {
@@ -89,47 +83,44 @@ const BudgetVsActualReport = () => {
                     <FaFilter className="me-2" /> Filters
                 </Card.Header>
                 <Card.Body>
-                    <Form onSubmit={applyFilters}>
-                        <Row className="g-3">
-                            <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>Start Date</Form.Label>
-                                    <Form.Control
-                                        type="date"
-                                        name="startDate"
-                                        value={filters.startDate}
-                                        onChange={handleFilterChange}
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>End Date</Form.Label>
-                                    <Form.Control
-                                        type="date"
-                                        name="endDate"
-                                        value={filters.endDate}
-                                        onChange={handleFilterChange}
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>Status</Form.Label>
-                                    <Form.Select name="status" value={filters.status} onChange={handleFilterChange}>
-                                        <option value="">All</option>
-                                        <option value="PLANNING">Planning</option>
-                                        <option value="IN_PROGRESS">In Progress</option>
-                                        <option value="COMPLETED">Completed</option>
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
-                            <Col md={3} className="d-flex align-items-end">
-                                <Button type="submit" variant="primary" className="me-2">Apply</Button>
-                                <Button type="button" variant="outline-secondary" onClick={resetFilters}>Reset</Button>
-                            </Col>
-                        </Row>
-                    </Form>
+                    <Row className="g-3">
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>Start Date</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    name="startDate"
+                                    value={filters.startDate}
+                                    onChange={handleFilterChange}
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>End Date</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    name="endDate"
+                                    value={filters.endDate}
+                                    onChange={handleFilterChange}
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>Status</Form.Label>
+                                <Form.Select name="status" value={filters.status} onChange={handleFilterChange}>
+                                    <option value="">All</option>
+                                    <option value="PLANNING">Planning</option>
+                                    <option value="IN_PROGRESS">In Progress</option>
+                                    <option value="COMPLETED">Completed</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={3} className="d-flex align-items-end">
+                            <Button type="button" variant="outline-secondary" onClick={resetFilters} className="w-100">Reset Filters</Button>
+                        </Col>
+                    </Row>
                 </Card.Body>
             </Card>
 

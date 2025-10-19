@@ -60,6 +60,9 @@ import CompletionTrendsReport from './pages/reporting/CompletionTrendsReport.jsx
 import BudgetVsActualReport from './pages/reporting/BudgetVsActualReport.jsx';
 import SlaComplianceReport from './pages/reporting/SlaComplianceReport.jsx';
 
+// --- AUDIT TRAIL PAGES ---
+import AuditLogPage from './pages/audit/AuditLogPage.jsx';
+
 
 function App() {
     return (
@@ -144,6 +147,9 @@ function App() {
                         {/* Support Reports */}
                         <Route path="reports/support/sla-compliance" element={<ProtectedRoute requiredPermission="TICKET_MANAGE"><SlaComplianceReport /></ProtectedRoute>} />
                         <Route path="reports/support/ticket-trends" element={<ProtectedRoute requiredPermission="TICKET_MANAGE"><CompletionTrendsReport /></ProtectedRoute>} />
+                        
+                        {/* Audit Trail */}
+                        <Route path="audit-trail" element={<ProtectedRoute requiredPermission="AUDIT_READ"><AuditLogPage /></ProtectedRoute>} />
                     </Route>
                     
                     {/* Catch-all Route for 404 Not Found */}

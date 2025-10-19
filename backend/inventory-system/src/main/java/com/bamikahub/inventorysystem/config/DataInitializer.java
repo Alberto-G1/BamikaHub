@@ -56,7 +56,9 @@ public class DataInitializer implements CommandLineRunner {
                     // Finance Management (Future)
                     "REQUISITION_CREATE", "REQUISITION_APPROVE", "FINANCE_READ",
                     // Technical Support (Future)
-            "TICKET_CREATE", "TICKET_MANAGE", "TICKET_COMMENT", "TICKET_ASSIGN", "TICKET_RESOLVE", "TICKET_CLOSE", "TICKET_ARCHIVE"
+                    "TICKET_CREATE", "TICKET_MANAGE", "TICKET_COMMENT", "TICKET_ASSIGN", "TICKET_RESOLVE", "TICKET_CLOSE", "TICKET_ARCHIVE",
+                    // Audit Trail
+                    "AUDIT_READ", "AUDIT_EXPORT"
             );
             List<Permission> allPermissions = permissionNames.stream().map(this::createPermissionIfNotFound).collect(Collectors.toList());
             Set<Permission> allPermissionsSet = new HashSet<>(allPermissions);

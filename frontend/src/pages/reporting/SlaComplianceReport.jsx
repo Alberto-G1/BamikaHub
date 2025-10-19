@@ -27,8 +27,8 @@ const SlaComplianceReport = () => {
     });
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        fetchData(filters);
+    }, [filters]);
 
     const fetchData = async (params = filters) => {
         setLoading(true);
@@ -47,11 +47,6 @@ const SlaComplianceReport = () => {
         setFilters(prev => ({ ...prev, [name]: value }));
     };
 
-    const applyFilters = (e) => {
-        e.preventDefault();
-        fetchData(filters);
-    };
-
     const resetFilters = () => {
         const defaultFilters = {
             startDate: new Date(new Date().setMonth(new Date().getMonth() - 3)).toISOString().split('T')[0],
@@ -60,7 +55,6 @@ const SlaComplianceReport = () => {
             status: ''
         };
         setFilters(defaultFilters);
-        fetchData(defaultFilters);
     };
 
     const chartData = data.length > 0 ? {
@@ -126,60 +120,57 @@ const SlaComplianceReport = () => {
                     <FaFilter className="me-2" /> Filters
                 </Card.Header>
                 <Card.Body>
-                    <Form onSubmit={applyFilters}>
-                        <Row className="g-3">
-                            <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>Start Date</Form.Label>
-                                    <Form.Control
-                                        type="date"
-                                        name="startDate"
-                                        value={filters.startDate}
-                                        onChange={handleFilterChange}
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>End Date</Form.Label>
-                                    <Form.Control
-                                        type="date"
-                                        name="endDate"
-                                        value={filters.endDate}
-                                        onChange={handleFilterChange}
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={2}>
-                                <Form.Group>
-                                    <Form.Label>Priority</Form.Label>
-                                    <Form.Select name="priority" value={filters.priority} onChange={handleFilterChange}>
-                                        <option value="">All</option>
-                                        <option value="LOW">Low</option>
-                                        <option value="MEDIUM">Medium</option>
-                                        <option value="HIGH">High</option>
-                                        <option value="URGENT">Urgent</option>
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
-                            <Col md={2}>
-                                <Form.Group>
-                                    <Form.Label>Status</Form.Label>
-                                    <Form.Select name="status" value={filters.status} onChange={handleFilterChange}>
-                                        <option value="">All</option>
-                                        <option value="OPEN">Open</option>
-                                        <option value="IN_PROGRESS">In Progress</option>
-                                        <option value="RESOLVED">Resolved</option>
-                                        <option value="CLOSED">Closed</option>
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
-                            <Col md={2} className="d-flex align-items-end">
-                                <Button type="submit" variant="primary" className="me-2">Apply</Button>
-                                <Button type="button" variant="outline-secondary" onClick={resetFilters}>Reset</Button>
-                            </Col>
-                        </Row>
-                    </Form>
+                    <Row className="g-3">
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>Start Date</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    name="startDate"
+                                    value={filters.startDate}
+                                    onChange={handleFilterChange}
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>End Date</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    name="endDate"
+                                    value={filters.endDate}
+                                    onChange={handleFilterChange}
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={2}>
+                            <Form.Group>
+                                <Form.Label>Priority</Form.Label>
+                                <Form.Select name="priority" value={filters.priority} onChange={handleFilterChange}>
+                                    <option value="">All</option>
+                                    <option value="LOW">Low</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="HIGH">High</option>
+                                    <option value="URGENT">Urgent</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={2}>
+                            <Form.Group>
+                                <Form.Label>Status</Form.Label>
+                                <Form.Select name="status" value={filters.status} onChange={handleFilterChange}>
+                                    <option value="">All</option>
+                                    <option value="OPEN">Open</option>
+                                    <option value="IN_PROGRESS">In Progress</option>
+                                    <option value="RESOLVED">Resolved</option>
+                                    <option value="CLOSED">Closed</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={2} className="d-flex align-items-end">
+                            <Button type="button" variant="outline-secondary" onClick={resetFilters} className="w-100">Reset Filters</Button>
+                        </Col>
+                    </Row>
                 </Card.Body>
             </Card>
 

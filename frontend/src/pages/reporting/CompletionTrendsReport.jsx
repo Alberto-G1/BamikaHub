@@ -27,8 +27,8 @@ const CompletionTrendsReport = () => {
     });
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        fetchData(filters);
+    }, [filters]);
 
     const fetchData = async (params = filters) => {
         setLoading(true);
@@ -45,11 +45,6 @@ const CompletionTrendsReport = () => {
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
-    };
-
-    const applyFilters = (e) => {
-        e.preventDefault();
-        fetchData(filters);
     };
 
     const chartData = data ? {
@@ -100,49 +95,44 @@ const CompletionTrendsReport = () => {
 
             <Card className="shadow-sm mb-3">
                 <Card.Body>
-                    <Form onSubmit={applyFilters}>
-                        <Row className="g-3">
-                            <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>Start Date</Form.Label>
-                                    <Form.Control
-                                        type="date"
-                                        name="startDate"
-                                        value={filters.startDate}
-                                        onChange={handleFilterChange}
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>End Date</Form.Label>
-                                    <Form.Control
-                                        type="date"
-                                        name="endDate"
-                                        value={filters.endDate}
-                                        onChange={handleFilterChange}
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>Aggregation</Form.Label>
-                                    <Form.Select
-                                        name="aggregationLevel"
-                                        value={filters.aggregationLevel}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <option value="DAILY">Daily</option>
-                                        <option value="WEEKLY">Weekly</option>
-                                        <option value="MONTHLY">Monthly</option>
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
-                            <Col md={3} className="d-flex align-items-end">
-                                <Button type="submit" variant="primary">Apply Filters</Button>
-                            </Col>
-                        </Row>
-                    </Form>
+                    <Row className="g-3">
+                        <Col md={4}>
+                            <Form.Group>
+                                <Form.Label>Start Date</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    name="startDate"
+                                    value={filters.startDate}
+                                    onChange={handleFilterChange}
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                            <Form.Group>
+                                <Form.Label>End Date</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    name="endDate"
+                                    value={filters.endDate}
+                                    onChange={handleFilterChange}
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                            <Form.Group>
+                                <Form.Label>Aggregation</Form.Label>
+                                <Form.Select
+                                    name="aggregationLevel"
+                                    value={filters.aggregationLevel}
+                                    onChange={handleFilterChange}
+                                >
+                                    <option value="DAILY">Daily</option>
+                                    <option value="WEEKLY">Weekly</option>
+                                    <option value="MONTHLY">Monthly</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                    </Row>
                 </Card.Body>
             </Card>
 
