@@ -10,7 +10,8 @@ import {
     FaTags,
     FaProjectDiagram,
     FaMoneyCheckAlt,
-    FaTicketAlt
+    FaTicketAlt,
+    FaChartLine
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
 import logo from '../../assets/logo/logo2.png';
@@ -88,10 +89,15 @@ const Sidebar = () => {
                     </li>
                 ) : null}
                 <li className="nav-item mt-2"><small>Support</small></li>
-                {/* v-- ADD THIS LINK --v */}
                 <li className="nav-item">
                     <NavLink to="/support/tickets" className="nav-link">
                     <FaTicketAlt className="me-2" /> Support Tickets
+                    </NavLink>
+                </li>
+                <li className="nav-item mt-2"><small>Analysis</small></li>
+                <li className="nav-item">
+                    <NavLink to="/reports" className="nav-link">
+                    <FaChartLine className="me-2" /> Reports & Analytics
                     </NavLink>
                 </li>
             </ul>

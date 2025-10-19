@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Col, Row, Spinner, Alert } from 'react-bootstrap';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { FaBoxes, FaExclamationTriangle, FaTruck, FaUsers, FaUserClock } from 'react-icons/fa';
+import { FaBoxes, FaExclamationTriangle, FaProjectDiagram, FaUsers, FaUserClock, FaTruck } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
+import { Doughnut, Bar } from 'react-chartjs-2';
 
-// Reusable currency formatter for UGX
+// Register the components you will use from Chart.js
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
+
+// Reusable currency formatter for Ugandan Shillings (UGX)
 const formatCurrency = (amount) => {
-    if (amount === null || amount === undefined) return 'USh 0';
+    if (amount === null || amount === undefined || isNaN(amount)) return 'USh 0';
     return new Intl.NumberFormat('en-UG', {
         style: 'currency',
         currency: 'UGX',
@@ -19,14 +24,20 @@ const formatCurrency = (amount) => {
 const Dashboard = () => {
     const { user } = useAuth();
     const [summaryData, setSummaryData] = useState(null);
+    const [chartData, setChartData] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchSummary = async () => {
+        const fetchDashboardData = async () => {
             setLoading(true);
             try {
-                const response = await api.get('/dashboard/summary');
-                setSummaryData(response.data);
+                // Fetch both summary cards and chart data in parallel for performance
+                const [summaryRes, chartsRes] = await Promise.all([
+                    api.get('/dashboard/summary'),
+                    api.get('/reports/dashboard-charts')
+                ]);
+                setSummaryData(summaryRes.data);
+                setChartData(chartsRes.data);
             } catch (error) {
                 toast.error("Failed to load dashboard data.");
             } finally {
@@ -34,8 +45,36 @@ const Dashboard = () => {
             }
         };
 
-        fetchSummary();
+        fetchDashboardData();
     }, []);
+
+    const inventoryChartData = useMemo(() => {
+        if (!chartData) return { labels: [], datasets: [] };
+        return {
+            labels: chartData.inventoryValueByCategory.map(c => c.categoryName),
+            datasets: [{
+                label: 'Stock Value (UGX)',
+                data: chartData.inventoryValueByCategory.map(c => c.totalValue),
+                backgroundColor: ['#00a8e8', '#fecb00', '#343a40', '#6c757d', '#198754', '#fd7e14', '#6f42c1'],
+                borderColor: '#ffffff',
+                borderWidth: 2,
+            }],
+        };
+    }, [chartData]);
+
+    const projectChartData = useMemo(() => {
+        if (!chartData) return { labels: [], datasets: [] };
+        return {
+            labels: chartData.projectsByStatus.map(p => p.status.replace(/_/g, ' ')),
+            datasets: [{
+                label: '# of Projects',
+                data: chartData.projectsByStatus.map(p => p.count),
+                backgroundColor: 'rgba(0, 168, 232, 0.6)', // Semi-transparent version of theme blue
+                borderColor: 'rgba(0, 168, 232, 1)',
+                borderWidth: 1,
+            }],
+        };
+    }, [chartData]);
 
     if (loading) {
         return (
@@ -45,23 +84,23 @@ const Dashboard = () => {
         );
     }
 
-    if (!summaryData) {
-        return <Alert variant="danger">Could not load dashboard summary.</Alert>;
+    if (!summaryData || !chartData) {
+        return <Alert variant="danger">Could not load dashboard summary. Please try refreshing the page.</Alert>;
     }
 
     return (
         <div>
             <div className="mb-4">
                 <h3>Welcome back, {user ? user.email.split('@')[0] : 'Guest'}!</h3>
-                <p className="text-muted">Here's a summary of your inventory system.</p>
+                <p className="text-muted">Here's a real-time summary of your engineering operations.</p>
             </div>
 
+            {/* Summary Stat Cards */}
             <Row>
-                {/* Total Stock Value Card */}
                 <Col md={6} lg={4} className="mb-4">
                     <Card bg="primary" text="white" className="shadow-sm h-100">
                         <Card.Body className="d-flex flex-column">
-                            <div className="d-flex justify-content-between align-items-center">
+                            <div className="d-flex justify-content-between align-items-start">
                                 <Card.Title as="h5">Total Stock Value</Card.Title>
                                 <FaBoxes size={28} />
                             </div>
@@ -71,12 +110,10 @@ const Dashboard = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-
-                {/* Low Stock Items Card */}
                 <Col md={6} lg={4} className="mb-4">
                     <Card bg="warning" text="dark" className="shadow-sm h-100">
                         <Card.Body className="d-flex flex-column">
-                            <div className="d-flex justify-content-between align-items-center">
+                            <div className="d-flex justify-content-between align-items-start">
                                 <Card.Title as="h5">Low Stock Items</Card.Title>
                                 <FaExclamationTriangle size={28} />
                             </div>
@@ -86,12 +123,10 @@ const Dashboard = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-
-                {/* Pending Users Card */}
                 <Col md={6} lg={4} className="mb-4">
                     <Card bg="info" text="white" className="shadow-sm h-100">
                         <Card.Body className="d-flex flex-column">
-                            <div className="d-flex justify-content-between align-items-center">
+                            <div className="d-flex justify-content-between align-items-start">
                                 <Card.Title as="h5">Pending User Approvals</Card.Title>
                                 <FaUserClock size={28} />
                             </div>
@@ -101,60 +136,27 @@ const Dashboard = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-
-                 {/* Total Items Card */}
-                <Col md={6} lg={4} className="mb-4">
-                    <Card className="shadow-sm h-100">
-                        <Card.Body className="d-flex flex-column">
-                            <div className="d-flex justify-content-between align-items-center">
-                                <Card.Title as="h5">Total Unique Items</Card.Title>
-                                <FaBoxes size={28} className="text-secondary" />
-                            </div>
-                            <Card.Text className="fs-2 fw-bold mt-auto">
-                                {summaryData.totalItems}
-                            </Card.Text>
-                        </Card.Body>
-                    </Card>
-                </Col>
-
-                {/* Total Suppliers Card */}
-                <Col md={6} lg={4} className="mb-4">
-                    <Card className="shadow-sm h-100">
-                        <Card.Body className="d-flex flex-column">
-                             <div className="d-flex justify-content-between align-items-center">
-                                <Card.Title as="h5">Total Suppliers</Card.Title>
-                                <FaTruck size={28} className="text-secondary" />
-                            </div>
-                            <Card.Text className="fs-2 fw-bold mt-auto">
-                                {summaryData.totalSuppliers}
-                            </Card.Text>
-                        </Card.Body>
-                    </Card>
-                </Col>
-
-                {/* Total Users Card */}
-                 <Col md={6} lg={4} className="mb-4">
-                    <Card className="shadow-sm h-100">
-                        <Card.Body className="d-flex flex-column">
-                            <div className="d-flex justify-content-between align-items-center">
-                                <Card.Title as="h5">Total System Users</Card.Title>
-                                <FaUsers size={28} className="text-secondary" />
-                            </div>
-                            <Card.Text className="fs-2 fw-bold mt-auto">
-                                {summaryData.totalUsers}
-                            </Card.Text>
-                        </Card.Body>
-                    </Card>
-                </Col>
             </Row>
 
-            {/* Placeholder for future charts */}
-            <Row className="mt-4">
-                <Col>
-                    <Card className="shadow-sm">
+            {/* Chart Section */}
+            <Row>
+                <Col lg={7} className="mb-4">
+                    <Card className="shadow-sm h-100">
                         <Card.Body>
-                            <Card.Title>Future Chart Area</Card.Title>
-                            <Card.Text>Charts for stock value over time or category breakdowns will be displayed here.</Card.Text>
+                            <Card.Title as="h5">Projects by Status</Card.Title>
+                            <div style={{ height: '300px' }}>
+                                <Bar data={projectChartData} options={{ responsive: true, maintainAspectRatio: false }} />
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col lg={5} className="mb-4">
+                    <Card className="shadow-sm h-100">
+                        <Card.Body>
+                            <Card.Title as="h5">Inventory Value by Category</Card.Title>
+                            <div style={{ height: '300px', position: 'relative' }}>
+                                <Doughnut data={inventoryChartData} options={{ responsive: true, maintainAspectRatio: false }} />
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
