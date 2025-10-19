@@ -61,6 +61,9 @@ public class AuditLog {
         // Reports
         REPORT_GENERATED, REPORT_EXPORTED, SCHEDULED_REPORT_SENT,
         
+        // Notifications
+        NOTIFICATION_SENT, NOTIFICATION_READ, NOTIFICATION_DELETED,
+        
         // System
         SYSTEM_CONFIG_CHANGED, BACKUP_CREATED, BACKUP_RESTORED
     }

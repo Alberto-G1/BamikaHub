@@ -2,7 +2,8 @@ import React from 'react';
 import { useLocation, NavLink, useNavigate } from 'react-router-dom'; 
 import { FaUserCircle } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { toast } from 'react-toastify'; 
+import { toast } from 'react-toastify';
+import NotificationBell from '../notifications/NotificationBell.jsx'; 
 
 const Header = () => {
     const location = useLocation();
@@ -30,20 +31,26 @@ const Header = () => {
     return (
         <header className="bg-white shadow-sm mb-4 d-flex justify-content-between align-items-center p-3">
             <h4 className="mb-0 text-secondary">{getPageTitle()}</h4>
-            <div className="dropdown">
-                <a href="#" className="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    {user && user.profilePictureUrl ? (
-                         <img src={`http://localhost:8080${user.profilePictureUrl}`} alt="avatar" width="32" height="32" className="rounded-circle me-2" style={{objectFit: 'cover'}} />
-                    ) : (
-                         <FaUserCircle size={28} className="me-2 text-secondary" />
-                    )}
-                    <span>{user ? user.email : 'Loading...'}</span>
-                </a>
-                <ul className="dropdown-menu dropdown-menu-end text-small shadow">
-                    <li><NavLink className="dropdown-item" to="/profile">Profile</NavLink></li>
-                    <li><hr className="dropdown-divider" /></li>
-                    <li><button className="dropdown-item" onClick={handleLogout}>Sign out</button></li>
-                </ul>
+            <div className="d-flex align-items-center gap-3">
+                {/* Notification Bell */}
+                <NotificationBell />
+                
+                {/* User Profile Dropdown */}
+                <div className="dropdown">
+                    <a href="#" className="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        {user && user.profilePictureUrl ? (
+                             <img src={`http://localhost:8080${user.profilePictureUrl}`} alt="avatar" width="32" height="32" className="rounded-circle me-2" style={{objectFit: 'cover'}} />
+                        ) : (
+                             <FaUserCircle size={28} className="me-2 text-secondary" />
+                        )}
+                        <span>{user ? user.email : 'Loading...'}</span>
+                    </a>
+                    <ul className="dropdown-menu dropdown-menu-end text-small shadow">
+                        <li><NavLink className="dropdown-item" to="/profile">Profile</NavLink></li>
+                        <li><hr className="dropdown-divider" /></li>
+                        <li><button className="dropdown-item" onClick={handleLogout}>Sign out</button></li>
+                    </ul>
+                </div>
             </div>
         </header>
     );
