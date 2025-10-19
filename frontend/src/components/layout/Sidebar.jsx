@@ -11,13 +11,14 @@ import {
     FaProjectDiagram,
     FaMoneyCheckAlt,
     FaTicketAlt,
-    FaChartLine
+    FaChartLine,
+    FaClipboardList
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
 import logo from '../../assets/logo/logo2.png';
 
 const Sidebar = () => {
-    const { hasPermission } = useAuth();
+    const { hasPermission, hasRole } = useAuth();
     
     return (
         <div className="d-flex flex-column flex-shrink-0 p-3 sidebar" style={{ width: '280px', minHeight: '100vh' }}>
@@ -100,6 +101,16 @@ const Sidebar = () => {
                     <FaChartLine className="me-2" /> Reports & Analytics
                     </NavLink>
                 </li>
+                {hasPermission('AUDIT_READ') && (
+                    <>
+                        <li className="nav-item mt-2"><small>Administration</small></li>
+                        <li className="nav-item">
+                            <NavLink to="/audit-trail" className="nav-link">
+                            <FaClipboardList className="me-2" /> Audit Trail
+                            </NavLink>
+                        </li>
+                    </>
+                )}
             </ul>
         </div>
     );
