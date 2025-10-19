@@ -1,9 +1,11 @@
 package com.bamikahub.inventorysystem.config;
 
+import com.bamikahub.inventorysystem.dao.support.TicketCategoryRepository;
 import com.bamikahub.inventorysystem.dao.user.PermissionRepository;
 import com.bamikahub.inventorysystem.dao.user.RoleRepository;
 import com.bamikahub.inventorysystem.dao.user.StatusRepository;
 import com.bamikahub.inventorysystem.dao.user.UserRepository;
+import com.bamikahub.inventorysystem.models.support.TicketCategory;
 import com.bamikahub.inventorysystem.models.user.Permission;
 import com.bamikahub.inventorysystem.models.user.Role;
 import com.bamikahub.inventorysystem.models.user.Status;
@@ -27,12 +29,14 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private PermissionRepository permissionRepository;
     @Autowired private StatusRepository statusRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private TicketCategoryRepository ticketCategoryRepository;
 
     @Override
     public void run(String... args) throws Exception {
 
         // Step 1: Initialize all core system statuses if they don't exist.
         initializeStatuses();
+        initializeTicketCategories();
 
         // Step 2: Initialize roles, permissions, and the admin user ONLY if no users exist.
         if (userRepository.count() == 0) {
@@ -52,7 +56,7 @@ public class DataInitializer implements CommandLineRunner {
                     // Finance Management (Future)
                     "REQUISITION_CREATE", "REQUISITION_APPROVE", "FINANCE_READ",
                     // Technical Support (Future)
-                    "TICKET_CREATE", "TICKET_MANAGE"
+            "TICKET_CREATE", "TICKET_MANAGE", "TICKET_COMMENT", "TICKET_ASSIGN", "TICKET_RESOLVE", "TICKET_CLOSE", "TICKET_ARCHIVE"
             );
             List<Permission> allPermissions = permissionNames.stream().map(this::createPermissionIfNotFound).collect(Collectors.toList());
             Set<Permission> allPermissionsSet = new HashSet<>(allPermissions);
@@ -85,6 +89,17 @@ public class DataInitializer implements CommandLineRunner {
 
             System.out.println("Default data initialization complete.");
         }
+    }
+
+    private void initializeTicketCategories() {
+        Arrays.asList("SYSTEM_ISSUE", "EQUIPMENT_FAULT", "NETWORK_PROBLEM", "MAINTENANCE_REQUEST", "GENERAL_INQUIRY", "OTHER")
+                .forEach(this::createTicketCategoryIfNotFound);
+    }
+
+    private void createTicketCategoryIfNotFound(String name) {
+        ticketCategoryRepository.findByName(name).orElseGet(() ->
+                ticketCategoryRepository.save(new TicketCategory(name))
+        );
     }
 
     // Helper to filter permissions by prefixes or exact names
