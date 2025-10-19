@@ -17,14 +17,18 @@ public class FileStorageService {
 
     private final Path profilePicLocation;
     private final Path itemImageLocation;
+    private final Path supportAttachmentLocation;
 
     public FileStorageService(@Value("${file.upload-dir.profile-pictures}") String profileUploadDir,
-                              @Value("${file.upload-dir.item-images}") String itemUploadDir) {
+                              @Value("${file.upload-dir.item-images}") String itemUploadDir,
+                              @Value("${file.upload-dir.support-attachments}") String supportAttachmentDir) {
         this.profilePicLocation = Paths.get(profileUploadDir).toAbsolutePath().normalize();
         this.itemImageLocation = Paths.get(itemUploadDir).toAbsolutePath().normalize();
+        this.supportAttachmentLocation = Paths.get(supportAttachmentDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(profilePicLocation);
             Files.createDirectories(itemImageLocation);
+            Files.createDirectories(supportAttachmentLocation);
         } catch (IOException e) {
             throw new RuntimeException("Could not initialize storage locations", e);
         }
@@ -58,5 +62,9 @@ public class FileStorageService {
 
     public String storeItemImage(MultipartFile file) {
         return store(file, this.itemImageLocation);
+    }
+
+    public String storeSupportAttachment(MultipartFile file) {
+        return store(file, this.supportAttachmentLocation);
     }
 }

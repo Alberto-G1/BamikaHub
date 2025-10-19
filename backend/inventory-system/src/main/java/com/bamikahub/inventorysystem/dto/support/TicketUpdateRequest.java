@@ -1,13 +1,11 @@
 package com.bamikahub.inventorysystem.dto.support;
 
-import com.bamikahub.inventorysystem.models.support.SupportTicket.TicketPriority;
+import com.bamikahub.inventorysystem.models.support.SupportTicket;
 import lombok.Data;
 
 @Data
-public class TicketRequest {
-    private String subject;
-    private String description;
-    private TicketPriority priority;
+public class TicketUpdateRequest {
+    private SupportTicket.TicketPriority priority;
     private Integer categoryId;
     private String otherCategory;
     private Long inventoryItemId;
