@@ -1,39 +1,82 @@
-import React from 'react';
-import { Container, Row, Col, Button, Card } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
-import { FaExclamationTriangle, FaHome, FaArrowLeft } from 'react-icons/fa';
+import React, { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import excavatorImg from '../assets/images/button.png';
+import './NotFoundPage.css';
 
 const NotFoundPage = () => {
     const navigate = useNavigate();
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        // Parallax effect for background circles
+        const handleMouseMove = (e) => {
+            const circles = document.querySelectorAll('.bg-decoration');
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            circles.forEach((circle, index) => {
+                const speed = (index + 1) * 20;
+                const xMove = (x - 0.5) * speed;
+                const yMove = (y - 0.5) * speed;
+                circle.style.transform = `translate(${xMove}px, ${yMove}px)`;
+            });
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        return () => document.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+
+    const handleGoBack = () => {
+        navigate(-1);
+    };
+
+    const handleGoToDashboard = () => {
+        navigate('/dashboard');
+    };
 
     return (
-        <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
-            <Container>
-                <Row className="justify-content-center">
-                    <Col md={8} lg={6}>
-                        <Card className="text-center shadow-lg border-0">
-                            <Card.Body className="p-5">
-                                <FaExclamationTriangle size={60} className="text-warning mb-4" />
-                                <h1 className="display-1 fw-bold" style={{ color: '#343a40' }}>404</h1>
-                                <h2 className="mb-3">Page Not Found</h2>
-                                <p className="text-muted mb-4">
-                                    Oops! The page you are looking for does not exist, might have been moved, or is temporarily unavailable.
-                                </p>
-                                <div className="d-flex justify-content-center gap-2">
-                                    <Button as={Link} to="/dashboard" variant="primary" size="lg">
-                                        <FaHome className="me-2" />
-                                        Go to Dashboard
-                                    </Button>
-                                    <Button variant="outline-secondary" size="lg" onClick={() => navigate(-1)}>
-                                        <FaArrowLeft className="me-2" />
-                                        Go Back
-                                    </Button>
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
-            </Container>
+        <div className="notfound-page" ref={containerRef}>
+            {/* Background Decorations */}
+            <div className="bg-decoration circle1"></div>
+            <div className="bg-decoration circle2"></div>
+            <div className="bg-decoration circle3"></div>
+
+            {/* Main Content */}
+            <div className="notfound-container">
+                {/* Animated Icon */}
+                <div className="notfound-icon-container">
+                    <img 
+                        src={excavatorImg} 
+                        alt="404 Excavator" 
+                        className="excavator-icon"
+                    />
+                </div>
+
+                {/* Error Code */}
+                <div className="notfound-error-code">404</div>
+
+                {/* Text Content */}
+                <h1 className="notfound-title">Page Under Construction</h1>
+                <p className="notfound-message">
+                    Oops! The page you're looking for seems to be under excavation. 
+                    Our team is working hard to build something amazing
+                    <span className="dots">
+                        <span>.</span>
+                        <span>.</span>
+                        <span>.</span>
+                    </span>
+                </p>
+
+                {/* Buttons */}
+                <div className="notfound-button-group">
+                    <button className="notfound-btn notfound-btn-primary" onClick={handleGoBack}>
+                        <span>← Go Back</span>
+                    </button>
+                    <button className="notfound-btn notfound-btn-secondary" onClick={handleGoToDashboard}>
+                        <span>🏠 Dashboard</span>
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };

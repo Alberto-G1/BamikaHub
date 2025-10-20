@@ -1,0 +1,70 @@
+/* src/components/common/Badge.css */
+
+.badge-bamika {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-weight: 700;
+  font-family: var(--font-family-sans);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Size variants */
+.badge-bamika--sm {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 0.7rem;
+}
+
+.badge-bamika--md {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  font-size: 0.75rem;
+}
+
+.badge-bamika--lg {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 0.875rem;
+}
+
+/* Variant: Primary (Gold) */
+.badge-bamika--primary {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+/* Variant: Secondary (Sky Blue) */
+.badge-bamika--secondary {
+  background-color: var(--color-secondary);
+  color: #fff;
+}
+
+/* Variant: Success */
+.badge-bamika--success {
+  background-color: #198754;
+  color: #fff;
+}
+
+/* Variant: Danger */
+.badge-bamika--danger {
+  background-color: var(--color-danger);
+  color: #fff;
+}
+
+/* Variant: Warning */
+.badge-bamika--warning {
+  background-color: #ffc107;
+  color: #000;
+}
+
+/* Variant: Info */
+.badge-bamika--info {
+  background-color: #0dcaf0;
+  color: #000;
+}

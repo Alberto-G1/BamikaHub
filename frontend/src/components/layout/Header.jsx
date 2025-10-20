@@ -3,7 +3,8 @@ import { useLocation, NavLink, useNavigate } from 'react-router-dom';
 import { FaUserCircle } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { toast } from 'react-toastify';
-import NotificationBell from '../notifications/NotificationBell.jsx'; 
+import NotificationBell from '../notifications/NotificationBell.jsx';
+import ThemeToggle from '../common/ThemeToggle.jsx'; 
 
 const Header = () => {
     const location = useLocation();
@@ -32,6 +33,9 @@ const Header = () => {
         <header className="bg-white shadow-sm mb-4 d-flex justify-content-between align-items-center p-3">
             <h4 className="mb-0 text-secondary">{getPageTitle()}</h4>
             <div className="d-flex align-items-center gap-3">
+                {/* Theme Toggle */}
+                <ThemeToggle />
+                
                 {/* Notification Bell */}
                 <NotificationBell />
                 

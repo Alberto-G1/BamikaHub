@@ -1,0 +1,130 @@
+/* src/components/common/Button.css */
+
+.btn-bamika {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: var(--font-family-sans);
+  transition: transform 0.08s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+/* Size variants */
+.btn-bamika--sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.btn-bamika--md {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
+.btn-bamika--lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.125rem;
+}
+
+/* Variant: Primary (Gold) */
+.btn-bamika--primary {
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(214, 162, 41, 0.16);
+}
+
+.btn-bamika--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 18px rgba(214, 162, 41, 0.24);
+}
+
+/* Variant: Secondary (Sky Blue) */
+.btn-bamika--secondary {
+  background: var(--color-secondary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(70, 193, 235, 0.16);
+}
+
+.btn-bamika--secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 18px rgba(70, 193, 235, 0.24);
+}
+
+/* Variant: Outline */
+.btn-bamika--outline {
+  background: transparent;
+  border: 1.5px solid var(--color-primary);
+  color: var(--color-text);
+}
+
+.btn-bamika--outline:hover:not(:disabled) {
+  background: rgba(214, 162, 41, 0.08);
+  border-color: var(--color-primary);
+}
+
+/* Variant: Danger */
+.btn-bamika--danger {
+  background: var(--color-danger);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.16);
+}
+
+.btn-bamika--danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+/* Disabled state */
+.btn-bamika:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Loading state */
+.btn-bamika--loading {
+  pointer-events: none;
+}
+
+.btn-bamika__spinner {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-bamika__spinner svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Icon and text spacing */
+.btn-bamika__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-bamika__text {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Focus visible for accessibility */
+.btn-bamika:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Full width variant */
+.btn-bamika--full-width {
+  width: 100%;
+}
