@@ -1,0 +1,115 @@
+/* Input Component Styles */
+.input-wrapper {
+  margin-bottom: 1rem;
+}
+
+.input-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: 0.375rem;
+}
+
+.input-required {
+  color: var(--color-primary);
+  margin-left: 0.25rem;
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--color-muted);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input-field.has-icon {
+  padding-left: 2.5rem;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(70, 193, 235, 0.1);
+}
+
+.input-field:disabled {
+  background-color: rgba(0, 0, 0, 0.04);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.input-field.is-invalid {
+  border-color: var(--color-primary);
+  padding-right: 2.5rem;
+}
+
+.input-field.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(214, 163, 41, 0.1);
+}
+
+.input-validation-icon {
+  position: absolute;
+  right: 0.75rem;
+  font-size: 1.125rem;
+  pointer-events: none;
+}
+
+.valid-icon {
+  color: #28a745;
+}
+
+.invalid-icon {
+  color: var(--color-primary);
+}
+
+.input-error {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.375rem;
+  font-size: 0.85rem;
+  color: var(--color-primary);
+}
+
+.input-hint {
+  margin-top: 0.375rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .input-field {
+  border-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .input-field:disabled {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Textarea variant */
+textarea.input-field {
+  resize: vertical;
+  min-height: 100px;
+}

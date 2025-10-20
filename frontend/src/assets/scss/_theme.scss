@@ -1,51 +1,242 @@
 // src/assets/scss/_theme.scss
 
-// 1. Your Custom Theme Colors from the Logo
-$gold: #fecb00; // A vibrant gold from the logo
-$light-blue: #00a8e8; // A vibrant light blue from the logo
-$black: #212529;
-$white: #ffffff;
+// ============================================================================
+// BamikaHub Design System - Theme Variables
+// Centralized variables for colors, typography, spacing, shadows and utilities
+// Provides light/dark mode mappings via data-theme attribute
+// ============================================================================
 
-// 2. Override Bootstrap's theme colors
-$primary:   $light-blue; // Let's make the light blue the primary action color
-$secondary: #6c757d; 
+// Brand colors (canonical)
+$brand-gold:   #D6A329; // Primary accent (Gold)
+$brand-sky:    #46C1EB; // Secondary / info (Sky Blue)
+$brand-black:  #000000; // Black base
+$brand-white:  #FFFFFF; // White base
+$brand-gray:   #7B7B7B; // Neutral / muted
+$danger-red:   #E63946; // Error variant
+
+// Legacy/compat colors (kept for Bootstrap overrides)
+$primary:   $brand-gold; 
+$secondary: $brand-sky;
 $success:   #198754;
-$info:      #0dcaf0; 
-$warning:   $gold; // Gold is a perfect warning color
-$danger:    #dc3545;
+$info:      $brand-sky; 
+$warning:   $brand-gold;
+$danger:    $danger-red;
 $light:     #f8f9fa;
-$dark:      $black;
+$dark:      $brand-black;
 
-// 3. Create a color map for Bootstrap
+// Bootstrap theme colors map
 $theme-colors: (
-  "primary":    $primary,
-  "secondary":  $secondary,
-  "success":    $success,
-  "info":       $info,
-  "warning":    $warning,
-  "danger":     $danger,
-  "light":      $light,
-  "dark":       $dark,
-  "gold":       $gold,
-  "light-blue": $light-blue
+    "primary":    $primary,
+    "secondary":  $secondary,
+    "success":    $success,
+    "info":       $info,
+    "warning":    $warning,
+    "danger":     $danger,
+    "light":      $light,
+    "dark":       $dark
 );
 
-// 4. Import Bootstrap
+// Typography scale
+$font-family-sans: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+$base-font-size: 16px; // 1rem
+$line-height-base: 1.45;
+
+// Spacing scale (in rem)
+$space-1: 0.25rem; // 4px
+$space-2: 0.5rem;  // 8px
+$space-3: 0.75rem; // 12px
+$space-4: 1rem;    // 16px
+$space-5: 1.5rem;  // 24px
+
+// Border radius and shadow tokens
+$radius-sm: 6px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$shadow-1: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
+$shadow-2: 0 4px 12px rgba(0,0,0,0.08);
+
+// ============================================================================
+// CSS variables for runtime theming (light + dark)
+// Use [data-theme="dark"] on <html> or <body> to switch
+// ============================================================================
+:root {
+    --color-primary: #{$brand-gold};
+    --color-secondary: #{$brand-sky};
+    --color-text: #{$brand-black};
+    --color-bg: #{$brand-white};
+    --color-muted: #{$brand-gray};
+    --color-danger: #{$danger-red};
+
+    --font-family-sans: #{$font-family-sans};
+    --base-font-size: #{$base-font-size};
+    --line-height-base: #{$line-height-base};
+
+    --radius-sm: #{$radius-sm};
+    --radius-md: #{$radius-md};
+    --radius-lg: #{$radius-lg};
+    --shadow-1: #{$shadow-1};
+    --shadow-2: #{$shadow-2};
+}
+
+[data-theme="dark"] {
+    --color-primary: #{$brand-gold};
+    --color-secondary: #{$brand-sky};
+    --color-text: #{$brand-white};
+    --color-bg: #{$brand-black};
+    --color-muted: #{$brand-gray};
+    --color-danger: #{$danger-red};
+}
+
+// ============================================================================
+// Import Bootstrap (after variable overrides so it picks our colors)
+// ============================================================================
 @import 'bootstrap/scss/bootstrap.scss';
 
-// 5. Custom Styles for Bamika Engineering Theme
+// ============================================================================
+// Global element styles
+// ============================================================================
+html {
+    font-family: var(--font-family-sans);
+    font-size: var(--base-font-size);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+}
+
+body {
+    margin: 0;
+    line-height: var(--line-height-base);
+}
+
+// Links
+a {
+    color: var(--color-secondary);
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+}
+
+// ============================================================================
+// Buttons - primary / secondary styles that adapt to theme
+// ============================================================================
+.btn-bamika {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform .08s ease, box-shadow .12s ease, background-color .12s ease;
+}
+
+.btn-primary-bamika {
+  @extend .btn-bamika;
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(214,162,41,0.12);
+  &:hover { 
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+  }
+  &:disabled { 
+    opacity: .6; 
+    cursor: not-allowed; 
+    &:hover { transform: none; }
+  }
+}
+
+.btn-outline-bamika {
+  @extend .btn-bamika;
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-text);
+  &:hover { 
+    background: rgba(214,162,41,0.08);
+    border-color: var(--color-primary);
+  }
+}// ============================================================================
+// Cards
+// ============================================================================
+.card-bamika {
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+    border: 1px solid rgba(0,0,0,0.04);
+    padding: $space-4;
+}
+
+// ============================================================================
+// Badge (notification badge style)
+// ============================================================================
+.badge-bamika {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    background-color: var(--color-primary);
+}
+
+// ============================================================================
+// Form validation tokens
+// Use gold border for invalid inputs to match brand
+// ============================================================================
+.is-invalid {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 0.12rem rgba(214,162,41,0.12);
+}
+
+.valid-icon { color: green; }
+.invalid-icon { color: var(--color-primary); }
+
+// ============================================================================
+// Skeleton / Shimmer for loading states
+// ============================================================================
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.06) 37%, rgba(255,255,255,0.02) 63%);
+    background-size: 400% 100%;
+    border-radius: var(--radius-sm);
+    animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+// ============================================================================
+// Sidebar tweaks (preserve earlier customizations)
+// ============================================================================
 .sidebar {
-    background-color: $dark;
-    color: $white;
+    background-color: var(--color-text); // dark sidebar in default theme - will invert in dark mode
+    color: var(--color-bg);
     .nav-link {
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.78);
         &:hover, &.active {
-            color: $white;
-            background-color: lighten($dark, 10%);
+            color: var(--color-bg);
+            background-color: rgba(255,255,255,0.04);
         }
         &.active {
-            color: $gold; // Active links will be gold
-            font-weight: bold;
+            color: var(--color-primary);
+            font-weight: 700;
         }
     }
 }
+
+// ============================================================================
+// Utility classes
+// ============================================================================
+.text-primary { color: var(--color-primary) !important; }
+.text-secondary { color: var(--color-secondary) !important; }
+.muted { color: var(--color-muted) !important; }
+.flex-center { display:flex; align-items:center; justify-content:center; }

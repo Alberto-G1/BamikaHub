@@ -1,0 +1,133 @@
+/* src/components/common/Modal.css */
+
+.modal-bamika {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-bamika__backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-bamika__dialog {
+  position: relative;
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  animation: slideUp 0.2s ease-out;
+  z-index: 1;
+}
+
+/* Size variants */
+.modal-bamika__dialog--sm {
+  width: 100%;
+  max-width: 400px;
+}
+
+.modal-bamika__dialog--md {
+  width: 100%;
+  max-width: 600px;
+}
+
+.modal-bamika__dialog--lg {
+  width: 100%;
+  max-width: 900px;
+}
+
+.modal-bamika__dialog--xl {
+  width: 100%;
+  max-width: 1200px;
+}
+
+.modal-bamika__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.modal-bamika__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.modal-bamika__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+}
+
+.modal-bamika__close:hover {
+  opacity: 1;
+}
+
+.modal-bamika__body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  color: var(--color-text);
+}
+
+.modal-bamika__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .modal-bamika__header,
+[data-theme="dark"] .modal-bamika__footer {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
