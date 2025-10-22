@@ -9,4 +9,8 @@ import java.util.List;
 @Repository
 public interface DailyFieldReportRepository extends JpaRepository<DailyFieldReport, Long> {
     List<DailyFieldReport> findByProjectId(Long projectId);
+    long countBySiteId(Long siteId);
+    long countByProjectIdAndSiteIsNull(Long projectId);
+    long countBySiteIsNull();
+    List<DailyFieldReport> findByProjectIdAndSiteId(Long projectId, Long siteId);
 }

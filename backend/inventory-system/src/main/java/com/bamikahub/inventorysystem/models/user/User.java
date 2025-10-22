@@ -78,6 +78,12 @@ public class User {
 
     private LocalDateTime lastLoginAt;
 
+    public String getFullName() {
+        String first = firstName != null ? firstName : "";
+        String last = lastName != null ? lastName : "";
+        return (first + " " + last).trim();
+    }
+
 //    @Column(columnDefinition = "boolean default false")
 //    private boolean softDeleted = false;
 //    private LocalDateTime deletedAt;

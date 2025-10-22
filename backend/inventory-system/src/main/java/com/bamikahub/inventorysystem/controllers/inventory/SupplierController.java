@@ -1,8 +1,7 @@
 package com.bamikahub.inventorysystem.controllers.inventory;
 
-import com.bamikahub.inventorysystem.dao.inventory.SupplierRepository;
 import com.bamikahub.inventorysystem.models.inventory.Supplier;
-import org.springframework.beans.BeanUtils;
+import com.bamikahub.inventorysystem.services.inventory.SupplierService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,51 +13,40 @@ import java.util.List;
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class SupplierController {
 
-    @Autowired private SupplierRepository supplierRepository;
+    @Autowired private SupplierService supplierService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('SUPPLIER_READ')")
     public List<Supplier> getAllSuppliers() {
-        return supplierRepository.findAll();
+        return supplierService.getAllSuppliers();
     }
 
     @PostMapping
     @PreAuthorize("hasAuthority('SUPPLIER_CREATE')")
     public Supplier createSupplier(@RequestBody Supplier supplier) {
-        return supplierRepository.save(supplier);
+        return supplierService.createSupplier(supplier);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('SUPPLIER_READ')")
     public Supplier getSupplierById(@PathVariable Long id) {
-        return supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found with id: " + id));
+        return supplierService.getSupplierById(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('SUPPLIER_UPDATE')")
     public Supplier updateSupplier(@PathVariable Long id, @RequestBody Supplier supplierDetails) {
-        Supplier supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found with id: " + id));
-
-        // Copy properties from the request to the existing entity
-        BeanUtils.copyProperties(supplierDetails, supplier, "id", "createdAt"); // Ignore ID and createdAt
-
-        return supplierRepository.save(supplier);
+        return supplierService.updateSupplier(id, supplierDetails);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('SUPPLIER_DELETE')")
     public ResponseEntity<?> deleteSupplier(@PathVariable Long id) {
-        Supplier supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found with id: " + id));
-
-        // Add a check here to prevent deleting a supplier if it's linked to inventory items
-        if (supplier.getItems() != null && !supplier.getItems().isEmpty()) {
-            return ResponseEntity.badRequest().body("Cannot delete supplier: It is currently assigned to one or more inventory items.");
+        try {
+            supplierService.deleteSupplier(id);
+            return ResponseEntity.ok().build();
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
         }
-
-        supplierRepository.delete(supplier);
-        return ResponseEntity.ok().build();
     }
 }

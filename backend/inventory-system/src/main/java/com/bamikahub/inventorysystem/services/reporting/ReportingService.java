@@ -3,7 +3,9 @@ package com.bamikahub.inventorysystem.services.reporting;
 import com.bamikahub.inventorysystem.dao.finance.RequisitionRepository;
 import com.bamikahub.inventorysystem.dao.inventory.InventoryItemRepository;
 import com.bamikahub.inventorysystem.dao.inventory.StockTransactionRepository;
+import com.bamikahub.inventorysystem.dao.operations.DailyFieldReportRepository;
 import com.bamikahub.inventorysystem.dao.operations.ProjectRepository;
+import com.bamikahub.inventorysystem.dao.operations.SiteRepository;
 import com.bamikahub.inventorysystem.dao.reporting.ReportHistoryRepository;
 import com.bamikahub.inventorysystem.dao.support.SupportTicketRepository;
 import com.bamikahub.inventorysystem.dao.user.UserRepository;
@@ -31,12 +33,15 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class ReportingService {
 
     @Autowired private InventoryItemRepository itemRepository;
-    @Autowired private ProjectRepository projectRepository;
+        @Autowired private ProjectRepository projectRepository;
+        @Autowired private SiteRepository siteRepository;
+        @Autowired private DailyFieldReportRepository fieldReportRepository;
     @Autowired private RequisitionRepository requisitionRepository;
     @Autowired private SupportTicketRepository ticketRepository;
     @Autowired private StockTransactionRepository transactionRepository;
@@ -70,6 +75,37 @@ public class ReportingService {
                 .map(entry -> new ProjectStatusCountDto(entry.getKey(), entry.getValue()))
                 .toList();
         chartsData.setProjectsByStatus(projectCounts);
+
+        List<SiteReportSummaryDto> siteSummaries = siteRepository.findAll().stream()
+                .map(site -> new SiteReportSummaryDto(
+                        site.getProject() != null ? site.getProject().getId() : null,
+                        site.getProject() != null ? site.getProject().getName() : null,
+                        site.getId(),
+                        site.getName(),
+                        site.getLocation(),
+                        fieldReportRepository.countBySiteId(site.getId()),
+                        false
+                ))
+                .toList();
+
+        List<SiteReportSummaryDto> projectRollups = projectRepository.findAll().stream()
+                .map(project -> new SiteReportSummaryDto(
+                        project.getId(),
+                        project.getName(),
+                        null,
+                        "Whole Project",
+                        null,
+                        fieldReportRepository.countByProjectIdAndSiteIsNull(project.getId()),
+                        true
+                ))
+                .toList();
+
+        List<SiteReportSummaryDto> fieldReportsBySite = Stream.concat(projectRollups.stream(), siteSummaries.stream())
+                .filter(summary -> summary.getReportCount() > 0)
+                .sorted(Comparator.comparingLong(SiteReportSummaryDto::getReportCount).reversed())
+                .limit(10)
+                .toList();
+        chartsData.setFieldReportsBySite(fieldReportsBySite);
 
         return chartsData;
     }

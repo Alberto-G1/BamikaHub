@@ -49,7 +49,7 @@ const Dashboard = () => {
     }, []);
 
     const inventoryChartData = useMemo(() => {
-        if (!chartData) return { labels: [], datasets: [] };
+        if (!chartData || !chartData.inventoryValueByCategory) return { labels: [], datasets: [] };
         return {
             labels: chartData.inventoryValueByCategory.map(c => c.categoryName),
             datasets: [{
@@ -63,7 +63,7 @@ const Dashboard = () => {
     }, [chartData]);
 
     const projectChartData = useMemo(() => {
-        if (!chartData) return { labels: [], datasets: [] };
+        if (!chartData || !chartData.projectsByStatus) return { labels: [], datasets: [] };
         return {
             labels: chartData.projectsByStatus.map(p => p.status.replace(/_/g, ' ')),
             datasets: [{
@@ -74,6 +74,11 @@ const Dashboard = () => {
                 borderWidth: 1,
             }],
         };
+    }, [chartData]);
+
+    const fieldReportLeaders = useMemo(() => {
+        if (!chartData || !chartData.fieldReportsBySite) return [];
+        return chartData.fieldReportsBySite;
     }, [chartData]);
 
     if (loading) {
@@ -161,6 +166,47 @@ const Dashboard = () => {
                     </Card>
                 </Col>
             </Row>
+
+            {fieldReportLeaders.length > 0 && (
+                <Row>
+                    <Col md={12} className="mb-4">
+                        <Card className="shadow-sm h-100">
+                            <Card.Body>
+                                <Card.Title as="h5">Top Field Report Activity</Card.Title>
+                                <div className="table-responsive">
+                                    <table className="table table-striped table-hover table-sm align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style={{ minWidth: '220px' }}>Project</th>
+                                                <th style={{ minWidth: '200px' }}>Site</th>
+                                                <th className="text-end">Reports Submitted</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {fieldReportLeaders.map((entry, index) => (
+                                                <tr key={`${entry.projectId || 'project'}-${entry.siteId || 'all'}-${index}`}>
+                                                    <td>{entry.projectName || 'Unassigned Project'}</td>
+                                                    <td>
+                                                        {entry.projectLevel ? (
+                                                            <span className="text-muted">Whole Project</span>
+                                                        ) : (
+                                                            <>
+                                                                <div className="fw-semibold">{entry.siteName}</div>
+                                                                {entry.siteLocation && <div className="text-muted small">{entry.siteLocation}</div>}
+                                                            </>
+                                                        )}
+                                                    </td>
+                                                    <td className="text-end fw-semibold">{entry.reportCount}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+            )}
         </div>
     );
 };

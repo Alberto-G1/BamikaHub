@@ -28,8 +28,10 @@ const NotificationBell = () => {
     const fetchNotifications = async () => {
         setLoading(true);
         try {
-            const response = await api.get('/notifications?page=0&size=10');
-            setNotifications(response.data.content || response.data);
+            const response = await api.get('/notifications', { params: { page: 0, size: 10 } });
+            const data = response.data;
+            const items = Array.isArray(data?.content) ? data.content : Array.isArray(data) ? data : [];
+            setNotifications(items);
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
         } finally {
@@ -40,7 +42,8 @@ const NotificationBell = () => {
     const fetchUnreadCount = async () => {
         try {
             const response = await api.get('/notifications/unread-count');
-            setUnreadCount(response.data);
+            const countValue = typeof response.data === 'number' ? response.data : response.data?.count;
+            setUnreadCount(Number.isFinite(countValue) ? countValue : 0);
         } catch (error) {
             console.error('Failed to fetch unread count:', error);
         }

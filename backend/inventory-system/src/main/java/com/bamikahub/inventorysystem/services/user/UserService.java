@@ -4,11 +4,13 @@ import com.bamikahub.inventorysystem.dao.user.RoleRepository;
 import com.bamikahub.inventorysystem.dao.user.StatusRepository;
 import com.bamikahub.inventorysystem.dao.user.UserRepository;
 import com.bamikahub.inventorysystem.dto.user.*;
+import com.bamikahub.inventorysystem.models.audit.AuditLog;
 import com.bamikahub.inventorysystem.models.user.Gender;
 import com.bamikahub.inventorysystem.models.user.Role;
 import com.bamikahub.inventorysystem.models.user.Status;
 import com.bamikahub.inventorysystem.models.user.User;
 import com.bamikahub.inventorysystem.services.FileStorageService;
+import com.bamikahub.inventorysystem.services.audit.AuditService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,8 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.OptimisticLockException;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +34,7 @@ public class UserService {
     @Autowired private StatusRepository statusRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private FileStorageService fileStorageService;
+    @Autowired private AuditService auditService;
 
 
     public List<UserDto> getAllUsers() {
@@ -75,6 +80,29 @@ public class UserService {
         user.setStatus(activeStatus);
 
         User savedUser = userRepository.save(user);
+
+        try {
+            User actor = getAuthenticatedUser();
+            if (actor == null) {
+                actor = savedUser;
+            }
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("email", savedUser.getEmail());
+            details.put("role", savedUser.getRole().getName());
+            details.put("status", savedUser.getStatus().getName());
+
+            auditService.logAction(
+                    actor,
+                    AuditLog.ActionType.USER_CREATED,
+                    "User",
+                    savedUser.getId(),
+                    savedUser.getFullName(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // audit failure should not block user creation
+        }
+
         return UserDto.fromEntity(savedUser);
     }
 
@@ -85,6 +113,13 @@ public class UserService {
         if (!user.getVersion().equals(request.getVersion())) {
             throw new OptimisticLockException("User has been updated by another transaction. Please refresh and try again.");
         }
+
+        String previousFirstName = user.getFirstName();
+        String previousLastName = user.getLastName();
+        String previousUsername = user.getUsername();
+        String previousEmail = user.getEmail();
+        String previousRoleName = user.getRole() != null ? user.getRole().getName() : null;
+        String previousStatusName = user.getStatus() != null ? user.getStatus().getName() : null;
 
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -98,6 +133,52 @@ public class UserService {
         user.setStatus(status);
 
         User updatedUser = userRepository.save(user);
+
+        try {
+            User actor = getAuthenticatedUser();
+            if (actor == null) {
+                actor = updatedUser;
+            }
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("previousFirstName", previousFirstName);
+            details.put("previousLastName", previousLastName);
+            details.put("previousUsername", previousUsername);
+            details.put("previousEmail", previousEmail);
+            details.put("previousRole", previousRoleName);
+            details.put("previousStatus", previousStatusName);
+            details.put("newFirstName", updatedUser.getFirstName());
+            details.put("newLastName", updatedUser.getLastName());
+            details.put("newUsername", updatedUser.getUsername());
+            details.put("newEmail", updatedUser.getEmail());
+            details.put("newRole", updatedUser.getRole() != null ? updatedUser.getRole().getName() : null);
+            details.put("newStatus", updatedUser.getStatus() != null ? updatedUser.getStatus().getName() : null);
+
+            auditService.logAction(
+                    actor,
+                    AuditLog.ActionType.USER_UPDATED,
+                    "User",
+                    updatedUser.getId(),
+                    updatedUser.getFullName(),
+                    details
+            );
+
+            if (previousRoleName != null && !previousRoleName.equals(updatedUser.getRole().getName())) {
+                Map<String, Object> roleDetails = auditService.createDetailsMap();
+                roleDetails.put("previousRole", previousRoleName);
+                roleDetails.put("newRole", updatedUser.getRole().getName());
+                auditService.logAction(
+                        actor,
+                        AuditLog.ActionType.USER_ROLE_CHANGED,
+                        "User",
+                        updatedUser.getId(),
+                        updatedUser.getFullName(),
+                        roleDetails
+                );
+            }
+        } catch (Exception ignored) {
+            // audit logging must not interrupt user updates
+        }
+
         return UserDto.fromEntity(updatedUser);
     }
 
@@ -107,6 +188,9 @@ public class UserService {
         if (!"PENDING".equals(user.getStatus().getName())) {
             throw new RuntimeException("User is not in PENDING state.");
         }
+
+        String previousStatus = user.getStatus().getName();
+        String previousRole = user.getRole() != null ? user.getRole().getName() : null;
 
         Role role = roleRepository.findById(roleId).orElseThrow(() -> new RuntimeException("Role not found"));
         user.setRole(role);
@@ -122,6 +206,45 @@ public class UserService {
 
         User approvedUser = userRepository.save(user);
         // Here you would trigger a welcome email
+
+        try {
+            User actor = approver != null ? approver : getAuthenticatedUser();
+            if (actor == null) {
+                actor = approvedUser;
+            }
+
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("previousStatus", previousStatus);
+            details.put("newStatus", approvedUser.getStatus().getName());
+            details.put("previousRole", previousRole);
+            details.put("newRole", approvedUser.getRole() != null ? approvedUser.getRole().getName() : null);
+
+            auditService.logAction(
+                    actor,
+                    AuditLog.ActionType.USER_ACTIVATED,
+                    "User",
+                    approvedUser.getId(),
+                    approvedUser.getFullName(),
+                    details
+            );
+
+            if (previousRole == null || !previousRole.equals(approvedUser.getRole().getName())) {
+                Map<String, Object> roleDetails = auditService.createDetailsMap();
+                roleDetails.put("previousRole", previousRole);
+                roleDetails.put("newRole", approvedUser.getRole().getName());
+                auditService.logAction(
+                        actor,
+                        AuditLog.ActionType.USER_ROLE_CHANGED,
+                        "User",
+                        approvedUser.getId(),
+                        approvedUser.getFullName(),
+                        roleDetails
+                );
+            }
+        } catch (Exception ignored) {
+            // audit failure should not stop approval
+        }
+
         return UserDto.fromEntity(approvedUser);
     }
 
@@ -141,6 +264,15 @@ public class UserService {
         User user = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new RuntimeException("Authenticated user not found."));
 
+    String previousFirstName = user.getFirstName();
+    String previousLastName = user.getLastName();
+    String previousPhone = user.getPhoneNumber();
+    String previousAddress = user.getAddress();
+    String previousCity = user.getCity();
+    String previousCountry = user.getCountry();
+    String previousGender = user.getGender() != null ? user.getGender().name() : null;
+    LocalDate previousDob = user.getDateOfBirth();
+
         // Update all allowed fields
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -154,7 +286,38 @@ public class UserService {
         }
 
         User updatedUser = userRepository.save(user);
-        // Here you would add an AuditLog entry
+
+        try {
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("previousFirstName", previousFirstName);
+            details.put("previousLastName", previousLastName);
+            details.put("previousPhone", previousPhone);
+            details.put("previousAddress", previousAddress);
+            details.put("previousCity", previousCity);
+            details.put("previousCountry", previousCountry);
+            details.put("previousGender", previousGender);
+            details.put("previousDateOfBirth", previousDob);
+            details.put("newFirstName", updatedUser.getFirstName());
+            details.put("newLastName", updatedUser.getLastName());
+            details.put("newPhone", updatedUser.getPhoneNumber());
+            details.put("newAddress", updatedUser.getAddress());
+            details.put("newCity", updatedUser.getCity());
+            details.put("newCountry", updatedUser.getCountry());
+            details.put("newGender", updatedUser.getGender() != null ? updatedUser.getGender().name() : null);
+            details.put("newDateOfBirth", updatedUser.getDateOfBirth());
+
+            auditService.logAction(
+                    updatedUser,
+                    AuditLog.ActionType.USER_UPDATED,
+                    "User",
+                    updatedUser.getId(),
+                    updatedUser.getFullName(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // audit failure should not stop profile changes
+        }
+
         return UserProfileDto.fromEntity(updatedUser);
     }
 
@@ -182,7 +345,21 @@ public class UserService {
         user.setPasswordChangedAt(LocalDateTime.now());
 
         userRepository.save(user);
-        // Here you would add an AuditLog entry and invalidate other active sessions/tokens
+
+        try {
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("changedAt", user.getPasswordChangedAt());
+            auditService.logAction(
+                    user,
+                    AuditLog.ActionType.USER_PASSWORD_CHANGED,
+                    "User",
+                    user.getId(),
+                    user.getFullName(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // continue flow if audit logging fails
+        }
     }
 
     @Transactional
@@ -204,6 +381,22 @@ public class UserService {
         user.setProfilePictureUrl("/uploads/profile-pictures/" + filename);
 
         userRepository.save(user);
+
+        try {
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("profilePictureUrl", user.getProfilePictureUrl());
+            auditService.logAction(
+                    user,
+                    AuditLog.ActionType.USER_UPDATED,
+                    "User",
+                    user.getId(),
+                    user.getFullName(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // audit logging is best-effort
+        }
+
         return UserProfileDto.fromEntity(user);
     }
 
@@ -217,6 +410,25 @@ public class UserService {
 
         user.setStatus(deactivatedStatus);
         userRepository.save(user);
+
+        try {
+            User actor = getAuthenticatedUser();
+            if (actor == null) {
+                actor = user;
+            }
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("newStatus", deactivatedStatus.getName());
+            auditService.logAction(
+                    actor,
+                    AuditLog.ActionType.USER_DEACTIVATED,
+                    "User",
+                    user.getId(),
+                    user.getFullName(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // do not interrupt status change
+        }
     }
 
     @Transactional
@@ -226,5 +438,33 @@ public class UserService {
 
         user.setStatus(activeStatus);
         userRepository.save(user);
+
+        try {
+            User actor = getAuthenticatedUser();
+            if (actor == null) {
+                actor = user;
+            }
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("newStatus", activeStatus.getName());
+            auditService.logAction(
+                    actor,
+                    AuditLog.ActionType.USER_ACTIVATED,
+                    "User",
+                    user.getId(),
+                    user.getFullName(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // audit logging should not rollback status change
+        }
+    }
+
+    private User getAuthenticatedUser() {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            return userRepository.findByEmail(email).orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

@@ -2,21 +2,22 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import Header from './Header.jsx';
+import './MainLayout.css';
 
 const MainLayout = () => {
     return (
-        <div className="d-flex" style={{ minHeight: '100vh' }}>
-            {/* The Sidebar is a fixed element on the left */}
+        <div className="main-layout d-flex" style={{ minHeight: '100vh' }}>
+            {/* Sidebar */}
             <Sidebar />
 
-            {/* This wrapper div takes up the remaining width of the screen */}
-            <div className="w-100 d-flex flex-column">
-                {/* The Header sits at the top of the content area */}
+            {/* Main Content Area */}
+            <div className="main-content-wrapper w-100 d-flex flex-column">
+                {/* Header */}
                 <Header />
 
-                {/* The main content area where pages will be rendered */}
-                <main className="p-4 flex-grow-1">
-                    <Outlet /> {/* Renders the current route's component (e.g., Dashboard, UserManagement) */}
+                {/* Page Content */}
+                <main className="main-content p-4 flex-grow-1">
+                    <Outlet />
                 </main>
             </div>
         </div>
