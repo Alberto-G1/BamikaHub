@@ -38,28 +38,32 @@ public class DataInitializer implements CommandLineRunner {
         initializeStatuses();
         initializeTicketCategories();
 
+    List<String> permissionNames = Arrays.asList(
+        // User & Role Management
+        "USER_CREATE", "USER_READ", "USER_UPDATE", "USER_DELETE", "USER_APPROVE",
+        "ROLE_CREATE", "ROLE_READ", "ROLE_UPDATE", "ROLE_DELETE",
+        // Inventory Management
+        "ITEM_CREATE", "ITEM_READ", "ITEM_UPDATE", "ITEM_DELETE",
+        "SUPPLIER_CREATE", "SUPPLIER_READ", "SUPPLIER_UPDATE", "SUPPLIER_DELETE",
+        // Operations Management (Future)
+        "PROJECT_CREATE", "PROJECT_READ", "PROJECT_UPDATE", "PROJECT_DELETE", "PROJECT_ASSIGN",
+        "FIELD_REPORT_SUBMIT", "FIELD_REPORT_READ",
+        // Finance Management (Future)
+        "REQUISITION_CREATE", "REQUISITION_APPROVE", "FINANCE_READ",
+        // Technical Support (Future)
+        "TICKET_CREATE", "TICKET_MANAGE", "TICKET_COMMENT", "TICKET_ASSIGN", "TICKET_RESOLVE", "TICKET_CLOSE", "TICKET_ARCHIVE",
+        // Audit Trail
+        "AUDIT_READ", "AUDIT_EXPORT",
+        // Notifications
+        "NOTIFICATION_SEND"
+    );
+
+    permissionNames.forEach(this::createPermissionIfNotFound);
+
         // Step 2: Initialize roles, permissions, and the admin user ONLY if no users exist.
         if (userRepository.count() == 0) {
             System.out.println("No users found. Initializing default roles, permissions, and admin user...");
 
-            // Create all planned permissions for the entire system
-            List<String> permissionNames = Arrays.asList(
-                    // User & Role Management
-                    "USER_CREATE", "USER_READ", "USER_UPDATE", "USER_DELETE", "USER_APPROVE",
-                    "ROLE_CREATE", "ROLE_READ", "ROLE_UPDATE", "ROLE_DELETE",
-                    // Inventory Management
-                    "ITEM_CREATE", "ITEM_READ", "ITEM_UPDATE", "ITEM_DELETE",
-                    "SUPPLIER_CREATE", "SUPPLIER_READ", "SUPPLIER_UPDATE", "SUPPLIER_DELETE",
-                    // Operations Management (Future)
-                    "PROJECT_CREATE", "PROJECT_READ", "PROJECT_UPDATE", "PROJECT_DELETE", "PROJECT_ASSIGN",
-                    "FIELD_REPORT_SUBMIT", "FIELD_REPORT_READ",
-                    // Finance Management (Future)
-                    "REQUISITION_CREATE", "REQUISITION_APPROVE", "FINANCE_READ",
-                    // Technical Support (Future)
-                    "TICKET_CREATE", "TICKET_MANAGE", "TICKET_COMMENT", "TICKET_ASSIGN", "TICKET_RESOLVE", "TICKET_CLOSE", "TICKET_ARCHIVE",
-                    // Audit Trail
-                    "AUDIT_READ", "AUDIT_EXPORT"
-            );
             List<Permission> allPermissions = permissionNames.stream().map(this::createPermissionIfNotFound).collect(Collectors.toList());
             Set<Permission> allPermissionsSet = new HashSet<>(allPermissions);
 

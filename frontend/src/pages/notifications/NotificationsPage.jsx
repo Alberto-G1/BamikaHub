@@ -36,17 +36,28 @@ const NotificationsPage = () => {
             
             const response = await api.get('/notifications', { params });
             
-            if (response.data.content) {
-                // Paginated response
+            if (Array.isArray(response.data?.content)) {
                 setNotifications(response.data.content);
                 setPagination(prev => ({
                     ...prev,
                     totalPages: response.data.totalPages,
-                    totalElements: response.data.totalElements
+                    totalElements: response.data.totalElements,
+                    size: response.data.size ?? prev.size
+                }));
+            } else if (Array.isArray(response.data)) {
+                setNotifications(response.data);
+                setPagination(prev => ({
+                    ...prev,
+                    totalPages: 1,
+                    totalElements: response.data.length
                 }));
             } else {
-                // Simple array response
-                setNotifications(response.data);
+                setNotifications([]);
+                setPagination(prev => ({
+                    ...prev,
+                    totalPages: 0,
+                    totalElements: 0
+                }));
             }
         } catch (error) {
             toast.error('Failed to fetch notifications');
@@ -181,7 +192,7 @@ const NotificationsPage = () => {
                         <div>
                             <h4 className="mb-0">Notifications</h4>
                             <small className="text-muted">
-                                {pagination.totalElements} total notification{pagination.totalElements !== 1 ? 's' : ''}
+                                {(pagination.totalElements || notifications.length)} total notification{(pagination.totalElements || notifications.length) !== 1 ? 's' : ''}
                             </small>
                         </div>
                     </div>

@@ -7,10 +7,12 @@ import com.bamikahub.inventorysystem.dao.user.UserRepository;
 import com.bamikahub.inventorysystem.dto.finance.FulfillmentItemDto;
 import com.bamikahub.inventorysystem.dto.finance.FulfillmentRequest;
 import com.bamikahub.inventorysystem.dto.finance.RequisitionRequest;
+import com.bamikahub.inventorysystem.models.audit.AuditLog;
 import com.bamikahub.inventorysystem.models.operations.Project;
 import com.bamikahub.inventorysystem.models.finance.Requisition;
 import com.bamikahub.inventorysystem.models.finance.RequisitionItem;
 import com.bamikahub.inventorysystem.models.user.User;
+import com.bamikahub.inventorysystem.services.audit.AuditService;
 import com.bamikahub.inventorysystem.services.inventory.InventoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,13 +32,12 @@ public class FinanceService {
     @Autowired private ProjectRepository projectRepository;
     @Autowired private RequisitionItemRepository requisitionItemRepository;
     @Autowired private InventoryService inventoryService;
+    @Autowired private AuditService auditService;
 
 
     @Transactional
     public Requisition createRequisition(RequisitionRequest request) {
-        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("Current user not found."));
+    User currentUser = getCurrentUser();
 
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found."));
@@ -68,7 +70,28 @@ public class FinanceService {
         requisition.setItems(items);
         // ^-- THIS IS THE ROBUST FIX --^
 
-        return requisitionRepository.save(requisition);
+        Requisition saved = requisitionRepository.save(requisition);
+
+        try {
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("projectId", project.getId());
+            details.put("projectName", project.getName());
+            details.put("dateNeeded", request.getDateNeeded());
+            details.put("itemCount", items.size());
+
+            auditService.logAction(
+                    currentUser,
+                    AuditLog.ActionType.REQUISITION_CREATED,
+                    "Requisition",
+                    saved.getId(),
+                    "REQ-" + saved.getId(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // audit failures should never prevent requisition creation
+        }
+
+        return saved;
     }
 
     @Transactional
@@ -76,9 +99,7 @@ public class FinanceService {
         Requisition requisition = requisitionRepository.findById(requisitionId)
                 .orElseThrow(() -> new RuntimeException("Requisition not found."));
 
-        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User approver = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("Approver not found."));
+    User approver = getCurrentUser();
 
         if (requisition.getStatus() != Requisition.RequisitionStatus.PENDING) {
             throw new IllegalStateException("Requisition is not in PENDING state and cannot be approved.");
@@ -89,7 +110,27 @@ public class FinanceService {
         requisition.setApprovedAt(LocalDateTime.now());
         requisition.setApprovalNotes(notes);
 
-        return requisitionRepository.save(requisition);
+        Requisition saved = requisitionRepository.save(requisition);
+
+        try {
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("notes", notes);
+            details.put("status", saved.getStatus());
+            details.put("projectId", saved.getProject() != null ? saved.getProject().getId() : null);
+
+            auditService.logAction(
+                    approver,
+                    AuditLog.ActionType.REQUISITION_APPROVED_FINANCE,
+                    "Requisition",
+                    saved.getId(),
+                    "REQ-" + saved.getId(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // keep approval flow resilient
+        }
+
+        return saved;
     }
 
     @Transactional
@@ -97,16 +138,34 @@ public class FinanceService {
         Requisition requisition = requisitionRepository.findById(requisitionId)
                 .orElseThrow(() -> new RuntimeException("Requisition not found."));
 
-        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User rejecter = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("Rejecter not found."));
+    User rejecter = getCurrentUser();
 
         requisition.setStatus(Requisition.RequisitionStatus.REJECTED);
         requisition.setApprovalNotes(reason);
         requisition.setApprovedBy(rejecter); // Set who rejected it
         requisition.setApprovedAt(LocalDateTime.now()); // Set when it was rejected
 
-        return requisitionRepository.save(requisition);
+        Requisition saved = requisitionRepository.save(requisition);
+
+        try {
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("reason", reason);
+            details.put("status", saved.getStatus());
+            details.put("projectId", saved.getProject() != null ? saved.getProject().getId() : null);
+
+            auditService.logAction(
+                    rejecter,
+                    AuditLog.ActionType.REQUISITION_REJECTED,
+                    "Requisition",
+                    saved.getId(),
+                    "REQ-" + saved.getId(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // rejection must proceed even if audit fails
+        }
+
+        return saved;
     }
 
     // Mark a requisition as fulfilled
@@ -119,9 +178,7 @@ public class FinanceService {
             throw new IllegalStateException("Requisition must be approved before it can be fulfilled.");
         }
 
-        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("Fulfiller not found."));
+    User currentUser = getCurrentUser();
 
         // Loop through the items received from the frontend
         for (FulfillmentItemDto itemDto : request.getItems()) {
@@ -150,7 +207,33 @@ public class FinanceService {
         requisition.setStatus(Requisition.RequisitionStatus.FULFILLED);
         requisition.setApprovalNotes((requisition.getApprovalNotes() != null ? requisition.getApprovalNotes() : "") + "\nFulfilled: " + request.getNotes());
 
-        return requisitionRepository.save(requisition);
+        Requisition saved = requisitionRepository.save(requisition);
+
+        try {
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("fulfillmentType", request.getFulfillmentType());
+            details.put("notes", request.getNotes());
+            details.put("items", request.getItems().stream().map(item -> {
+                Map<String, Object> itemDetails = auditService.createDetailsMap();
+                itemDetails.put("inventoryItemId", item.getInventoryItemId());
+                itemDetails.put("quantityReceived", item.getQuantityReceived());
+                itemDetails.put("actualUnitCost", item.getActualUnitCost());
+                return itemDetails;
+            }).collect(Collectors.toList()));
+
+            auditService.logAction(
+                    currentUser,
+                    AuditLog.ActionType.REQUISITION_FULFILLED,
+                    "Requisition",
+                    saved.getId(),
+                    "REQ-" + saved.getId(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // audit logging should not block requisition fulfillment
+        }
+
+        return saved;
     }
 
     //  Mark a requisition as closed
@@ -167,7 +250,26 @@ public class FinanceService {
         requisition.setStatus(Requisition.RequisitionStatus.CLOSED);
         requisition.setApprovalNotes(requisition.getApprovalNotes() + "\nClosed: " + notes);
 
-        return requisitionRepository.save(requisition);
+        Requisition saved = requisitionRepository.save(requisition);
+
+        try {
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("notes", notes);
+            details.put("status", saved.getStatus());
+
+            auditService.logAction(
+                    getCurrentUser(),
+                    AuditLog.ActionType.REQUISITION_CLOSED,
+                    "Requisition",
+                    saved.getId(),
+                    "REQ-" + saved.getId(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // closing should remain robust
+        }
+
+        return saved;
     }
 
 
@@ -181,8 +283,8 @@ public class FinanceService {
             throw new IllegalStateException("Requisition cannot be edited in its current state.");
         }
 
-        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!requisition.getRequestedBy().getEmail().equals(currentUserEmail)) {
+        User currentUser = getCurrentUser();
+        if (!requisition.getRequestedBy().getEmail().equals(currentUser.getEmail())) {
             throw new SecurityException("You are not authorized to edit this requisition.");
         }
 
@@ -226,6 +328,32 @@ public class FinanceService {
         }).collect(Collectors.toList());
         requisition.getItems().addAll(newItems);
 
-        return requisitionRepository.save(requisition);
+        Requisition saved = requisitionRepository.save(requisition);
+
+        try {
+            Map<String, Object> details = auditService.createDetailsMap();
+            details.put("projectId", project.getId());
+            details.put("submissionCount", saved.getSubmissionCount());
+            details.put("itemCount", saved.getItems().size());
+
+            auditService.logAction(
+                    currentUser,
+                    AuditLog.ActionType.REQUISITION_UPDATED,
+                    "Requisition",
+                    saved.getId(),
+                    "REQ-" + saved.getId(),
+                    details
+            );
+        } catch (Exception ignored) {
+            // edits should continue even if audit fails
+        }
+
+        return saved;
+    }
+
+    private User getCurrentUser() {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new RuntimeException("Current user not found."));
     }
 }

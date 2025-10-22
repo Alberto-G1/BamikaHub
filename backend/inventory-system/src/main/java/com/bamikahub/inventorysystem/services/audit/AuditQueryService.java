@@ -37,11 +37,11 @@ public class AuditQueryService {
     @Transactional(readOnly = true)
     public List<AuditLogDto> queryAuditLogs(AuditFilterDto filters) {
         // Parse filters
-        Long userId = filters.getUserId();
-        AuditLog.ActionType action = parseActionType(filters.getAction());
-        String entityType = filters.getEntityType();
-        Long entityId = filters.getEntityId();
-        AuditLog.Severity severity = parseSeverity(filters.getSeverity());
+    Long userId = filters.getUserId();
+    AuditLog.ActionType action = parseActionType(filters.getAction());
+    String entityType = normalizeBlank(filters.getEntityType());
+    Long entityId = filters.getEntityId();
+    AuditLog.Severity severity = parseSeverity(filters.getSeverity());
         LocalDateTime startDate = parseDate(filters.getStartDate(), true);
         LocalDateTime endDate = parseDate(filters.getEndDate(), false);
 
@@ -175,5 +175,13 @@ public class AuditQueryService {
             log.warn("Invalid date format: {}", dateStr);
             return null;
         }
+    }
+
+    private String normalizeBlank(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

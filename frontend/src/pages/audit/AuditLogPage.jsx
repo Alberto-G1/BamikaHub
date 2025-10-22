@@ -37,14 +37,48 @@ const AuditLogPage = () => {
         }
     };
 
+    const sanitizeFilters = () => {
+        const trimOrNull = (value) => {
+            if (value === undefined || value === null) return null;
+            const trimmed = typeof value === 'string' ? value.trim() : value;
+            return trimmed === '' ? null : trimmed;
+        };
+
+        const sanitizedUserId = trimOrNull(filters.userId);
+        const sanitizedEntityId = trimOrNull(filters.entityId);
+
+        return {
+            userId: sanitizedUserId !== null ? Number(sanitizedUserId) : null,
+            action: trimOrNull(filters.action),
+            entityType: trimOrNull(filters.entityType),
+            entityId: sanitizedEntityId !== null ? Number(sanitizedEntityId) : null,
+            severity: trimOrNull(filters.severity),
+            startDate: trimOrNull(filters.startDate),
+            endDate: trimOrNull(filters.endDate)
+        };
+    };
+
+    const hasActiveFilters = (payload) => Object.values(payload).some(value => value !== null);
+
     const fetchLogs = async () => {
         setLoading(true);
         try {
-            const response = await api.post('/audit/query', filters);
+            const payload = sanitizeFilters();
+            const response = await api.post('/audit/query', payload);
             setLogs(response.data);
+            if (response.data.length === 0 && hasActiveFilters(payload)) {
+                toast.info('No audit logs found matching your filters');
+            }
         } catch (error) {
-            toast.error('Failed to fetch audit logs');
             console.error('Error fetching logs:', error);
+            if (error.response?.status === 403) {
+                toast.error('You do not have permission to view audit logs. Please contact your administrator.');
+            } else if (error.response?.status === 401) {
+                toast.error('Your session has expired. Please log in again.');
+            } else {
+                toast.error('Failed to fetch audit logs. Please try again.');
+            }
+            setLogs([]); // Clear logs on error
         } finally {
             setLoading(false);
         }

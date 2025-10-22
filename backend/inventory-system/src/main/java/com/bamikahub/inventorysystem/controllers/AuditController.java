@@ -18,12 +18,12 @@ import java.util.Map;
 
 /**
  * REST Controller for Audit Log Management
- * Restricted to users with audit permissions
+ * Restricted to users with audit permissions OR Admin role
  */
 @RestController
 @RequestMapping("/api/audit")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('AUDIT_READ')") // Permission-based access control
+@PreAuthorize("hasAnyAuthority('AUDIT_READ', 'ROLE_Admin')") // Allow audit permission OR Admin role
 public class AuditController {
 
     private final AuditQueryService auditQueryService;

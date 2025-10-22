@@ -1,11 +1,8 @@
 package com.bamikahub.inventorysystem.controllers.operations;
 
-import com.bamikahub.inventorysystem.dao.operations.ProjectRepository;
-import com.bamikahub.inventorysystem.dao.user.UserRepository;
 import com.bamikahub.inventorysystem.dto.operations.ProjectRequest;
 import com.bamikahub.inventorysystem.models.operations.Project;
 import com.bamikahub.inventorysystem.models.operations.ProjectImage;
-import com.bamikahub.inventorysystem.models.user.User;
 import com.bamikahub.inventorysystem.services.operations.OperationsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,72 +10,47 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/projects")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class ProjectController {
 
-    @Autowired private ProjectRepository projectRepository;
-    @Autowired private UserRepository userRepository;
     @Autowired private OperationsService operationsService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('PROJECT_READ')")
     public List<Project> getAllProjects() {
-        return projectRepository.findAll();
+        return operationsService.getAllProjects();
     }
 
     @PostMapping
     @PreAuthorize("hasAuthority('PROJECT_CREATE')")
     public Project createProject(@RequestBody ProjectRequest request) {
-        Project project = new Project();
-        project.setName(request.getName());
-        project.setClientName(request.getClientName());
-        project.setDescription(request.getDescription());
-        project.setStatus(request.getStatus());
-        project.setStartDate(request.getStartDate());
-        project.setEndDate(request.getEndDate());
-
-        if (request.getAssignedEngineerIds() != null && !request.getAssignedEngineerIds().isEmpty()) {
-            Set<User> engineers = new HashSet<>(userRepository.findAllById(request.getAssignedEngineerIds()));
-            project.setAssignedEngineers(engineers);
-        }
-
-        return projectRepository.save(project);
+        return operationsService.createProject(request);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('PROJECT_READ')")
     public Project getProjectById(@PathVariable Long id) {
-        return projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Project not found."));
+        return operationsService.getProjectById(id);
+    }
+
+    @GetMapping("/{projectId}/reports")
+    @PreAuthorize("hasAuthority('FIELD_REPORT_READ')")
+    public ResponseEntity<OperationsService.ReportListing> getProjectReports(
+            @PathVariable Long projectId,
+            @RequestParam(value = "siteId", required = false) Long siteId
+    ) {
+        OperationsService.ReportListing reports = operationsService.getReportsForProject(projectId, siteId);
+        return ResponseEntity.ok(reports);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('PROJECT_UPDATE')")
     public Project updateProject(@PathVariable Long id, @RequestBody ProjectRequest request) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Project not found."));
-
-        project.setName(request.getName());
-        project.setClientName(request.getClientName());
-        project.setDescription(request.getDescription());
-        project.setStatus(request.getStatus());
-        project.setStartDate(request.getStartDate());
-        project.setEndDate(request.getEndDate());
-
-        if (request.getAssignedEngineerIds() != null) {
-            Set<User> engineers = new HashSet<>(userRepository.findAllById(request.getAssignedEngineerIds()));
-            project.setAssignedEngineers(engineers);
-        } else {
-            project.getAssignedEngineers().clear(); // Clear engineers if an empty list is sent
-        }
-
-        return projectRepository.save(project);
+        return operationsService.updateProject(id, request);
     }
 
     // Endpoint to archive a project
@@ -93,7 +65,7 @@ public class ProjectController {
     @GetMapping("/archived")
     @PreAuthorize("hasAuthority('PROJECT_READ')")
     public List<Project> getArchivedProjects() {
-        return projectRepository.findByIsArchived(true);
+        return operationsService.getArchivedProjects();
     }
 
     // Endpoint for gallery image upload

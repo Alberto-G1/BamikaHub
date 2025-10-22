@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Automated report generation and email delivery service.
@@ -56,8 +57,10 @@ public class ScheduledReportService {
 
             List<ProjectPerformanceDto> performance = reportingService.getProjectPerformance(request);
             TrendReportDto completionTrend = reportingService.getProjectCompletionTrend(request);
+            List<SiteReportSummaryDto> siteActivity = Optional.ofNullable(reportingService.getDashboardChartsData().getFieldReportsBySite())
+                    .orElse(List.of());
 
-            String emailBody = buildProjectSummaryEmail(performance, completionTrend, startDate, endDate);
+            String emailBody = buildProjectSummaryEmail(performance, completionTrend, siteActivity, startDate, endDate);
 
             for (String recipient : recipients.split(",")) {
                 sendEmail(recipient.trim(), "Weekly Project Summary Report", emailBody);
@@ -140,6 +143,7 @@ public class ScheduledReportService {
 
     private String buildProjectSummaryEmail(List<ProjectPerformanceDto> performance,
                                              TrendReportDto trend,
+                                             List<SiteReportSummaryDto> siteActivity,
                                              LocalDate startDate,
                                              LocalDate endDate) {
         StringBuilder sb = new StringBuilder();
@@ -162,6 +166,23 @@ public class ScheduledReportService {
 
         sb.append("<h3>Completion Trend</h3>");
         sb.append("<p>").append(trend.getSummary()).append("</p>");
+
+        if (siteActivity != null && !siteActivity.isEmpty()) {
+            sb.append("<h3>Field Report Activity by Site</h3>");
+            sb.append("<table border='1' cellpadding='8' style='border-collapse: collapse;'>");
+            sb.append("<tr><th>Project</th><th>Site</th><th>Reports Submitted</th></tr>");
+            for (SiteReportSummaryDto summary : siteActivity) {
+                sb.append("<tr>")
+                        .append("<td>").append(summary.getProjectName() != null ? summary.getProjectName() : "-").append("</td>")
+                        .append("<td>")
+                        .append(summary.isProjectLevel() ? "Whole Project" : summary.getSiteName())
+                        .append(summary.getSiteLocation() != null ? " (" + summary.getSiteLocation() + ")" : "")
+                        .append("</td>")
+                        .append("<td>").append(summary.getReportCount()).append("</td>")
+                        .append("</tr>");
+            }
+            sb.append("</table>");
+        }
 
         return sb.toString();
     }

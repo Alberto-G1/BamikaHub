@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface InventoryItemRepository extends JpaRepository<InventoryItem, Long> {
     Optional<InventoryItem> findBySku(String sku);
 
+    long countByCategoryId(Long categoryId);
+
     @Override
     @Query("select i from InventoryItem i where i.isDeleted = false")
     List<InventoryItem> findAll();

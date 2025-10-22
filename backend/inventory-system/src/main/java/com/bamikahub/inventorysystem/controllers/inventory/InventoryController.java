@@ -1,15 +1,11 @@
 package com.bamikahub.inventorysystem.controllers.inventory;
 
-import com.bamikahub.inventorysystem.dao.inventory.CategoryRepository;
 import com.bamikahub.inventorysystem.dao.inventory.InventoryItemRepository;
 import com.bamikahub.inventorysystem.dao.inventory.StockTransactionRepository;
-import com.bamikahub.inventorysystem.dao.inventory.SupplierRepository;
 import com.bamikahub.inventorysystem.dto.inventory.InventoryItemRequest;
 import com.bamikahub.inventorysystem.dto.inventory.StockTransactionRequest;
-import com.bamikahub.inventorysystem.models.inventory.Category;
 import com.bamikahub.inventorysystem.models.inventory.InventoryItem;
 import com.bamikahub.inventorysystem.models.inventory.StockTransaction;
-import com.bamikahub.inventorysystem.models.inventory.Supplier;
 import com.bamikahub.inventorysystem.services.inventory.InventoryService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +15,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -28,8 +23,6 @@ import java.util.List;
 public class InventoryController {
 
     @Autowired private InventoryItemRepository itemRepository;
-    @Autowired private SupplierRepository supplierRepository;
-    @Autowired private CategoryRepository categoryRepository; // <-- INJECT CATEGORY REPOSITORY
     @Autowired private StockTransactionRepository transactionRepository;
     @Autowired private InventoryService inventoryService;
 
@@ -51,75 +44,19 @@ public class InventoryController {
     @PostMapping("/items")
     @PreAuthorize("hasAuthority('ITEM_CREATE')")
     public InventoryItem createItem(@RequestBody InventoryItemRequest request) {
-        InventoryItem newItem = new InventoryItem();
-
-        // Manual mapping to handle relationships
-        newItem.setName(request.getName());
-        newItem.setSku(request.getSku());
-        newItem.setDescription(request.getDescription());
-        newItem.setQuantity(request.getQuantity());
-        newItem.setReorderLevel(request.getReorderLevel());
-        newItem.setUnitPrice(request.getUnitPrice());
-        newItem.setLocation(request.getLocation());
-        newItem.setActive(request.isActive());
-
-        // Fetch and set the Category
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
-        newItem.setCategory(category);
-
-        // Fetch and set the Supplier (if provided)
-        if (request.getSupplierId() != null) {
-            Supplier supplier = supplierRepository.findById(request.getSupplierId()).orElse(null);
-            newItem.setSupplier(supplier);
-        }
-
-        return itemRepository.save(newItem);
+        return inventoryService.createItem(request);
     }
 
     @PutMapping("/items/{id}")
     @PreAuthorize("hasAuthority('ITEM_UPDATE')")
     public InventoryItem updateItem(@PathVariable Long id, @RequestBody InventoryItemRequest request) {
-        InventoryItem existingItem = itemRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Item not found with id: " + id));
-
-        // Manual mapping
-        existingItem.setName(request.getName());
-        existingItem.setSku(request.getSku());
-        existingItem.setDescription(request.getDescription());
-        existingItem.setReorderLevel(request.getReorderLevel());
-        existingItem.setUnitPrice(request.getUnitPrice());
-        existingItem.setLocation(request.getLocation());
-        existingItem.setActive(request.isActive());
-
-        // Fetch and update the Category
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
-        existingItem.setCategory(category);
-
-        // Fetch and update the Supplier (if provided)
-        if (request.getSupplierId() != null) {
-            Supplier supplier = supplierRepository.findById(request.getSupplierId()).orElse(null);
-            existingItem.setSupplier(supplier);
-        } else {
-            existingItem.setSupplier(null);
-        }
-
-        return itemRepository.save(existingItem);
+        return inventoryService.updateItem(id, request);
     }
 
     @DeleteMapping("/items/{id}")
     @PreAuthorize("hasAuthority('ITEM_DELETE')")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id) {
-        InventoryItem item = itemRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Item not found with id: " + id));
-
-        if (item.getQuantity() > 0) {
-            throw new RuntimeException("Cannot delete item with active stock. Adjust quantity to 0 first.");
-        }
-        item.setDeleted(true);
-        item.setDeletedAt(LocalDateTime.now());
-        itemRepository.save(item);
+        inventoryService.deleteItem(id);
         return ResponseEntity.ok().build();
     }
 

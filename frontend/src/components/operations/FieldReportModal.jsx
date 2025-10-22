@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form, Row, Col } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import api from '../../api/api.js';
 
-const FieldReportModal = ({ show, handleClose, project, onReportSubmit }) => {
+const FieldReportModal = ({ show, handleClose, project, onReportSubmit, sites = [], initialSiteId = '' }) => {
     // State to toggle between form and file upload
     const [submissionType, setSubmissionType] = useState('form'); // 'form' or 'file'
 
     // State for form fields
     const [formData, setFormData] = useState({
         reportDate: new Date().toISOString().split('T')[0],
+        siteId: '',
         workProgressUpdate: '', 
         materialsUsed: '', 
         challengesFaced: '', 
@@ -21,7 +22,8 @@ const FieldReportModal = ({ show, handleClose, project, onReportSubmit }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleFormChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
     };
 
     const handleFileChange = (e) => {
@@ -37,7 +39,7 @@ const FieldReportModal = ({ show, handleClose, project, onReportSubmit }) => {
         // Construct the JSON part of the payload
         const reportDataPayload = {
             projectId: project.id,
-            siteId: null, // Future enhancement
+            siteId: formData.siteId ? Number(formData.siteId) : null,
             reportDate: formData.reportDate,
             // If in 'form' mode, send the text data. If in 'file' mode, send placeholder text.
             workProgressUpdate: submissionType === 'form' ? formData.workProgressUpdate : `See attached file: ${reportFile.name}`,
@@ -75,10 +77,20 @@ const FieldReportModal = ({ show, handleClose, project, onReportSubmit }) => {
         setSubmissionType('form');
         setFormData({
             reportDate: new Date().toISOString().split('T')[0],
+            siteId: '',
             workProgressUpdate: '', materialsUsed: '', challengesFaced: '', weatherConditions: ''
         });
         setReportFile(null);
     };
+
+    useEffect(() => {
+        if (show) {
+            setFormData((prev) => ({
+                ...prev,
+                siteId: initialSiteId || ''
+            }));
+        }
+    }, [show, initialSiteId]);
 
     if (!project) return null;
 
@@ -104,6 +116,22 @@ const FieldReportModal = ({ show, handleClose, project, onReportSubmit }) => {
                             </Form.Group>
                          </Col>
                     </Row>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Site (optional)</Form.Label>
+                        <Form.Select name="siteId" value={formData.siteId} onChange={handleFormChange} disabled={sites.length === 0}>
+                            <option value="">Whole project / unspecified site</option>
+                            {sites.map((site) => (
+                                <option key={site.id} value={site.id}>
+                                    {site.name}{site.location ? ` - ${site.location}` : ''}
+                                </option>
+                            ))}
+                        </Form.Select>
+                        {sites.length === 0 && (
+                            <Form.Text className="text-muted">
+                                No sites defined for this project yet.
+                            </Form.Text>
+                        )}
+                    </Form.Group>
                     <hr />
 
                     {/* Submission Type Toggle */}

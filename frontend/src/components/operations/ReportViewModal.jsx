@@ -5,6 +5,10 @@ import { FaDownload, FaFileAlt } from 'react-icons/fa';
 const ReportViewModal = ({ show, handleClose, report }) => {
     if (!report) return null;
 
+    const siteDisplay = report.site
+        ? `${report.site.name}${report.site.location ? ` - ${report.site.location}` : ''}`
+        : 'Whole project';
+
     return (
         <Modal show={show} onHide={handleClose} size="lg" centered>
             <Modal.Header closeButton>
@@ -12,6 +16,7 @@ const ReportViewModal = ({ show, handleClose, report }) => {
             </Modal.Header>
             <Modal.Body>
                 <h5>Submitted by: {report.submittedBy.username}</h5>
+                <p><strong>Site:</strong> {siteDisplay}</p>
                 <p><strong>Weather:</strong> {report.weatherConditions || 'N/A'}</p>
                 
                 <hr />
