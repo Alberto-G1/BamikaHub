@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Container, Card, Row, Col, Form, Button, Spinner, Tabs, Tab, Image } from 'react-bootstrap';
+import { Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { FaUserCircle } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
+import './ProfilePage.css';
 
 const ProfileEditPage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
-    const [profilePictureUrl, setProfilePictureUrl] = useState(null);
+    const [profileData, setProfileData] = useState({});
 
     const [formData, setFormData] = useState({
         firstName: '', lastName: '', gender: '', dateOfBirth: '',
@@ -19,6 +20,7 @@ const ProfileEditPage = () => {
     const [passwordData, setPasswordData] = useState({
         currentPassword: '', newPassword: '', confirmPassword: ''
     });
+    const [activeTab, setActiveTab] = useState('info');
 
     const fileInputRef = useRef(null);
 
@@ -27,6 +29,7 @@ const ProfileEditPage = () => {
             setLoading(true);
             try {
                 const res = await api.get('/profile/me');
+                setProfileData(res.data);
                 setFormData({
                     firstName: res.data.firstName || '',
                     lastName: res.data.lastName || '',
@@ -37,7 +40,6 @@ const ProfileEditPage = () => {
                     city: res.data.city || '',
                     country: res.data.country || '',
                 });
-                setProfilePictureUrl(res.data.profilePictureUrl);
             } catch (error) {
                 toast.error('Could not load profile data for editing.');
                 navigate('/profile'); // Redirect back if data fails to load
@@ -55,7 +57,8 @@ const ProfileEditPage = () => {
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
         try {
-            await api.put('/profile/me', formData);
+            const res = await api.put('/profile/me', formData);
+            setProfileData(res.data);
             toast.success('Profile updated successfully!');
             navigate('/profile');
         } catch (error) {
@@ -108,7 +111,7 @@ const ProfileEditPage = () => {
             const res = await api.post('/profile/me/picture', apiFormData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            setProfilePictureUrl(res.data.profilePictureUrl);
+            setProfileData((prev) => ({ ...prev, profilePictureUrl: res.data.profilePictureUrl }));
             toast.success("Profile picture updated successfully!");
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to upload picture.");
@@ -117,112 +120,325 @@ const ProfileEditPage = () => {
         }
     };
 
-    if (loading) return <Spinner animation="border" />;
+    if (loading) {
+        return (
+            <div className="profile-loading">
+                <Spinner animation="border" role="status" />
+            </div>
+        );
+    }
+
+    const formatValue = (value, fallback = 'Not provided') => (value ? value : fallback);
+    const formatDate = (value) => {
+        if (!value) return '';
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return value;
+        }
+        return parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    };
+    const genderMap = { MALE: 'Male', FEMALE: 'Female', OTHER: 'Other' };
+
+    const fullName = [formData.firstName, formData.lastName].filter(Boolean).join(' ') || 'Update Profile';
+    const roleLabel = profileData.roleName || 'Team Member';
+    const locationLabel = [formData.city, formData.country].filter(Boolean).join(', ');
+    const bannerSubtitle = locationLabel || formData.address || 'Review and update your information below.';
+    const genderDisplay = formData.gender ? genderMap[formData.gender] || formData.gender : '';
 
     return (
-        <Container>
-            <Row>
-                <Col md={4}>
-                    <Card className="mb-3 shadow-sm">
-                        <Card.Header as="h5">Profile Picture</Card.Header>
-                        <Card.Body className="text-center position-relative">
-                            {uploading && (
-                                <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10, borderRadius: '.375rem' }}>
-                                    <Spinner animation="border" variant="light" />
-                                </div>
-                            )}
-                            {profilePictureUrl ? (
-                                <Image src={`http://localhost:8080${profilePictureUrl}`} roundedCircle fluid style={{ width: '150px', height: '150px', objectFit: 'cover' }} />
-                            ) : (
-                                <FaUserCircle size={150} className="text-muted" />
-                            )}
-                            <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} accept="image/png, image/jpeg" />
-                            <Button variant="outline-primary" size="sm" className="mt-3" onClick={handlePictureButtonClick} disabled={uploading}>
-                                {uploading ? 'Uploading...' : 'Change Photo'}
-                            </Button>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={8}>
-                    <Card className="shadow-sm">
-                        <Tabs defaultActiveKey="info" id="profile-edit-tabs" className="mb-3">
-                            <Tab eventKey="info" title="Personal Information">
-                                <Card.Body>
-                                    <Form onSubmit={handleProfileUpdate}>
-                                        <Row>
-                                            <Col md={6}><Form.Group className="mb-3">
-                                                <Form.Label>First Name</Form.Label>
-                                                <Form.Control type="text" name="firstName" value={formData.firstName} onChange={handleFormChange} required />
-                                            </Form.Group></Col>
-                                            <Col md={6}><Form.Group className="mb-3">
-                                                <Form.Label>Last Name</Form.Label>
-                                                <Form.Control type="text" name="lastName" value={formData.lastName} onChange={handleFormChange} required />
-                                            </Form.Group></Col>
-                                        </Row>
-                                        <Row>
-                                            <Col md={6}><Form.Group className="mb-3">
-                                                <Form.Label>Phone Number</Form.Label>
-                                                <Form.Control type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleFormChange} placeholder="+256700123456" />
-                                            </Form.Group></Col>
-                                            <Col md={6}><Form.Group className="mb-3">
-                                                <Form.Label>Date of Birth</Form.Label>
-                                                <Form.Control type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleFormChange} />
-                                            </Form.Group></Col>
-                                        </Row>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Gender</Form.Label>
-                                            <Form.Select name="gender" value={formData.gender} onChange={handleFormChange}>
+        <section className="profile-page">
+            <div className="profile-banner">
+                <div className="profile-banner__avatar">
+                    <div className="profile-avatar-wrapper">
+                        {uploading && (
+                            <div className="profile-avatar-overlay">
+                                <Spinner animation="border" variant="light" />
+                            </div>
+                        )}
+
+                        {profileData.profilePictureUrl ? (
+                            <img
+                                src={`http://localhost:8080${profileData.profilePictureUrl}`}
+                                alt={`${fullName}'s profile`}
+                                className="profile-avatar-image"
+                            />
+                        ) : (
+                            <FaUserCircle className="profile-avatar-placeholder" />
+                        )}
+                    </div>
+
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/png, image/jpeg"
+                        style={{ display: 'none' }}
+                    />
+
+                    <button
+                        type="button"
+                        className="profile-upload-btn"
+                        onClick={handlePictureButtonClick}
+                        disabled={uploading}
+                    >
+                        {uploading ? 'Uploading...' : 'Change Photo'}
+                    </button>
+                </div>
+
+                <div className="profile-banner__text">
+                    <span className="profile-chip">Profile Editor</span>
+                    <h1>{fullName}</h1>
+                    <p className="profile-banner__subtitle">{bannerSubtitle}</p>
+
+                    <div className="profile-banner__meta">
+                        <div className="meta-item">
+                            <span className="meta-label">Email</span>
+                            <span className="meta-value">{formatValue(profileData.email)}</span>
+                        </div>
+                        <div className="meta-item">
+                            <span className="meta-label">Phone</span>
+                            <span className="meta-value">{formatValue(formData.phoneNumber)}</span>
+                        </div>
+                        <div className="meta-item">
+                            <span className="meta-label">Role</span>
+                            <span className="meta-value">{roleLabel}</span>
+                        </div>
+                    </div>
+
+                    <div className="profile-banner__actions">
+                        <button
+                            type="button"
+                            className="profile-secondary-btn"
+                            onClick={() => navigate('/profile')}
+                        >
+                            Cancel &amp; Go Back
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="profile-body">
+                <div className="profile-column profile-column--left">
+                    <div className="profile-card">
+                        <h3>Current Snapshot</h3>
+                        <div className="profile-info-grid">
+                            <div className="info-item">
+                                <span className="info-label">Address</span>
+                                <span className="info-value">{formatValue(formData.address)}</span>
+                            </div>
+                            <div className="info-item">
+                                <span className="info-label">City</span>
+                                <span className="info-value">{formatValue(formData.city)}</span>
+                            </div>
+                            <div className="info-item">
+                                <span className="info-label">Country</span>
+                                <span className="info-value">{formatValue(formData.country)}</span>
+                            </div>
+                            <div className="info-item">
+                                <span className="info-label">Date of Birth</span>
+                                <span className="info-value">{formatValue(formatDate(formData.dateOfBirth), '—')}</span>
+                            </div>
+                            <div className="info-item">
+                                <span className="info-label">Gender</span>
+                                <span className="info-value">{formatValue(genderDisplay)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="profile-column profile-column--right">
+                    <div className="profile-card profile-card--form">
+                        <div className="profile-tabs">
+                            <button
+                                type="button"
+                                className={`profile-tab-btn ${activeTab === 'info' ? 'is-active' : ''}`}
+                                onClick={() => setActiveTab('info')}
+                            >
+                                Personal Information
+                            </button>
+                            <button
+                                type="button"
+                                className={`profile-tab-btn ${activeTab === 'security' ? 'is-active' : ''}`}
+                                onClick={() => setActiveTab('security')}
+                            >
+                                Security
+                            </button>
+                        </div>
+
+                        <div className="profile-tab-panels">
+                            {activeTab === 'info' && (
+                                <form className="profile-form" onSubmit={handleProfileUpdate}>
+                                    <div className="profile-form-grid">
+                                        <div className="profile-input-group">
+                                            <label htmlFor="firstName">First Name</label>
+                                            <input
+                                                id="firstName"
+                                                name="firstName"
+                                                type="text"
+                                                value={formData.firstName}
+                                                onChange={handleFormChange}
+                                                required
+                                                autoComplete="given-name"
+                                            />
+                                        </div>
+                                        <div className="profile-input-group">
+                                            <label htmlFor="lastName">Last Name</label>
+                                            <input
+                                                id="lastName"
+                                                name="lastName"
+                                                type="text"
+                                                value={formData.lastName}
+                                                onChange={handleFormChange}
+                                                required
+                                                autoComplete="family-name"
+                                            />
+                                        </div>
+                                        <div className="profile-input-group">
+                                            <label htmlFor="phoneNumber">Phone Number</label>
+                                            <input
+                                                id="phoneNumber"
+                                                name="phoneNumber"
+                                                type="tel"
+                                                value={formData.phoneNumber}
+                                                onChange={handleFormChange}
+                                                placeholder="+256700123456"
+                                                autoComplete="tel"
+                                            />
+                                        </div>
+                                        <div className="profile-input-group">
+                                            <label htmlFor="dateOfBirth">Date of Birth</label>
+                                            <input
+                                                id="dateOfBirth"
+                                                name="dateOfBirth"
+                                                type="date"
+                                                value={formData.dateOfBirth}
+                                                onChange={handleFormChange}
+                                            />
+                                        </div>
+                                        <div className="profile-input-group">
+                                            <label htmlFor="gender">Gender</label>
+                                            <select
+                                                id="gender"
+                                                name="gender"
+                                                value={formData.gender}
+                                                onChange={handleFormChange}
+                                            >
                                                 <option value="">Select...</option>
                                                 <option value="MALE">Male</option>
                                                 <option value="FEMALE">Female</option>
                                                 <option value="OTHER">Other</option>
-                                            </Form.Select>
-                                        </Form.Group>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Address</Form.Label>
-                                            <Form.Control type="text" name="address" value={formData.address} onChange={handleFormChange} />
-                                        </Form.Group>
-                                        <Row>
-                                            <Col md={6}><Form.Group className="mb-3">
-                                                <Form.Label>City</Form.Label>
-                                                <Form.Control type="text" name="city" value={formData.city} onChange={handleFormChange} />
-                                            </Form.Group></Col>
-                                            <Col md={6}><Form.Group className="mb-3">
-                                                <Form.Label>Country</Form.Label>
-                                                <Form.Control type="text" name="country" value={formData.country} onChange={handleFormChange} />
-                                            </Form.Group></Col>
-                                        </Row>
-                                        <Button type="submit" variant="primary">Save Changes</Button>
-                                        <Button variant="secondary" className="ms-2" onClick={() => navigate('/profile')}>Cancel</Button>
-                                    </Form>
-                                </Card.Body>
-                            </Tab>
-                            <Tab eventKey="security" title="Security">
-                                <Card.Body>
-                                    <h5 className="card-title">Change Password</h5>
-                                    <Form onSubmit={handlePasswordChange}>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Current Password</Form.Label>
-                                            <Form.Control type="password" name="currentPassword" value={passwordData.currentPassword} onChange={handlePasswordFormChange} required />
-                                        </Form.Group>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>New Password</Form.Label>
-                                            <Form.Control type="password" name="newPassword" value={passwordData.newPassword} onChange={handlePasswordFormChange} required />
-                                        </Form.Group>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Confirm New Password</Form.Label>
-                                            <Form.Control type="password" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordFormChange} required />
-                                        </Form.Group>
-                                        <Button type="submit" variant="primary">Update Password</Button>
-                                        <Button variant="secondary" className="ms-2" onClick={() => navigate('/profile')}>Cancel</Button>
-                                    </Form>
-                                </Card.Body>
-                            </Tab>
-                        </Tabs>
-                    </Card>
-                </Col>
-            </Row>
-        </Container>
+                                            </select>
+                                        </div>
+                                        <div className="profile-input-group profile-input-group--full">
+                                            <label htmlFor="address">Address</label>
+                                            <input
+                                                id="address"
+                                                name="address"
+                                                type="text"
+                                                value={formData.address}
+                                                onChange={handleFormChange}
+                                                autoComplete="street-address"
+                                            />
+                                        </div>
+                                        <div className="profile-input-group">
+                                            <label htmlFor="city">City</label>
+                                            <input
+                                                id="city"
+                                                name="city"
+                                                type="text"
+                                                value={formData.city}
+                                                onChange={handleFormChange}
+                                                autoComplete="address-level2"
+                                            />
+                                        </div>
+                                        <div className="profile-input-group">
+                                            <label htmlFor="country">Country</label>
+                                            <input
+                                                id="country"
+                                                name="country"
+                                                type="text"
+                                                value={formData.country}
+                                                onChange={handleFormChange}
+                                                autoComplete="country-name"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="profile-form-actions">
+                                        <button
+                                            type="button"
+                                            className="profile-secondary-btn"
+                                            onClick={() => navigate('/profile')}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button type="submit" className="profile-primary-btn">
+                                            Save Changes
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {activeTab === 'security' && (
+                                <form className="profile-form" onSubmit={handlePasswordChange}>
+                                    <div className="profile-form-grid">
+                                        <div className="profile-input-group profile-input-group--full">
+                                            <label htmlFor="currentPassword">Current Password</label>
+                                            <input
+                                                id="currentPassword"
+                                                name="currentPassword"
+                                                type="password"
+                                                value={passwordData.currentPassword}
+                                                onChange={handlePasswordFormChange}
+                                                required
+                                                autoComplete="current-password"
+                                            />
+                                        </div>
+                                        <div className="profile-input-group profile-input-group--full">
+                                            <label htmlFor="newPassword">New Password</label>
+                                            <input
+                                                id="newPassword"
+                                                name="newPassword"
+                                                type="password"
+                                                value={passwordData.newPassword}
+                                                onChange={handlePasswordFormChange}
+                                                required
+                                                autoComplete="new-password"
+                                            />
+                                        </div>
+                                        <div className="profile-input-group profile-input-group--full">
+                                            <label htmlFor="confirmPassword">Confirm New Password</label>
+                                            <input
+                                                id="confirmPassword"
+                                                name="confirmPassword"
+                                                type="password"
+                                                value={passwordData.confirmPassword}
+                                                onChange={handlePasswordFormChange}
+                                                required
+                                                autoComplete="new-password"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="profile-form-actions">
+                                        <button
+                                            type="button"
+                                            className="profile-secondary-btn"
+                                            onClick={() => navigate('/profile')}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button type="submit" className="profile-primary-btn">
+                                            Update Password
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     );
 };
 

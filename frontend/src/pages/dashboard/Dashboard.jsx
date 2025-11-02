@@ -6,9 +6,41 @@ import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
+import './Dashboard.css';
 
 // Register the components you will use from Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
+
+/**
+ * Dashboard Component
+ * 
+ * Main dashboard page displaying real-time summary of engineering operations.
+ * 
+ * Features:
+ * - KPI Cards: Total Stock Value, Low Stock Items, Pending User Approvals
+ * - Charts: Projects by Status (Bar), Inventory Value by Category (Doughnut)
+ * - Table: Top Field Report Activity by project and site
+ * 
+ * Styling:
+ * - Growth-themed colors (Green #10B981, Gold #D6A329, Sky Blue #46C1EB)
+ * - Smooth animations with staggered entrance effects
+ * - Responsive grid layout (mobile, tablet, desktop)
+ * - Dark/light theme support
+ * 
+ * API Endpoints:
+ * - GET /dashboard/summary - Summary statistics for KPI cards
+ * - GET /reports/dashboard-charts - Chart data (inventory, projects, field reports)
+ * 
+ * Dependencies:
+ * - Chart.js & react-chartjs-2 for data visualization
+ * - Bootstrap for responsive grid system
+ * - React Icons for card icons
+ * 
+ * @component
+ * @example
+ * // Used in main routing:
+ * <Route path="/dashboard" element={<Dashboard />} />
+ */
 
 // Reusable currency formatter for Ugandan Shillings (UGX)
 const formatCurrency = (amount) => {
@@ -94,50 +126,50 @@ const Dashboard = () => {
     }
 
     return (
-        <div>
-            <div className="mb-4">
+        <div className="dashboard-page">
+            <div className="mb-4 dashboard-header dashboard-welcome">
                 <h3>Welcome back, {user ? user.email.split('@')[0] : 'Guest'}!</h3>
                 <p className="text-muted">Here's a real-time summary of your engineering operations.</p>
             </div>
 
             {/* Summary Stat Cards */}
-            <Row>
+            <Row className="kpi-row">
                 <Col md={6} lg={4} className="mb-4">
-                    <Card bg="primary" text="white" className="shadow-sm h-100">
-                        <Card.Body className="d-flex flex-column">
-                            <div className="d-flex justify-content-between align-items-start">
-                                <Card.Title as="h5">Total Stock Value</Card.Title>
-                                <FaBoxes size={28} />
+                    <Card className="h-100 kpi-card-primary">
+                        <Card.Body>
+                            <div className="kpi-icon-wrapper">
+                                <FaBoxes size={24} />
                             </div>
-                            <Card.Text className="fs-2 fw-bold mt-auto">
-                                {formatCurrency(summaryData.totalStockValue)}
-                            </Card.Text>
+                            <div className="kpi-content">
+                                <div className="kpi-label">Total Stock Value</div>
+                                <div className="kpi-value">{formatCurrency(summaryData.totalStockValue)}</div>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col md={6} lg={4} className="mb-4">
-                    <Card bg="warning" text="dark" className="shadow-sm h-100">
-                        <Card.Body className="d-flex flex-column">
-                            <div className="d-flex justify-content-between align-items-start">
-                                <Card.Title as="h5">Low Stock Items</Card.Title>
-                                <FaExclamationTriangle size={28} />
+                    <Card className="h-100 kpi-card-warning">
+                        <Card.Body>
+                            <div className="kpi-icon-wrapper">
+                                <FaExclamationTriangle size={24} />
                             </div>
-                            <Card.Text className="fs-2 fw-bold mt-auto">
-                                {summaryData.lowStockItems}
-                            </Card.Text>
+                            <div className="kpi-content">
+                                <div className="kpi-label">Low Stock Items</div>
+                                <div className="kpi-value">{summaryData.lowStockItems}</div>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col md={6} lg={4} className="mb-4">
-                    <Card bg="info" text="white" className="shadow-sm h-100">
-                        <Card.Body className="d-flex flex-column">
-                            <div className="d-flex justify-content-between align-items-start">
-                                <Card.Title as="h5">Pending User Approvals</Card.Title>
-                                <FaUserClock size={28} />
+                    <Card className="h-100 kpi-card-info">
+                        <Card.Body>
+                            <div className="kpi-icon-wrapper">
+                                <FaUserClock size={24} />
                             </div>
-                            <Card.Text className="fs-2 fw-bold mt-auto">
-                                {summaryData.pendingUsers}
-                            </Card.Text>
+                            <div className="kpi-content">
+                                <div className="kpi-label">Pending User Approvals</div>
+                                <div className="kpi-value">{summaryData.pendingUsers}</div>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -146,9 +178,9 @@ const Dashboard = () => {
             {/* Chart Section */}
             <Row>
                 <Col lg={7} className="mb-4">
-                    <Card className="shadow-sm h-100">
+                    <Card className="h-100 chart-card">
                         <Card.Body>
-                            <Card.Title as="h5">Projects by Status</Card.Title>
+                            <Card.Title>Projects by Status</Card.Title>
                             <div style={{ height: '300px' }}>
                                 <Bar data={projectChartData} options={{ responsive: true, maintainAspectRatio: false }} />
                             </div>
@@ -156,9 +188,9 @@ const Dashboard = () => {
                     </Card>
                 </Col>
                 <Col lg={5} className="mb-4">
-                    <Card className="shadow-sm h-100">
+                    <Card className="h-100 chart-card">
                         <Card.Body>
-                            <Card.Title as="h5">Inventory Value by Category</Card.Title>
+                            <Card.Title>Inventory Value by Category</Card.Title>
                             <div style={{ height: '300px', position: 'relative' }}>
                                 <Doughnut data={inventoryChartData} options={{ responsive: true, maintainAspectRatio: false }} />
                             </div>

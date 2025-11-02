@@ -16,7 +16,7 @@ const MainLayout = () => {
                 <Header />
 
                 {/* Page Content */}
-                <main className="main-content p-4 flex-grow-1">
+                <main className="main-content flex-grow-1">
                     <Outlet />
                 </main>
             </div>

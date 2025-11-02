@@ -1,12 +1,4 @@
-/* ============================================
-   SIDEBAR.CSS - BamikaHub Sidebar Component
-   Enhanced collapsible navigation with growth theme
-   Theme: Gold (#D6A329) + Growth Green (#10B981)
-   ============================================ */
 
-/* ============================================
-   Main Sidebar Container
-   ============================================ */
 .sidebar-modern {
     position: fixed;
     left: 0;
@@ -16,28 +8,34 @@
     background: linear-gradient(180deg, #0F0F0F 0%, #1A1A1A 100%);
     border-right: 2px solid rgba(16, 185, 129, 0.15);
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
-    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1010;
+}
+
+.sidebar-scroll-area {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex-grow: 1;
     padding: 1.5rem 1rem;
 }
 
 /* Custom Scrollbar */
-.sidebar-modern::-webkit-scrollbar {
+.sidebar-scroll-area::-webkit-scrollbar {
     width: 6px;
 }
 
-.sidebar-modern::-webkit-scrollbar-track {
+.sidebar-scroll-area::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
 }
 
-.sidebar-modern::-webkit-scrollbar-thumb {
+.sidebar-scroll-area::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, #10B981, #D6A329);
     border-radius: 10px;
 }
 
-.sidebar-modern::-webkit-scrollbar-thumb:hover {
+.sidebar-scroll-area::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, #059669, #B8941F);
 }
 
@@ -50,6 +48,11 @@
 /* ============================================
    Logo Section
    ============================================ */
+.sidebar-logo-container {
+    padding: 1.5rem 1rem;
+    flex-shrink: 0;
+}
+
 .sidebar-logo {
     padding: 0.75rem 1rem;
     border-radius: 12px;
