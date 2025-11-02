@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Container, Spinner, Row, Col } from 'react-bootstrap';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
+import './RoleForm.css';
 
 const RoleForm = () => {
     const { id } = useParams();
@@ -77,13 +78,14 @@ const RoleForm = () => {
     if (loading) return <Spinner animation="border" />;
 
     return (
-        <Container>
-            <Card>
-                <Card.Header>
-                    <Card.Title as="h3">{isEditMode ? `Edit Role` : 'Create New Role'}</Card.Title>
-                </Card.Header>
-                <Card.Body>
-                    <Form onSubmit={handleSubmit}>
+        <Container className="role-form-page">
+            <div className="role-form-header">
+                <h3>{isEditMode ? `Edit Role` : 'Create New Role'}</h3>
+                <p className="text-muted">Manage role details and associated permissions below.</p>
+            </div>
+            <Form onSubmit={handleSubmit}>
+                <Card className="form-section-card">
+                    <Card.Body>
                         <Form.Group className="mb-4">
                             <Form.Label>Role Name</Form.Label>
                             <Form.Control 
@@ -94,42 +96,43 @@ const RoleForm = () => {
                                 required
                             />
                         </Form.Group>
+                    </Card.Body>
+                </Card>
 
-                        <Form.Group>
-                            <Form.Label>Permissions</Form.Label>
-                            <p className="text-muted">Select the permissions this role should have.</p>
-                            
-                            {/* NEW: Render grouped permissions */}
-                            {Object.keys(groupedPermissions).sort().map(groupName => (
-                                <Card key={groupName} className="mb-3">
-                                    <Card.Header as="h6" className="text-capitalize">{groupName.toLowerCase()} Management</Card.Header>
-                                    <Card.Body>
-                                        <Row>
-                                            {groupedPermissions[groupName].map(permission => (
-                                                <Col md={4} sm={6} key={permission.id}>
-                                                    <Form.Check 
-                                                        type="checkbox"
-                                                        id={`permission-${permission.id}`}
-                                                        label={permission.name}
-                                                        checked={selectedPermissions.has(permission.id)}
-                                                        onChange={() => handlePermissionChange(permission.id)}
-                                                        className="mb-2"
-                                                    />
-                                                </Col>
-                                            ))}
-                                        </Row>
-                                    </Card.Body>
-                                </Card>
-                            ))}
-                        </Form.Group>
-                        
-                        <div className="mt-4">
-                            <Button variant="primary" type="submit">Save Role</Button>
-                            <Button variant="secondary" className="ms-2" onClick={() => navigate('/roles')}>Cancel</Button>
-                        </div>
-                    </Form>
-                </Card.Body>
-            </Card>
+                <div className="permissions-section">
+                    <div className="role-form-header">
+                        <h4>Permissions</h4>
+                        <p className="text-muted">Select the permissions this role should have.</p>
+                    </div>
+                    
+                    {Object.keys(groupedPermissions).sort().map(groupName => (
+                        <Card key={groupName} className="mb-3 permission-group-card">
+                            <Card.Header as="h6" className="text-capitalize">{groupName.toLowerCase()} Management</Card.Header>
+                            <Card.Body>
+                                <Row>
+                                    {groupedPermissions[groupName].map(permission => (
+                                        <Col md={4} sm={6} key={permission.id}>
+                                            <Form.Check 
+                                                type="checkbox"
+                                                id={`permission-${permission.id}`}
+                                                label={permission.name}
+                                                checked={selectedPermissions.has(permission.id)}
+                                                onChange={() => handlePermissionChange(permission.id)}
+                                                className="mb-2"
+                                            />
+                                        </Col>
+                                    ))}
+                                </Row>
+                            </Card.Body>
+                        </Card>
+                    ))}
+                </div>
+                
+                <div className="mt-4 form-actions">
+                    <Button variant="primary" type="submit">Save Role</Button>
+                    <Button variant="secondary" className="ms-2" onClick={() => navigate('/roles')}>Cancel</Button>
+                </div>
+            </Form>
         </Container>
     );
 };

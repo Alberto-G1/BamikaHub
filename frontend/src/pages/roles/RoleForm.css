@@ -1,0 +1,307 @@
+/* Page Container */
+.role-form-page {
+    animation: pageSlideIn 0.5s ease-out;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.role-form-header {
+    margin-bottom: 2rem;
+    animation: slideDown 0.6s ease;
+}
+
+.role-form-header h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    background: linear-gradient(135deg, #10B981, #D6A329);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+[data-theme="dark"] .role-form-header h3 {
+    background: linear-gradient(135deg, #10B981, #D6A329);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.role-form-header p {
+    font-size: 1rem;
+    color: #6B7280;
+}
+
+[data-theme="dark"] .role-form-header p {
+    color: #9CA3AF;
+}
+
+.form-section-card,
+.permission-group-card {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    background: white;
+    margin-bottom: 1.5rem;
+    animation: cardFadeIn 0.6s ease backwards;
+}
+
+[data-theme="dark"] .form-section-card,
+[data-theme="dark"] .permission-group-card {
+    background: #1F2937;
+    border-color: rgba(16, 185, 129, 0.1);
+}
+
+.form-section-card .card-body,
+.permission-group-card .card-body {
+    padding: 2rem;
+}
+
+.permission-group-card .card-header {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(214, 163, 41, 0.03));
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    font-weight: 600;
+    color: #111827;
+}
+
+[data-theme="dark"] .permission-group-card .card-header {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(214, 163, 41, 0.08));
+    border-bottom-color: rgba(16, 185, 129, 0.1);
+    color: #F9FAFB;
+}
+
+.form-actions {
+    padding: 1.5rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+[data-theme="dark"] .form-actions {
+    background: #1F2937;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes pageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Staggered animations */
+.form-section-card { animation-delay: 0.1s; }
+.permissions-section .permission-group-card:nth-child(1) { animation-delay: 0.2s; }
+.permissions-section .permission-group-card:nth-child(2) { animation-delay: 0.3s; }
+.permissions-section .permission-group-card:nth-child(3) { animation-delay: 0.4s; }
+.permissions-section .permission-group-card:nth-child(4) { animation-delay: 0.5s; }
+.permissions-section .permission-group-card:nth-child(5) { animation-delay: 0.6s; }
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Form Labels */
+.role-form-page .form-label {
+    font-weight: 600;
+    color: #111827;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+[data-theme="dark"] .role-form-page .form-label {
+    color: #F9FAFB;
+}
+
+/* Form Inputs */
+.role-form-page .form-control {
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+[data-theme="dark"] .role-form-page .form-control {
+    background: #374151;
+    border-color: rgba(16, 185, 129, 0.2);
+    color: #F9FAFB;
+}
+
+.role-form-page .form-control:focus {
+    border-color: #10B981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    outline: none;
+}
+
+/* Text Muted */
+.role-form-page .text-muted {
+    color: #6B7280 !important;
+    font-size: 0.9rem;
+}
+
+[data-theme="dark"] .role-form-page .text-muted {
+    color: #9CA3AF !important;
+}
+
+/* Checkboxes */
+.role-form-page .form-check {
+    padding-left: 1.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.role-form-page .form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .role-form-page .form-check-input {
+    border-color: rgba(16, 185, 129, 0.3);
+    background-color: #374151;
+}
+
+.role-form-page .form-check-input:checked {
+    background-color: #10B981;
+    border-color: #10B981;
+    animation: checkPop 0.3s ease;
+}
+
+@keyframes checkPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.role-form-page .form-check-input:focus {
+    border-color: #10B981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+}
+
+.role-form-page .form-check-label {
+    color: #374151;
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.3s ease;
+}
+
+[data-theme="dark"] .role-form-page .form-check-label {
+    color: #D1D5DB;
+}
+
+.role-form-page .form-check-input:checked ~ .form-check-label {
+    color: #10B981;
+    font-weight: 600;
+}
+
+/* Action Buttons */
+.role-form-page .btn-primary {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    position: relative;
+    overflow: hidden;
+}
+
+.role-form-page .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+}
+
+.role-form-page .btn-primary:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.role-form-page .btn-primary:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+}
+
+.role-form-page .btn-primary:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+.role-form-page .btn-secondary {
+    background: #6B7280;
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    transition: all 0.3s ease;
+}
+
+.role-form-page .btn-secondary:hover {
+    background: #4B5563;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(107, 114, 128, 0.4);
+}
+
+.role-form-page .btn-secondary:active {
+    transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .role-form-header h3 {
+        font-size: 1.5rem;
+    }
+    
+    .form-section-card .card-body,
+    .permission-group-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .form-actions {
+        padding: 1rem;
+    }
+
+    .form-actions .btn-primary,
+    .form-actions .btn-secondary {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}

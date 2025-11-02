@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
+import './RoleManagement.css';
 
 
 const RoleManagement = () => {
@@ -65,7 +66,7 @@ const RoleManagement = () => {
     if (error) return <Alert variant="danger">{error}</Alert>;
     
     return (
-        <div>
+        <div className="role-management-page">
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>Roles & Permissions</h2>
                 {hasPermission('ROLE_CREATE') && (
@@ -87,12 +88,12 @@ const RoleManagement = () => {
                                 <Card.Text className="text-muted flex-grow-1">
                                     This role has <strong>{role.permissions.length}</strong> permissions assigned.
                                 </Card.Text>
-                                <div className="mt-auto">
+                                <div className="mt-auto d-flex">
                                     {hasPermission('ROLE_UPDATE') && (
                                         <Button 
                                             variant="outline-warning" 
                                             size="sm" 
-                                            className="me-2 w-50"
+                                            className="flex-grow-1 me-2"
                                             onClick={() => navigate(`/roles/edit/${role.id}`)}
                                         >
                                             <FaEdit className="me-1" /> Edit
@@ -102,7 +103,7 @@ const RoleManagement = () => {
                                         <Button 
                                             variant="outline-danger" 
                                             size="sm" 
-                                            className="w-50"
+                                            className="flex-grow-1"
                                             onClick={() => confirmDelete(role.id, role.name)}
                                     >
                                         <FaTrash className="me-1" /> Delete
