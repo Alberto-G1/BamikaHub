@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Spinner, Alert, Badge, Card } from 'react-bootstrap';
-import { FaUndo, FaArrowLeft } from 'react-icons/fa';
+import { FaUndo, FaArrowLeft, FaUserCircle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
+import './UserManagementPage.css';
 
 const DeactivatedUsers = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [dialogConfig, setDialogConfig] = useState({ open: false });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -16,70 +19,152 @@ const DeactivatedUsers = () => {
 
     const fetchData = async () => {
         setLoading(true);
+        setError('');
         try {
             const response = await api.get('/users/deactivated');
             setUsers(response.data);
         } catch (err) {
+            setError('Failed to fetch deactivated users.');
             toast.error('Failed to fetch deactivated users.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleReactivate = async (userId, userFullName) => {
+    const closeDialog = () => setDialogConfig(prev => ({ ...prev, open: false }));
+
+    const requestReactivate = user => {
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+        setDialogConfig({
+            open: true,
+            tone: 'success',
+            title: 'Reactivate User',
+            message: `Reactivate ${fullName}?`,
+            detail: 'They will regain access to the system immediately.',
+            confirmLabel: 'Reactivate',
+            cancelLabel: 'Cancel',
+            onConfirm: () => handleReactivate(user),
+        });
+    };
+
+    const handleReactivate = async user => {
+        closeDialog();
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
         try {
-            await api.post(`/users/${userId}/reactivate`);
-            toast.success(`User '${userFullName}' has been reactivated.`);
-            fetchData(); // Refresh the list
+            await api.post(`/users/${user.id}/reactivate`);
+            toast.success(`User '${fullName}' has been reactivated.`);
+            fetchData();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to reactivate user.');
         }
     };
 
-    if (loading) return <Spinner animation="border" />;
+    if (loading) {
+        return (
+            <section className="users-page">
+                <div className="users-loading">
+                    <span className="users-spinner" aria-hidden="true" />
+                    <p>Loading deactivated users...</p>
+                </div>
+            </section>
+        );
+    }
 
     return (
-        <Card className="shadow-sm">
-            <Card.Header className="d-flex justify-content-between align-items-center">
-                <Card.Title as="h3" className="mb-0">Deactivated Users</Card.Title>
-                <Button variant="outline-secondary" onClick={() => navigate('/users')}>
-                    <FaArrowLeft className="me-2" /> Back to Active Users
-                </Button>
-            </Card.Header>
-            <Card.Body>
+        <section className="users-page">
+            <div className="users-banner users-banner--compact" data-animate="fade-up">
+                <div className="users-banner__content">
+                    <div className="users-banner__eyebrow">User Admin</div>
+                    <h2 className="users-banner__title">Deactivated Users</h2>
+                    <p className="users-banner__subtitle">Review inactive accounts and bring team members back when needed.</p>
+                </div>
+
+                <div className="users-banner__actions">
+                    <button type="button" className="users-secondary-btn" onClick={() => navigate('/users')}>
+                        <FaArrowLeft />
+                        <span>Back to Active Users</span>
+                    </button>
+                </div>
+            </div>
+
+            {error && (
+                <div className="users-error" role="alert" data-animate="fade-up" data-delay="0.05">
+                    {error}
+                </div>
+            )}
+
+            <div className="users-table-container" data-animate="fade-up" data-delay="0.08">
                 {users.length === 0 ? (
-                    <Alert variant="info">There are no deactivated users.</Alert>
+                    <div className="users-empty-state">There are no deactivated users.</div>
                 ) : (
-                    <Table striped bordered hover responsive className="align-middle">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.map(user => {
-                                const userFullName = `${user.firstName} ${user.lastName}`;
-                                return (
-                                    <tr key={user.id}>
-                                        <td>{userFullName}</td>
-                                        <td>{user.email}</td>
-                                        <td>{user.role.name}</td>
-                                        <td>
-                                            <Button variant="info" size="sm" onClick={() => handleReactivate(user.id, userFullName)} title="Reactivate User">
-                                                <FaUndo /> Reactivate
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </Table>
+                    <div className="users-table-scroll">
+                        <table className="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th className="users-actions-header">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.map((user, index) => {
+                                    const userFullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unnamed user';
+                                    return (
+                                        <tr key={user.id} style={{ animationDelay: `${index * 0.03}s` }}>
+                                            <td className="users-user-cell">
+                                                <div className="users-name-cell">
+                                                    {user.profilePictureUrl ? (
+                                                        <img
+                                                            src={`http://localhost:8080${user.profilePictureUrl}`}
+                                                            alt={`${userFullName}'s avatar`}
+                                                            className="users-avatar"
+                                                        />
+                                                    ) : (
+                                                        <FaUserCircle className="users-avatar--placeholder" aria-hidden="true" />
+                                                    )}
+                                                    <div>
+                                                        <div className="users-name">{userFullName}</div>
+                                                        <div className="users-name-sub">{user.email || 'No email provided'}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>{user.email || '—'}</td>
+                                            <td>{user.role?.name || '—'}</td>
+                                            <td>
+                                                <div className="users-actions">
+                                                    <button
+                                                        type="button"
+                                                        className="users-icon-btn users-icon-btn--success"
+                                                        onClick={() => requestReactivate(user)}
+                                                        aria-label="Reactivate user"
+                                                        title="Reactivate user"
+                                                    >
+                                                        <FaUndo />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
-            </Card.Body>
-        </Card>
+            </div>
+
+            <ConfirmDialog
+                open={dialogConfig.open}
+                tone={dialogConfig.tone}
+                title={dialogConfig.title || ''}
+                message={dialogConfig.message || ''}
+                detail={dialogConfig.detail}
+                confirmLabel={dialogConfig.confirmLabel}
+                cancelLabel={dialogConfig.cancelLabel}
+                onConfirm={dialogConfig.onConfirm}
+                onCancel={closeDialog}
+            />
+        </section>
     );
 };
 
