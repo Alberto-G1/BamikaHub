@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Row, Col, InputGroup, Form, Badge, Spinner, Button } from 'react-bootstrap';
-import { FaPlus, FaSearch, FaBoxes, FaExclamationTriangle, FaDolly } from 'react-icons/fa';
+import { FaBoxes, FaDolly, FaExclamationTriangle, FaPlus, FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
 import placeholderImage from '../../assets/images/placeholder.jpg';
+import './InventoryStyles.css';
 
 // Reusable currency formatter
 const formatCurrency = (amount) => {
@@ -60,103 +60,164 @@ const InventoryPage = () => {
         };
     }, [items]);
 
+    const getStockStatus = (item) => {
+        if (item.quantity === 0) return 'out';
+        if (item.quantity <= item.reorderLevel) return 'low';
+        return 'healthy';
+    };
+
+    const getStatusLabel = (status) => {
+        switch (status) {
+            case 'out':
+                return 'Out of Stock';
+            case 'low':
+                return 'Low Stock';
+            default:
+                return 'In Stock';
+        }
+    };
 
     if (loading) {
         return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
-                <Spinner animation="border" />
-            </div>
+            <section className="inventory-page inventory-page--centered">
+                <div className="inventory-loading">
+                    <span className="inventory-spinner" aria-hidden="true" />
+                    <p>Loading inventory overview...</p>
+                </div>
+            </section>
         );
     }
 
     return (
-        <div>
-            {/* RESTORED: Summary Stat Cards Section */}
-            <Row className="mb-4">
-                <Col lg={4} className="mb-3 mb-lg-0">
-                    <Card bg="primary" text="white" className="shadow-sm h-100">
-                        <Card.Body>
-                            <div className="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <Card.Title as="h5">Total Stock Value</Card.Title>
-                                    <Card.Text className="fs-4 fw-bold">{formatCurrency(totalStockValue)}</Card.Text>
-                                </div>
-                                <FaBoxes size={36} />
-                            </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col lg={4} className="mb-3 mb-lg-0">
-                    <Card bg="warning" text="dark" className="shadow-sm h-100">
-                        <Card.Body>
-                            <div className="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <Card.Title as="h5">Low Stock Items</Card.Title>
-                                    <Card.Text className="fs-4 fw-bold">{lowStockItems}</Card.Text>
-                                </div>
-                                <FaExclamationTriangle size={36} />
-                            </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col lg={4} className="mb-3 mb-lg-0">
-                    <Card bg="danger" text="white" className="shadow-sm h-100">
-                        <Card.Body>
-                            <div className="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <Card.Title as="h5">Out of Stock Items</Card.Title>
-                                    <Card.Text className="fs-4 fw-bold">{outOfStockItems}</Card.Text>
-                                </div>
-                                <FaDolly size={36} />
-                            </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+        <section className="inventory-page inventory-dashboard" data-page-pattern="hero">
+            <div className="inventory-hero" data-animate="fade-up">
+                <div className="inventory-hero__content">
+                    <div className="inventory-banner__eyebrow">Inventory Pulse</div>
+                    <h2 className="inventory-banner__title">Warehouse Command Center</h2>
+                    <p className="inventory-banner__subtitle">
+                        Monitor valuation, spot low stock signals, and keep your fulfilment teams aligned in real time.
+                    </p>
 
-            {/* Main Content: Search and Item Grid */}
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2>Inventory Items ({filteredItems.length})</h2>
-                {hasPermission('ITEM_CREATE') && (
-                    <Button variant="primary" onClick={() => navigate('/inventory/new')}>
-                        <FaPlus className="me-2" /> Add New Item
-                    </Button>
-                )}
+                    <div className="inventory-hero__actions">
+                        {hasPermission('ITEM_CREATE') && (
+                            <button type="button" className="inventory-primary-btn" onClick={() => navigate('/inventory/new')}>
+                                <FaPlus aria-hidden="true" />
+                                <span>Add New Item</span>
+                            </button>
+                        )}
+                        <div className="inventory-hero__hint">{filteredItems.length} of {items.length} items visible</div>
+                    </div>
+                </div>
+
+                <div className="inventory-hero__stats">
+                    <div className="inventory-hero-card">
+                        <div className="inventory-hero-card__icon inventory-hero-card__icon--primary">
+                            <FaBoxes aria-hidden="true" />
+                        </div>
+                        <span className="inventory-hero-card__label">Total Stock Value</span>
+                        <span className="inventory-hero-card__value">{formatCurrency(totalStockValue)}</span>
+                        <span className="inventory-hero-card__hint">Across {items.length} tracked items</span>
+                    </div>
+                    <div className="inventory-hero-card">
+                        <div className="inventory-hero-card__icon inventory-hero-card__icon--warning">
+                            <FaExclamationTriangle aria-hidden="true" />
+                        </div>
+                        <span className="inventory-hero-card__label">Low Stock Alerts</span>
+                        <span className="inventory-hero-card__value">{lowStockItems}</span>
+                        <span className="inventory-hero-card__hint">Requires reorder attention</span>
+                    </div>
+                    <div className="inventory-hero-card">
+                        <div className="inventory-hero-card__icon inventory-hero-card__icon--danger">
+                            <FaDolly aria-hidden="true" />
+                        </div>
+                        <span className="inventory-hero-card__label">Out of Stock</span>
+                        <span className="inventory-hero-card__value">{outOfStockItems}</span>
+                        <span className="inventory-hero-card__hint">Ready for restock</span>
+                    </div>
+                </div>
             </div>
-            <InputGroup className="mb-4 shadow-sm">
-                <InputGroup.Text><FaSearch /></InputGroup.Text>
-                <Form.Control 
-                    placeholder="Search by Name, SKU, or Category..." 
-                    value={searchQuery} 
-                    onChange={e => setSearchQuery(e.target.value)} 
-                />
-            </InputGroup>
 
-            <Row xs={1} md={2} lg={3} xl={4} className="g-4">
-                {filteredItems.map(item => (
-                    <Col key={item.id}>
-                        <Card className="h-100 shadow-sm inventory-card" onClick={() => navigate(`/inventory/items/${item.id}`)}>
-                            <Card.Img 
-                                variant="top" 
-                                src={item.imageUrl ? `http://localhost:8080${item.imageUrl}` : placeholderImage} 
-                                className="inventory-card-img"
-                            />
-                            <Card.Body>
-                                {item.category && <Badge bg="secondary" className="mb-2">{item.category.name}</Badge>}
-                                <Card.Title className="inventory-card-title">{item.name}</Card.Title>
-                                <Card.Text className="text-muted">{item.sku}</Card.Text>
-                            </Card.Body>
-                            <Card.Footer className="d-flex justify-content-between align-items-center">
-                                <span className={`fw-bold fs-5 ${item.quantity <= item.reorderLevel && item.quantity > 0 ? 'text-warning' : item.quantity === 0 ? 'text-danger' : ''}`}>
-                                    {item.quantity.toLocaleString()} <small className="text-muted">in stock</small>
-                                </span>
-                                <span className="fw-bold text-success">{formatCurrency(item.unitPrice)}</span>
-                            </Card.Footer>
-                        </Card>
-                    </Col>
-                ))}
-            </Row>
-        </div>
+            <div className="inventory-search-panel" data-animate="fade-up" data-delay="0.08">
+                <div className="inventory-search-panel__field">
+                    <FaSearch aria-hidden="true" />
+                    <input
+                        type="text"
+                        placeholder="Search by name, SKU, or category..."
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                    />
+                </div>
+                <div className="inventory-search-panel__meta">
+                    <span>
+                        Showing <strong>{filteredItems.length}</strong> of <strong>{items.length}</strong> items
+                    </span>
+                    <span className="inventory-search-panel__meta-divider" aria-hidden="true">•</span>
+                    <span>
+                        Total valuation <strong>{formatCurrency(totalStockValue)}</strong>
+                    </span>
+                </div>
+            </div>
+
+            {filteredItems.length === 0 ? (
+                <div className="inventory-empty-state" data-animate="fade-up" data-delay="0.12">
+                    No inventory matches your search. Try adjusting the keywords or create a new item.
+                </div>
+            ) : (
+                <div className="inventory-item-grid" data-animate="fade-up" data-delay="0.12">
+                    {filteredItems.map((item) => {
+                        const status = getStockStatus(item);
+                        return (
+                            <article
+                                key={item.id}
+                                className={`inventory-item-card inventory-item-card--${status}`}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => navigate(`/inventory/items/${item.id}`)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                        event.preventDefault();
+                                        navigate(`/inventory/items/${item.id}`);
+                                    }
+                                }}
+                            >
+                                <div className="inventory-item-card__media">
+                                    <img
+                                        src={item.imageUrl ? `http://localhost:8080${item.imageUrl}` : placeholderImage}
+                                        alt={item.name}
+                                    />
+                                    {item.category && (
+                                        <span className="inventory-item-card__badge">{item.category.name}</span>
+                                    )}
+                                </div>
+
+                                <div className="inventory-item-card__body">
+                                    <h3>{item.name}</h3>
+                                    <p>{item.sku}</p>
+
+                                    <div className="inventory-item-card__meta">
+                                        <div>
+                                            <span className="inventory-meta-label">On Hand</span>
+                                            <span className="inventory-meta-value">{item.quantity.toLocaleString()}</span>
+                                        </div>
+                                        <div>
+                                            <span className="inventory-meta-label">Unit Price</span>
+                                            <span className="inventory-meta-value">{formatCurrency(item.unitPrice)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <footer className="inventory-item-card__footer">
+                                    <span className={`inventory-status inventory-status--${status}`}>
+                                        {getStatusLabel(status)}
+                                    </span>
+                                    <span className="inventory-item-card__cta">View Details →</span>
+                                </footer>
+                            </article>
+                        );
+                    })}
+                </div>
+            )}
+        </section>
     );
 };
 
