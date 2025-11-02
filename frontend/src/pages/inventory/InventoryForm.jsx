@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Form, Button, Card, Container, Spinner, Row, Col, Image } from 'react-bootstrap';
+import { FaArrowLeft, FaBoxOpen, FaSave, FaUpload, FaWarehouse } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import placeholderImage from '../../assets/images/placeholder.jpg';
+import './InventoryStyles.css';
 
 const InventoryForm = () => {
     const { id } = useParams();
@@ -114,92 +115,300 @@ const InventoryForm = () => {
         }
     };
 
-    if (loading) return <Spinner animation="border" />;
+    if (loading) {
+        return (
+            <section className="inventory-page inventory-page--centered">
+                <div className="inventory-loading">
+                    <span className="inventory-spinner" aria-hidden="true" />
+                    <p>Loading item configuration...</p>
+                </div>
+            </section>
+        );
+    }
 
     return (
-        <Container>
-            <Form onSubmit={handleSubmit}>
-                <Row>
-                    <Col md={isEditMode ? 8 : 12}>
-                        <Card className="shadow-sm">
-                            <Card.Header as="h3">{isEditMode ? 'Edit Item Details' : 'Create New Inventory Item'}</Card.Header>
-                            <Card.Body>
-                                <Row>
-                                    <Col md={8}><Form.Group className="mb-3">
-                                        <Form.Label>Item Name</Form.Label>
-                                        <Form.Control name="name" value={formData.name} onChange={handleFormChange} required />
-                                    </Form.Group></Col>
-                                    <Col md={4}><Form.Group className="mb-3">
-                                        <Form.Label>SKU (Stock Keeping Unit)</Form.Label>
-                                        <Form.Control name="sku" value={formData.sku} onChange={handleFormChange} required />
-                                    </Form.Group></Col>
-                                </Row>
-                                <Row>
-                                    <Col md={6}><Form.Group className="mb-3">
-                                        <Form.Label>Category</Form.Label>
-                                        <Form.Select name="categoryId" value={formData.categoryId} onChange={handleFormChange} required>
-                                            <option value="">Select a Category...</option>
-                                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                        </Form.Select>
-                                    </Form.Group></Col>
-                                    <Col md={6}><Form.Group className="mb-3">
-                                        <Form.Label>Unit Price (UGX)</Form.Label>
-                                        <Form.Control type="number" name="unitPrice" value={formData.unitPrice} onChange={handleFormChange} required min="0" />
-                                    </Form.Group></Col>
-                                </Row>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Description</Form.Label>
-                                    <Form.Control as="textarea" rows={3} name="description" value={formData.description} onChange={handleFormChange} />
-                                </Form.Group>
-                                <Row>
-                                    <Col md={6}><Form.Group className="mb-3">
-                                        <Form.Label>Initial Quantity</Form.Label>
-                                        <Form.Control type="number" name="quantity" value={formData.quantity} onChange={handleFormChange} required min="0" disabled={isEditMode} />
-                                        {isEditMode && <Form.Text className="text-muted">Quantity must be changed via Stock Transactions.</Form.Text>}
-                                    </Form.Group></Col>
-                                    <Col md={6}><Form.Group className="mb-3">
-                                        <Form.Label>Re-Order Level</Form.Label>
-                                        <Form.Control type="number" name="reorderLevel" value={formData.reorderLevel} onChange={handleFormChange} required min="0" />
-                                    </Form.Group></Col>
-                                </Row>
-                                <Row>
-                                    <Col md={6}><Form.Group className="mb-3">
-                                        <Form.Label>Supplier</Form.Label>
-                                        <Form.Select name="supplierId" value={formData.supplierId} onChange={handleFormChange}>
-                                            <option value="">No Supplier</option>
-                                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                        </Form.Select>
-                                    </Form.Group></Col>
-                                    <Col md={6}><Form.Group className="mb-3">
-                                        <Form.Label>Location</Form.Label>
-                                        <Form.Control name="location" value={formData.location} onChange={handleFormChange} />
-                                    </Form.Group></Col>
-                                </Row>
-                                <Form.Check type="switch" id="is-active-switch" name="isActive" label="Item is Active" checked={formData.isActive} onChange={handleFormChange} className="mb-3" />
-                                <Button variant="primary" type="submit">Save Item</Button>
-                                <Button variant="secondary" className="ms-2" onClick={() => navigate('/inventory')}>Cancel</Button>
-                            </Card.Body>
-                        </Card>
-                    </Col>
+        <section className="inventory-page inventory-form-page">
+            <div className="inventory-form-banner" data-animate="fade-up">
+                <button type="button" className="inventory-ghost-btn" onClick={() => navigate(-1)}>
+                    <FaArrowLeft aria-hidden="true" />
+                    <span>Back</span>
+                </button>
+
+                <div className="inventory-form-banner__content">
+                    <div className="inventory-banner__eyebrow">Inventory Control</div>
+                    <h2 className="inventory-banner__title">
+                        {isEditMode ? 'Edit Item Details' : 'Create New Inventory Item'}
+                    </h2>
+                    <p className="inventory-banner__subtitle">
+                        {isEditMode
+                            ? 'Refresh product details, supplier links, and reorder thresholds to keep inventory accurate.'
+                            : 'Create a new catalogue entry with supplier links and replenishment settings.'}
+                    </p>
+
+                    <div className="inventory-banner__meta">
+                        <div className="inventory-banner__meta-item">
+                            <span className="inventory-meta-label">Status</span>
+                            <span className="inventory-meta-value">
+                                {formData.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                        <div className="inventory-banner__meta-item">
+                            <span className="inventory-meta-label">Reorder Level</span>
+                            <span className="inventory-meta-value">{formData.reorderLevel || 0}</span>
+                        </div>
+                        <div className="inventory-banner__meta-item">
+                            <span className="inventory-meta-label">Tracking SKU</span>
+                            <span className="inventory-meta-value">{formData.sku || 'Pending'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form className="inventory-form-shell" onSubmit={handleSubmit} data-animate="fade-up" data-delay="0.08">
+                <section className="inventory-form-section inventory-form-section--two-column">
+                    <div className="inventory-form-section__main">
+                        <header className="inventory-form-section__header">
+                            <div>
+                                <h3>Item Information</h3>
+                                <p>Basic details that appear across the platform, including item name and pricing.</p>
+                            </div>
+                            <span className="inventory-chip">
+                                <FaBoxOpen aria-hidden="true" /> Core Data
+                            </span>
+                        </header>
+
+                        <div className="inventory-form-grid">
+                            <div className="inventory-form-group">
+                                <label htmlFor="itemName">Item Name</label>
+                                <input
+                                    id="itemName"
+                                    name="name"
+                                    className="inventory-input"
+                                    value={formData.name}
+                                    onChange={handleFormChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="inventory-form-group">
+                                <label htmlFor="itemSku">SKU (Stock Keeping Unit)</label>
+                                <input
+                                    id="itemSku"
+                                    name="sku"
+                                    className="inventory-input"
+                                    value={formData.sku}
+                                    onChange={handleFormChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="inventory-form-group">
+                                <label htmlFor="categoryId">Category</label>
+                                <select
+                                    id="categoryId"
+                                    name="categoryId"
+                                    className="inventory-select"
+                                    value={formData.categoryId}
+                                    onChange={handleFormChange}
+                                    required
+                                >
+                                    <option value="">Select a category...</option>
+                                    {categories.map(category => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="inventory-form-group">
+                                <label htmlFor="unitPrice">Unit Price (UGX)</label>
+                                <input
+                                    id="unitPrice"
+                                    type="number"
+                                    min="0"
+                                    name="unitPrice"
+                                    className="inventory-input"
+                                    value={formData.unitPrice}
+                                    onChange={handleFormChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="inventory-form-group inventory-form-group--full">
+                                <label htmlFor="itemDescription">Description</label>
+                                <textarea
+                                    id="itemDescription"
+                                    name="description"
+                                    className="inventory-textarea"
+                                    rows={4}
+                                    value={formData.description}
+                                    onChange={handleFormChange}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     {isEditMode && (
-                        <Col md={4}>
-                             <Card className="shadow-sm">
-                                <Card.Header as="h5">Item Image</Card.Header>
-                                <Card.Body className="text-center">
-                                    {uploading ? <Spinner animation="border" /> :
-                                        <Image src={imageUrl ? `http://localhost:8080${imageUrl}` : placeholderImage} fluid rounded className="mb-3" style={{maxHeight: '200px', objectFit: 'cover'}} />
-                                    }
-                                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} style={{ display: 'none' }} accept="image/png, image/jpeg, image/gif" />
-                                    <Button variant="outline-primary" onClick={() => fileInputRef.current.click()} disabled={uploading}>
-                                        {uploading ? 'Uploading...' : 'Upload Image'}
-                                    </Button>
-                                </Card.Body>
-                             </Card>
-                        </Col>
+                        <aside className="inventory-form-preview">
+                            <div className="inventory-form-preview__media">
+                                <img
+                                    src={imageUrl ? `http://localhost:8080${imageUrl}` : placeholderImage}
+                                    alt={formData.name || 'Inventory item preview'}
+                                />
+                                <div className="inventory-form-preview__badge">
+                                    <FaWarehouse aria-hidden="true" />
+                                    <span>{formData.location || 'Unassigned Location'}</span>
+                                </div>
+                            </div>
+
+                            <dl className="inventory-form-preview__meta">
+                                <div>
+                                    <dt>On Hand</dt>
+                                    <dd>{formData.quantity}</dd>
+                                </div>
+                                <div>
+                                    <dt>Reorder Level</dt>
+                                    <dd>{formData.reorderLevel}</dd>
+                                </div>
+                                <div>
+                                    <dt>Supplier</dt>
+                                    <dd>{suppliers.find(supplier => String(supplier.id) === String(formData.supplierId))?.name || 'No Supplier'}</dd>
+                                </div>
+                            </dl>
+
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="sr-only"
+                                accept="image/png, image/jpeg, image/gif"
+                                onChange={handleImageUpload}
+                            />
+
+                            <button
+                                type="button"
+                                className="inventory-secondary-btn inventory-secondary-btn--wide"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploading}
+                            >
+                                <FaUpload aria-hidden="true" />
+                                <span>{uploading ? 'Uploading...' : 'Upload Image'}</span>
+                            </button>
+                        </aside>
                     )}
-                </Row>
-            </Form>
-        </Container>
+                </section>
+
+                <section className="inventory-form-section">
+                    <header className="inventory-form-section__header">
+                        <div>
+                            <h3>Stock Settings</h3>
+                            <p>Configure stock levels and alerts to stay ahead of shortages.</p>
+                        </div>
+                    </header>
+
+                    <div className="inventory-form-grid">
+                        <div className="inventory-form-group">
+                            <label htmlFor="itemQuantity">Initial Quantity</label>
+                            <input
+                                id="itemQuantity"
+                                type="number"
+                                min="0"
+                                name="quantity"
+                                className="inventory-input"
+                                value={formData.quantity}
+                                onChange={handleFormChange}
+                                required
+                                disabled={isEditMode}
+                            />
+                            {isEditMode && (
+                                <p className="inventory-form-helper">Quantity updates happen through stock transactions.</p>
+                            )}
+                        </div>
+
+                        <div className="inventory-form-group">
+                            <label htmlFor="reorderLevel">Reorder Level</label>
+                            <input
+                                id="reorderLevel"
+                                type="number"
+                                min="0"
+                                name="reorderLevel"
+                                className="inventory-input"
+                                value={formData.reorderLevel}
+                                onChange={handleFormChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="inventory-form-group inventory-form-group--toggle">
+                            <span>Item Visibility</span>
+                            <label className="inventory-toggle">
+                                <input
+                                    type="checkbox"
+                                    name="isActive"
+                                    checked={formData.isActive}
+                                    onChange={handleFormChange}
+                                />
+                                <span className="inventory-toggle__slider" aria-hidden="true" />
+                                <span className="inventory-toggle__label">
+                                    {formData.isActive ? 'Active in catalogue' : 'Hidden from listings'}
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="inventory-form-section">
+                    <header className="inventory-form-section__header">
+                        <div>
+                            <h3>Supplier &amp; Location</h3>
+                            <p>Link trusted suppliers and track where items live in your warehouse map.</p>
+                        </div>
+                    </header>
+
+                    <div className="inventory-form-grid">
+                        <div className="inventory-form-group">
+                            <label htmlFor="supplierId">Supplier</label>
+                            <select
+                                id="supplierId"
+                                name="supplierId"
+                                className="inventory-select"
+                                value={formData.supplierId}
+                                onChange={handleFormChange}
+                            >
+                                <option value="">No supplier assigned</option>
+                                {suppliers.map(supplier => (
+                                    <option key={supplier.id} value={supplier.id}>
+                                        {supplier.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="inventory-form-group">
+                            <label htmlFor="location">Storage Location</label>
+                            <input
+                                id="location"
+                                name="location"
+                                className="inventory-input"
+                                value={formData.location}
+                                onChange={handleFormChange}
+                                placeholder="e.g. Aisle 4 - Shelf B"
+                            />
+                        </div>
+                    </div>
+                </section>
+
+                <footer className="inventory-form-actions">
+                    <button type="button" className="inventory-secondary-btn" onClick={() => navigate('/inventory')}>
+                        Cancel
+                    </button>
+                    <button type="submit" className="inventory-primary-btn">
+                        <FaSave aria-hidden="true" />
+                        <span>{isEditMode ? 'Update Item' : 'Create Item'}</span>
+                    </button>
+                </footer>
+            </form>
+        </section>
     );
 };
 

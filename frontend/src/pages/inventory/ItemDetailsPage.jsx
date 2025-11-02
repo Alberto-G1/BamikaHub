@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Card, Row, Col, Button, Spinner, Image, ListGroup, Tabs, Tab, Badge, Table } from 'react-bootstrap';
-import { FaEdit, FaArrowLeft, FaExchangeAlt } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaExchangeAlt, FaLayerGroup, FaWarehouse } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
 import StockTransactionModal from '../../components/inventory/StockTransactionModal.jsx';
 import placeholderImage from '../../assets/images/placeholder.jpg';
+import './InventoryStyles.css';
 
 
 const formatCurrency = (amount) => {
@@ -17,13 +17,21 @@ const formatCurrency = (amount) => {
 };
 
 const getTransactionTypeBadge = (type) => {
-    switch (type) {
-        case 'IN': return <Badge bg="success">Stock In</Badge>;
-        case 'OUT': return <Badge bg="danger">Stock Out</Badge>;
-        case 'ADJUSTMENT': return <Badge bg="warning" text="dark">Adjustment</Badge>;
-        case 'RETURN': return <Badge bg="info">Return</Badge>;
-        default: return <Badge bg="secondary">{type}</Badge>;
-    }
+    const tone = {
+        IN: 'inventory-badge--success',
+        OUT: 'inventory-badge--danger',
+        ADJUSTMENT: 'inventory-badge--warning',
+        RETURN: 'inventory-badge--info',
+    }[type] || 'inventory-badge--neutral';
+
+    const label = {
+        IN: 'Stock In',
+        OUT: 'Stock Out',
+        ADJUSTMENT: 'Adjustment',
+        RETURN: 'Return',
+    }[type] || type;
+
+    return <span className={`inventory-badge ${tone}`}>{label}</span>;
 };
 
 const ItemDetailsPage = () => {
@@ -58,76 +66,174 @@ const ItemDetailsPage = () => {
         fetchData();
     }, [id, navigate]);
 
+    if (loading) {
+        return (
+            <section className="inventory-page inventory-page--centered">
+                <div className="inventory-loading">
+                    <span className="inventory-spinner" aria-hidden="true" />
+                    <p>Loading item details...</p>
+                </div>
+            </section>
+        );
+    }
 
-    if (loading) return <Spinner animation="border" />;
-    if (!item) return <p>Item not found.</p>;
+    if (!item) {
+        return (
+            <section className="inventory-page inventory-page--centered">
+                <p>Item not found.</p>
+            </section>
+        );
+    }
 
     return (
-        <>
-            <Container>
-                <Button variant="outline-secondary" size="sm" className="mb-3" onClick={() => navigate('/inventory')}>
-                    <FaArrowLeft className="me-2" /> Back to Inventory
-                </Button>
-                <Row>
-                    <Col md={5} lg={4}>
-                        <Card className="shadow-sm mb-3">
-                             <Card.Img variant="top" src={item.imageUrl ? `http://localhost:8080${item.imageUrl}` : placeholderImage} />
-                             <Card.Body>
-                                {hasPermission('ITEM_UPDATE') && (
-                                    <Button variant="primary" className="w-100 mb-2" onClick={() => setShowStockModal(true)}>
-                                        <FaExchangeAlt className="me-2" /> Manage Stock
-                                    </Button>
-                                )}
-                                {hasPermission('ITEM_UPDATE') && (
-                                    <Button variant="outline-secondary" className="w-100" onClick={() => navigate(`/inventory/edit/${id}`)}>
-                                        <FaEdit className="me-2" /> Edit Item
-                                    </Button>
-                                )}
-                             </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col md={7} lg={8}>
-                         <Card className="shadow-sm">
-                            <Card.Header>
-                                <h3>{item.name}</h3>
-                                <p className="text-muted mb-0">SKU: {item.sku}</p>
-                            </Card.Header>
-                            <Card.Body>
-                                <Tabs defaultActiveKey="details" id="item-details-tabs" className="mb-3">
-                                    <Tab eventKey="details" title="Details">
-                                        <ListGroup variant="flush">
-                                            <ListGroup.Item><strong>Category:</strong> {item.category?.name || 'N/A'}</ListGroup.Item>
-                                            <ListGroup.Item><strong>Current Quantity:</strong> <span className="fw-bold fs-5">{item.quantity.toLocaleString()}</span></ListGroup.Item>
-                                            <ListGroup.Item><strong>Unit Price:</strong> {formatCurrency(item.unitPrice)}</ListGroup.Item>
-                                            <ListGroup.Item><strong>Total Stock Value:</strong> {formatCurrency(item.quantity * item.unitPrice)}</ListGroup.Item>
-                                            <ListGroup.Item><strong>Supplier:</strong> {item.supplier?.name || 'N/A'}</ListGroup.Item>
-                                            <ListGroup.Item><strong>Location:</strong> {item.location || 'N/A'}</ListGroup.Item>
-                                            <ListGroup.Item><strong>Description:</strong> {item.description || 'No description provided.'}</ListGroup.Item>
-                                        </ListGroup>
-                                    </Tab>
-                                    <Tab eventKey="history" title={`Transaction History (${transactions.length})`}>
-                                        <Table striped bordered hover responsive size="sm" className="mt-3">
-                                            <thead><tr><th>Date</th><th>Type</th><th>Qty</th><th>Ref.</th><th>User</th></tr></thead>
-                                            <tbody>
-                                                {transactions.map(t => (
-                                                    <tr key={t.id}>
-                                                        <td>{new Date(t.createdAt).toLocaleString()}</td>
-                                                        <td>{getTransactionTypeBadge(t.type)}</td>
-                                                        <td>{t.quantity}</td>
-                                                        <td>{t.reference}</td>
-                                                        <td>{t.user.username}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </Table>
-                                    </Tab>
-                                </Tabs>
-                            </Card.Body>
-                         </Card>
-                    </Col>
-                </Row>
-            </Container>
-            
+        <section className="inventory-page">
+            <div className="inventory-banner inventory-banner--item" data-animate="fade-up">
+                <button type="button" className="inventory-ghost-btn" onClick={() => navigate('/inventory')}>
+                    <FaArrowLeft aria-hidden="true" />
+                    <span>Back to Inventory</span>
+                </button>
+
+                <div className="inventory-banner__content">
+                    <div className="inventory-banner__eyebrow">Item Overview</div>
+                    <h2 className="inventory-banner__title">{item.name}</h2>
+                    <p className="inventory-banner__subtitle">Manage stock, suppliers, and traceability in one place.</p>
+
+                    <div className="inventory-banner__meta">
+                        <div className="inventory-banner__meta-item">
+                            <span className="inventory-meta-label">On Hand</span>
+                            <span className="inventory-meta-value">{item.quantity.toLocaleString()}</span>
+                        </div>
+                        <div className="inventory-banner__meta-item">
+                            <span className="inventory-meta-label">Total Value</span>
+                            <span className="inventory-meta-value">{formatCurrency(item.quantity * item.unitPrice)}</span>
+                        </div>
+                        <div className="inventory-banner__meta-item">
+                            <span className="inventory-meta-label">SKU</span>
+                            <span className="inventory-meta-value">{item.sku}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="inventory-detail-layout" data-animate="fade-up" data-delay="0.08">
+                <aside className="inventory-detail-sidebar">
+                    <div className="inventory-detail-image">
+                        <img src={item.imageUrl ? `http://localhost:8080${item.imageUrl}` : placeholderImage} alt={item.name} />
+                        <span className="inventory-detail-image__badge">
+                            <FaLayerGroup aria-hidden="true" />
+                            <span>{item.category?.name || 'Uncategorized'}</span>
+                        </span>
+                    </div>
+
+                    <div className="inventory-detail-sidebar__meta">
+                        <div>
+                            <span className="inventory-meta-label">Location</span>
+                            <span className="inventory-meta-value">{item.location || 'Not assigned'}</span>
+                        </div>
+                        <div>
+                            <span className="inventory-meta-label">Supplier</span>
+                            <span className="inventory-meta-value">{item.supplier?.name || 'No supplier'}</span>
+                        </div>
+                    </div>
+
+                    <div className="inventory-detail-actions">
+                        {hasPermission('ITEM_UPDATE') && (
+                            <button type="button" className="inventory-primary-btn" onClick={() => setShowStockModal(true)}>
+                                <FaExchangeAlt aria-hidden="true" />
+                                <span>Manage Stock</span>
+                            </button>
+                        )}
+                        {hasPermission('ITEM_UPDATE') && (
+                            <button type="button" className="inventory-secondary-btn" onClick={() => navigate(`/inventory/edit/${id}`)}>
+                                <FaEdit aria-hidden="true" />
+                                <span>Edit Item</span>
+                            </button>
+                        )}
+                    </div>
+                </aside>
+
+                <div className="inventory-detail-content">
+                    <article className="inventory-detail-card">
+                        <header className="inventory-detail-card__header">
+                            <div>
+                                <h3>Item Details</h3>
+                                <p>Reference information and financial snapshot.</p>
+                            </div>
+                        </header>
+
+                        <dl className="inventory-detail-grid">
+                            <div>
+                                <dt>Category</dt>
+                                <dd>{item.category?.name || 'Uncategorized'}</dd>
+                            </div>
+                            <div>
+                                <dt>Reorder Level</dt>
+                                <dd>{item.reorderLevel}</dd>
+                            </div>
+                            <div>
+                                <dt>Unit Price</dt>
+                                <dd>{formatCurrency(item.unitPrice)}</dd>
+                            </div>
+                            <div>
+                                <dt>Item Status</dt>
+                                <dd>
+                                    <span className={`inventory-badge ${item.isActive ? 'inventory-badge--success' : 'inventory-badge--neutral'}`}>
+                                        {item.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                </dd>
+                            </div>
+                            <div className="inventory-detail-grid__full">
+                                <dt>Description</dt>
+                                <dd>{item.description || 'No description provided.'}</dd>
+                            </div>
+                        </dl>
+                    </article>
+
+                    <article className="inventory-detail-card">
+                        <header className="inventory-detail-card__header">
+                            <div>
+                                <h3>Transaction History</h3>
+                                <p>Recent movements and adjustments for this item.</p>
+                            </div>
+                            <span className="inventory-chip inventory-chip--outline">
+                                {transactions.length} entries
+                            </span>
+                        </header>
+
+                        {transactions.length === 0 ? (
+                            <div className="inventory-empty-state">
+                                No transactions recorded yet.
+                            </div>
+                        ) : (
+                            <div className="inventory-table-container">
+                                <table className="inventory-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Quantity</th>
+                                            <th>Reference</th>
+                                            <th>User</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {transactions.map(transaction => (
+                                            <tr key={transaction.id}>
+                                                <td>{new Date(transaction.createdAt).toLocaleString()}</td>
+                                                <td>{getTransactionTypeBadge(transaction.type)}</td>
+                                                <td>{transaction.quantity}</td>
+                                                <td>{transaction.reference}</td>
+                                                <td>{transaction.user.username}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </article>
+                </div>
+            </div>
+
             {item && (
                 <StockTransactionModal
                     show={showStockModal}
@@ -136,7 +242,7 @@ const ItemDetailsPage = () => {
                     onTransactionSuccess={fetchData}
                 />
             )}
-        </>
+        </section>
     );
 };
 export default ItemDetailsPage;
