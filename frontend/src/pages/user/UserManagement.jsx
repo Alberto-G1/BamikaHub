@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Table, Button, Spinner, Alert, Badge, Form, Row, Col, InputGroup, Card, Image } from 'react-bootstrap';
 import { FaEdit, FaPlus, FaCheck, FaTimes, FaSearch, FaUserCircle, FaArchive } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
+import './UserManagementPage.css';
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
@@ -13,9 +14,9 @@ const UserManagement = () => {
     const navigate = useNavigate();
     const { hasPermission } = useAuth();
 
-    // Filtering and Searching State
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
+    const [dialogConfig, setDialogConfig] = useState({ open: false });
 
     useEffect(() => {
         fetchData();
@@ -23,6 +24,7 @@ const UserManagement = () => {
 
     const fetchData = async () => {
         setLoading(true);
+        setError('');
         try {
             const response = await api.get('/users');
             setUsers(response.data);
@@ -34,37 +36,59 @@ const UserManagement = () => {
         }
     };
 
-        const handleDeactivate = async (userId, userFullName) => {
-        try {
-            await api.post(`/users/${userId}/deactivate`);
-            toast.warn(`User '${userFullName}' has been deactivated.`);
-            fetchData();
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to deactivate user.');
+    const closeDialog = () => setDialogConfig(prev => ({ ...prev, open: false }));
+
+    const requestAction = (type, user) => {
+        const userFullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+
+        if (type === 'deactivate') {
+            setDialogConfig({
+                open: true,
+                tone: 'warn',
+                title: 'Deactivate User',
+                message: `Deactivate ${userFullName}?`,
+                detail: 'They will be moved to the deactivated list and can be restored later.',
+                confirmLabel: 'Deactivate',
+                cancelLabel: 'Keep Active',
+                onConfirm: () => performDeactivate(user),
+            });
+            return;
+        }
+
+        if (type === 'approve') {
+            setDialogConfig({
+                open: true,
+                tone: 'success',
+                title: 'Approve User',
+                message: `Approve ${userFullName}?`,
+                detail: 'They will immediately gain access with the Staff role.',
+                confirmLabel: 'Approve',
+                cancelLabel: 'Cancel',
+                onConfirm: () => performApprove(user),
+            });
+            return;
+        }
+
+        if (type === 'reject') {
+            setDialogConfig({
+                open: true,
+                tone: 'danger',
+                title: 'Reject Registration',
+                message: `Reject ${userFullName}?`,
+                detail: 'This permanently removes their registration request.',
+                confirmLabel: 'Reject',
+                cancelLabel: 'Keep Pending',
+                onConfirm: () => performReject(user),
+            });
         }
     };
-    
-    // Custom Confirmation Toast for deactivating
-    const confirmDeactivate = (userId, userFullName) => {
-        const toastId = toast.warn(
-            <div>
-                <p>Deactivate user <strong>{userFullName}</strong>?</p>
-                <p className="small text-muted">They will be moved to the deactivated list and can be reactivated later.</p>
-                <div className="mt-3">
-                    <Button variant="warning" size="sm" className="me-2" onClick={() => { handleDeactivate(userId, userFullName); toast.dismiss(toastId); }}>Yes, Deactivate</Button>
-                    <Button variant="secondary" size="sm" onClick={() => toast.dismiss(toastId)}>Cancel</Button>
-                </div>
-            </div>,
-            { autoClose: false, closeOnClick: false, position: "top-center" }
-        );
-    };
 
-    const handleApprove = async (userId) => {
-        // Assign the default 'Staff' role (ID 3) on approval.
+    const performApprove = async user => {
+        closeDialog();
         const defaultStaffRoleId = 3;
         try {
-            await api.post(`/users/${userId}/approve`, defaultStaffRoleId, {
-                 headers: { 'Content-Type': 'application/json' }
+            await api.post(`/users/${user.id}/approve`, defaultStaffRoleId, {
+                headers: { 'Content-Type': 'application/json' },
             });
             toast.success('User approved successfully!');
             fetchData();
@@ -72,195 +96,273 @@ const UserManagement = () => {
             toast.error(err.response?.data?.message || 'Failed to approve user.');
         }
     };
-    
-    const handleReject = async (userId, userFullName) => {
+
+    const performReject = async user => {
+        closeDialog();
         try {
-            await api.delete(`/users/${userId}`);
-            toast.info(`Registration for ${userFullName} has been rejected.`);
+            await api.delete(`/users/${user.id}`);
+            const nameOrEmail = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+            toast.info(`Registration for ${nameOrEmail} has been rejected.`);
             fetchData();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to reject user.');
         }
     };
-    
-    const confirmReject = (userId, userFullName) => {
-        const toastId = toast(
-            <div>
-                <p className="mb-2">Reject registration for <strong>{userFullName}</strong>?</p>
-                <p className="small text-muted">This will permanently delete the user record.</p>
-                <div className="mt-3">
-                    <Button variant="danger" size="sm" className="me-2" onClick={() => {
-                        handleReject(userId, userFullName);
-                        toast.dismiss(toastId);
-                    }}>
-                        Yes, Reject
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => toast.dismiss(toastId)}>
-                        Cancel
-                    </Button>
-                </div>
-            </div>,
-            {
-                autoClose: false,
-                closeOnClick: false,
-                draggable: false,
-                position: "top-center",
-                theme: "light",
-            }
-        );
+
+    const performDeactivate = async user => {
+        closeDialog();
+        try {
+            await api.post(`/users/${user.id}/deactivate`);
+            const nameOrEmail = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+            toast.warn(`User '${nameOrEmail}' has been deactivated.`);
+            fetchData();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to deactivate user.');
+        }
     };
+
+    const totals = useMemo(() => {
+        const summary = { total: users.length, active: 0, pending: 0, suspended: 0 };
+        users.forEach(user => {
+            const statusName = user.status?.name;
+            if (statusName === 'ACTIVE') summary.active += 1;
+            if (statusName === 'PENDING') summary.pending += 1;
+            if (statusName === 'SUSPENDED') summary.suspended += 1;
+        });
+        return summary;
+    }, [users]);
 
     const filteredUsers = useMemo(() => {
         return users
             .filter(user => {
-                // Status filter
                 if (statusFilter === 'ALL') return true;
-                return user.status.name === statusFilter;
+                return user.status?.name === statusFilter;
             })
             .filter(user => {
-                // Search filter (case-insensitive)
-                const searchLower = searchQuery.toLowerCase();
-                const fullName = `${user.firstName || ''} ${user.lastName || ''}`;
-                
-                return fullName.toLowerCase().includes(searchLower) ||
-                       (user.username && user.username.toLowerCase().includes(searchLower)) ||
-                       user.email.toLowerCase().includes(searchLower);
+                const term = searchQuery.trim().toLowerCase();
+                if (!term) return true;
+                const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+                return (
+                    fullName.toLowerCase().includes(term) ||
+                    (user.username && user.username.toLowerCase().includes(term)) ||
+                    (user.email && user.email.toLowerCase().includes(term))
+                );
             });
     }, [users, statusFilter, searchQuery]);
 
-    if (loading) return <Spinner animation="border" />;
-    if (error) return <Alert variant="danger">{error}</Alert>;
+    if (loading) {
+        return (
+            <section className="users-page">
+                <div className="users-loading">
+                    <span className="users-spinner" aria-hidden="true" />
+                    <p>Loading users...</p>
+                </div>
+            </section>
+        );
+    }
 
     return (
-        <div>
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2>User Management</h2>
-                <div> {/* Wrapper div for buttons on the right */}
-                    <Button variant="outline-secondary" className="me-2" onClick={() => navigate('/users/deactivated')}>
-                        <FaArchive className="me-2" /> View Deactivated
-                    </Button>
+        <section className="users-page">
+            <div className="users-banner" data-animate="fade-up">
+                <div className="users-banner__content">
+                    <div className="users-banner__eyebrow">User Admin</div>
+                    <h2 className="users-banner__title">User Management</h2>
+                    <p className="users-banner__subtitle">
+                        Manage approvals, roles, and access for every member of your organization.
+                    </p>
+
+                    <div className="users-banner__meta">
+                        <div className="users-banner__meta-item">
+                            <span className="users-meta-label">Total</span>
+                            <span className="users-meta-value">{totals.total}</span>
+                        </div>
+                        <div className="users-banner__meta-item">
+                            <span className="users-meta-label">Active</span>
+                            <span className="users-meta-value">{totals.active}</span>
+                        </div>
+                        <div className="users-banner__meta-item">
+                            <span className="users-meta-label">Pending</span>
+                            <span className="users-meta-value">{totals.pending}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="users-banner__actions">
+                    <button type="button" className="users-secondary-btn" onClick={() => navigate('/users/deactivated')}>
+                        <FaArchive />
+                        <span>View Deactivated</span>
+                    </button>
                     {hasPermission('USER_CREATE') && (
-                        <Button variant="primary" onClick={() => navigate('/users/new')}>
-                            <FaPlus className="me-2" /> Add User
-                        </Button>
+                        <button type="button" className="users-primary-btn" onClick={() => navigate('/users/new')}>
+                            <FaPlus />
+                            <span>Add User</span>
+                        </button>
                     )}
                 </div>
             </div>
 
-            <Card className="mb-4 shadow-sm">
-                <Card.Body>
-                    <Row className="align-items-center">
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Filter by Status</Form.Label>
-                                <Form.Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                                    <option value="ALL">All</option>
-                                    <option value="PENDING">Pending</option>
-                                    <option value="ACTIVE">Active</option>
-                                    <option value="SUSPENDED">Suspended</option>
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
-                        <Col md={8}>
-                             <Form.Group>
-                                <Form.Label>Search by Name, Username, or Email</Form.Label>
-                                <InputGroup>
-                                    <InputGroup.Text><FaSearch /></InputGroup.Text>
-                                    <Form.Control 
-                                        type="text"
-                                        placeholder="Search..."
-                                        value={searchQuery}
-                                        onChange={e => setSearchQuery(e.target.value)}
-                                    />
-                                </InputGroup>
-                            </Form.Group>
-                        </Col>
-                    </Row>
-                </Card.Body>
-            </Card>
+            <div className="users-toolbar" data-animate="fade-up" data-delay="0.05">
+                <div className="users-filter-panel">
+                    <label className="users-control">
+                        <span className="users-label">Filter by Status</span>
+                        <select
+                            className="users-select"
+                            value={statusFilter}
+                            onChange={event => setStatusFilter(event.target.value)}
+                        >
+                            <option value="ALL">All</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="SUSPENDED">Suspended</option>
+                        </select>
+                    </label>
 
-            <Table striped bordered hover responsive className="align-middle">
-                <thead>
-                    <tr>
-                        <th style={{ width: '25%' }}>Name</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Joined</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredUsers.map(user => {
-                        const userFullName = `${user.firstName} ${user.lastName}`;
+                    <label className="users-control">
+                        <span className="users-label">Search</span>
+                        <div className="users-input-wrapper">
+                            <FaSearch />
+                            <input
+                                className="users-input"
+                                type="text"
+                                placeholder="Search by name, username, or email"
+                                value={searchQuery}
+                                onChange={event => setSearchQuery(event.target.value)}
+                            />
+                        </div>
+                    </label>
+                </div>
 
-                        return (
-                            <tr key={user.id}>
-                                <td>
-                                    <div className="d-flex align-items-center">
-                                        {user.profilePictureUrl ? (
-                                            <Image 
-                                                src={`http://localhost:8080${user.profilePictureUrl}`} 
-                                                roundedCircle 
-                                                width="40" 
-                                                height="40" 
-                                                className="me-3"
-                                                style={{ objectFit: 'cover' }}
-                                            />
-                                        ) : (
-                                            <FaUserCircle size={40} className="text-muted me-3" />
-                                        )}
-                                        <span>{userFullName}</span>
-                                    </div>
-                                </td>
-                                <td>{user.username}</td>
-                                <td>{user.email}</td>
-                                <td>{user.role.name}</td>
-                                <td>
-                                    <Badge pill style={{ backgroundColor: user.status.color, color: '#fff' }}>
-                                        {user.status.name}
-                                    </Badge>
-                                </td>
-                                <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                                <td>
-                                    {user.status.name === 'PENDING' ? (
-                                        <>
-                                            {hasPermission('USER_APPROVE') && (
-                                                <Button variant="success" size="sm" className="me-2" onClick={() => handleApprove(user.id)} title="Approve">
-                                                    <FaCheck />
-                                                </Button>
-                                            )}
-                                            {hasPermission('USER_DELETE') && (
-                                                // UPDATED: Calls the new confirmation toast function
-                                                <Button variant="danger" size="sm" onClick={() => confirmReject(user.id, userFullName)} title="Reject">
-                                                    <FaTimes />
-                                                </Button>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {hasPermission('USER_UPDATE') && (
-                                                <Button variant="warning" size="sm" className="me-2" onClick={() => navigate(`/users/edit/${user.id}`)} title="Edit">
-                                                    <FaEdit />
-                                                </Button>
-                                            )}
+                {error && <div className="users-error" role="alert">{error}</div>}
+            </div>
 
-                                            {hasPermission('USER_DELETE') && ( // Using DELETE permission for deactivation
-                                                <Button variant="danger" size="sm" onClick={() => confirmDeactivate(user.id, userFullName)} title="Deactivate">
-                                                    <FaArchive />
-                                                </Button>
-                                            )} 
-                                            {/* You can add a delete button for active users here, which would also call a confirmation toast */}
-                                        </>
-                                    )}
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </Table>
-        </div>
+            <div className="users-table-container" data-animate="fade-up" data-delay="0.1">
+                {filteredUsers.length === 0 ? (
+                    <div className="users-empty-state">No users match your current filters.</div>
+                ) : (
+                    <div className="users-table-scroll">
+                        <table className="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th className="users-actions-header">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredUsers.map((user, index) => {
+                                    const userFullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unnamed user';
+                                    const joinedOn = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—';
+                                    const statusColor = user.status?.color || '#10B981';
+
+                                    return (
+                                        <tr key={user.id} style={{ animationDelay: `${index * 0.03}s` }}>
+                                            <td className="users-user-cell">
+                                                <div className="users-name-cell">
+                                                    {user.profilePictureUrl ? (
+                                                        <img
+                                                            src={`http://localhost:8080${user.profilePictureUrl}`}
+                                                            alt={`${userFullName}'s avatar`}
+                                                            className="users-avatar"
+                                                        />
+                                                    ) : (
+                                                        <FaUserCircle className="users-avatar--placeholder" aria-hidden="true" />
+                                                    )}
+                                                    <div>
+                                                        <div className="users-name">{userFullName}</div>
+                                                        <div className="users-name-sub">{user.username ? `@${user.username}` : 'No username'}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>{user.email || '—'}</td>
+                                            <td>{user.role?.name || '—'}</td>
+                                            <td>
+                                                <span
+                                                    className="users-status-pill"
+                                                    style={{ backgroundColor: statusColor }}
+                                                >
+                                                    {user.status?.name || '—'}
+                                                </span>
+                                            </td>
+                                            <td>{joinedOn}</td>
+                                            <td>
+                                                <div className="users-actions">
+                                                    {user.status?.name === 'PENDING' ? (
+                                                        <>
+                                                            {hasPermission('USER_APPROVE') && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="users-icon-btn users-icon-btn--success"
+                                                                    onClick={() => requestAction('approve', user)}
+                                                                    aria-label="Approve user"
+                                                                    title="Approve user"
+                                                                >
+                                                                    <FaCheck />
+                                                                </button>
+                                                            )}
+                                                            {hasPermission('USER_DELETE') && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="users-icon-btn users-icon-btn--danger"
+                                                                    onClick={() => requestAction('reject', user)}
+                                                                    aria-label="Reject registration"
+                                                                    title="Reject registration"
+                                                                >
+                                                                    <FaTimes />
+                                                                </button>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {hasPermission('USER_UPDATE') && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="users-icon-btn users-icon-btn--warning"
+                                                                    onClick={() => navigate(`/users/edit/${user.id}`)}
+                                                                    aria-label="Edit user"
+                                                                    title="Edit user"
+                                                                >
+                                                                    <FaEdit />
+                                                                </button>
+                                                            )}
+                                                            {hasPermission('USER_DELETE') && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="users-icon-btn users-icon-btn--danger"
+                                                                    onClick={() => requestAction('deactivate', user)}
+                                                                    aria-label="Deactivate user"
+                                                                    title="Deactivate user"
+                                                                >
+                                                                    <FaArchive />
+                                                                </button>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            <ConfirmDialog
+                open={dialogConfig.open}
+                tone={dialogConfig.tone}
+                title={dialogConfig.title || ''}
+                message={dialogConfig.message || ''}
+                detail={dialogConfig.detail}
+                confirmLabel={dialogConfig.confirmLabel}
+                cancelLabel={dialogConfig.cancelLabel}
+                onConfirm={dialogConfig.onConfirm}
+                onCancel={closeDialog}
+            />
+        </section>
     );
 };
 
