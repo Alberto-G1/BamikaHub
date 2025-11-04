@@ -1,24 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Card, Row, Col, Button, Spinner, Tabs, Tab, Badge, Table, ListGroup, Image, Alert, Form, Modal } from 'react-bootstrap';
-import { FaArrowLeft, FaPlus, FaUser, FaEdit, FaImage, FaArchive, FaTrash, FaFileExcel, FaFilePdf } from 'react-icons/fa';
+import { FaArrowLeft, FaPlus, FaUser, FaEdit, FaImage, FaArchive, FaTrash, FaFileExcel, FaFilePdf, FaMapMarkerAlt, FaUsers, FaCalendarAlt, FaProjectDiagram, FaFileAlt, FaTimes } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import FieldReportModal from '../../components/operations/FieldReportModal.jsx';
 import ReportViewModal from '../../components/operations/ReportViewModal.jsx';
 import GalleryUploadModal from '../../components/operations/GalleryUploadModal.jsx';
 import ImageLightbox from '../../components/operations/ImageLightbox.jsx';
+import './OperationsStyles.css';
 
-const getStatusBadge = (status) => {
+const getStatusBadgeClass = (status) => {
     switch (status) {
-        case 'IN_PROGRESS': return <Badge bg="primary">In Progress</Badge>;
-        case 'COMPLETED': return <Badge bg="success">Completed</Badge>;
-        case 'PLANNING': return <Badge bg="info">Planning</Badge>;
-        case 'ON_HOLD': return <Badge bg="warning" text="dark">On Hold</Badge>;
-        case 'CANCELLED': return <Badge bg="danger">Cancelled</Badge>;
-        default: return <Badge bg="secondary">{status}</Badge>;
+        case 'IN_PROGRESS': return 'operations-badge--in-progress';
+        case 'COMPLETED': return 'operations-badge--completed';
+        case 'PLANNING': return 'operations-badge--planning';
+        case 'ON_HOLD': return 'operations-badge--on-hold';
+        case 'CANCELLED': return 'operations-badge--cancelled';
+        default: return 'operations-badge--planning';
     }
+};
+
+const formatStatus = (status) => {
+    return status ? status.replace('_', ' ') : 'Unknown';
 };
 
 const ProjectDetailsPage = () => {
@@ -34,6 +39,7 @@ const ProjectDetailsPage = () => {
     const [reportsLoading, setReportsLoading] = useState(false);
     const [downloadingFormat, setDownloadingFormat] = useState(null);
     const [selectedSiteFilter, setSelectedSiteFilter] = useState('');
+    const [activeTab, setActiveTab] = useState('reports');
 
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
@@ -42,17 +48,14 @@ const ProjectDetailsPage = () => {
     const [editingSite, setEditingSite] = useState(null);
     const [siteForm, setSiteForm] = useState({ name: '', location: '' });
     const [siteSubmitting, setSiteSubmitting] = useState(false);
-
-        
     const [lightboxImage, setLightboxImage] = useState(null);
+    const [dialogConfig, setDialogConfig] = useState({ open: false });
 
     const loadReports = async (siteId) => {
         setReportsLoading(true);
         try {
             const params = {};
-            if (siteId) {
-                params.siteId = siteId;
-            }
+            if (siteId) params.siteId = siteId;
             const response = await api.get(`/reports/project/${id}`, { params });
             const { reports: reportList = [], siteSummaries = [] } = response.data || {};
             setReports(reportList);
@@ -102,7 +105,6 @@ const ProjectDetailsPage = () => {
             setDownloadingFormat(format);
             const params = new URLSearchParams();
             if (selectedSiteFilter) params.append('siteId', selectedSiteFilter);
-            // In future we can add date range filters here
 
             const response = await api.get(`/reports/project/${id}/export/${format}` + (params.toString() ? `?${params.toString()}` : ''), {
                 responseType: 'blob'
@@ -127,6 +129,8 @@ const ProjectDetailsPage = () => {
     useEffect(() => {
         fetchData();
     }, [id, navigate]);
+
+    const closeDialog = () => setDialogConfig(prev => ({ ...prev, open: false }));
 
     const openSiteModal = (site = null) => {
         if (site) {
@@ -161,10 +165,7 @@ const ProjectDetailsPage = () => {
         setSiteSubmitting(true);
         try {
             if (editingSite) {
-                await api.put(`/sites/${editingSite.id}`, {
-                    ...siteForm,
-                    projectId: project.id
-                });
+                await api.put(`/sites/${editingSite.id}`, { ...siteForm, projectId: project.id });
                 toast.success('Site updated successfully.');
             } else {
                 await api.post(`/projects/${project.id}/sites`, siteForm);
@@ -179,17 +180,23 @@ const ProjectDetailsPage = () => {
             setSiteSubmitting(false);
         }
     };
-    const handleSiteDelete = async (site) => {
-        if (!project) return;
-        if (project.isArchived) {
-            toast.error('This project is archived; sites cannot be modified.');
-            return;
-        }
-        const confirm = window.confirm(`Delete site "${site.name}"? This action cannot be undone.`);
-        if (!confirm) {
-            return;
-        }
 
+    const confirmSiteDelete = (site) => {
+        setDialogConfig({
+            open: true,
+            tone: 'danger',
+            title: 'Delete Site',
+            message: `Delete site "${site.name}"?`,
+            detail: 'This action cannot be undone. All associated reports will remain but will no longer be linked to this site.',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            onConfirm: () => handleSiteDelete(site),
+        });
+    };
+
+    const handleSiteDelete = async (site) => {
+        closeDialog();
+        if (!project || project.isArchived) return;
         try {
             await api.delete(`/sites/${site.id}`);
             toast.success('Site deleted successfully.');
@@ -205,256 +212,703 @@ const ProjectDetailsPage = () => {
         }
     };
 
-
-    const handleImageDelete = async (imageId, event) => {
-        event.stopPropagation(); // Prevent the lightbox from opening
-        
-        const toastId = toast.error(
-            <div><p>Delete this image from the gallery?</p>
-                <Button variant="danger" size="sm" onClick={async () => {
-                    try {
-                        await api.delete(`/projects/${project.id}/gallery/${imageId}`);
-                        toast.success("Image deleted successfully.");
-                        fetchData(); // Refresh to see the change
-                    } catch (error) { toast.error("Failed to delete image."); }
-                    toast.dismiss(toastId);
-                }}>Confirm Delete</Button>
-            </div> // ... (simplified toast)
-        );
+    const confirmImageDelete = (imageId, event) => {
+        event.stopPropagation();
+        setDialogConfig({
+            open: true,
+            tone: 'danger',
+            title: 'Delete Image',
+            message: 'Delete this image from the gallery?',
+            detail: 'This action cannot be undone.',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            onConfirm: () => handleImageDelete(imageId),
+        });
     };
 
-    if (loading) return <Spinner animation="border" />;
+    const handleImageDelete = async (imageId) => {
+        closeDialog();
+        try {
+            await api.delete(`/projects/${project.id}/gallery/${imageId}`);
+            toast.success("Image deleted successfully.");
+            fetchData();
+        } catch (error) {
+            toast.error("Failed to delete image.");
+        }
+    };
+
+    if (loading) {
+        return (
+            <section className="operations-page">
+                <div className="operations-loading">
+                    <span className="operations-spinner" aria-hidden="true" />
+                    <p>Loading project details...</p>
+                </div>
+            </section>
+        );
+    }
+
     if (!project) return <p>Project not found.</p>;
 
-    const galleryImages = project.galleryImages || []; 
+    const galleryImages = project.galleryImages || [];
     const assignedEngineers = project.assignedEngineers || [];
 
     return (
-        <>
-            <Container>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Button variant="outline-secondary" size="sm" onClick={() => navigate('/projects')}>
-                        <FaArrowLeft className="me-2" /> Back to Projects
-                    </Button>
-                    <div>
-                        {/* THE FIX: Hide buttons if project is archived */}
+        <section className="operations-page">
+            {/* Hero Banner */}
+            <div className="operations-banner" data-animate="fade-up">
+                <button
+                    type="button"
+                    className="operations-btn operations-btn--blue"
+                    onClick={() => navigate('/projects')}
+                    style={{ border: 'none', background: 'transparent', boxShadow: 'none', padding: '0.5rem 0', width: 'fit-content' }}
+                >
+                    <FaArrowLeft aria-hidden="true" />
+                    <span>Back to Projects</span>
+                </button>
+
+                <div className="operations-banner__content">
+                    <div className="operations-banner__info">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <div className="operations-banner__eyebrow">Project Details</div>
+                            <span className={`operations-badge ${getStatusBadgeClass(project.status)}`}>
+                                {formatStatus(project.status)}
+                            </span>
+                            {project.isArchived && (
+                                <span className="operations-badge" style={{
+                                    background: 'rgba(148, 163, 184, 0.15)',
+                                    color: 'var(--operations-text-muted)',
+                                    borderColor: 'rgba(148, 163, 184, 0.3)'
+                                }}>
+                                    <FaArchive aria-hidden="true" />
+                                    Archived
+                                </span>
+                            )}
+                        </div>
+                        <h2 className="operations-banner__title">{project.name}</h2>
+                        <p className="operations-banner__subtitle">
+                            <FaProjectDiagram aria-hidden="true" style={{ marginRight: '0.5rem' }} />
+                            {project.clientName}
+                        </p>
+                        {project.description && (
+                            <p style={{
+                                fontSize: '0.95rem',
+                                color: 'var(--operations-text-secondary)',
+                                lineHeight: '1.6',
+                                maxWidth: '60ch',
+                                margin: '0.5rem 0 0'
+                            }}>
+                                {project.description}
+                            </p>
+                        )}
+
+                        <div className="operations-banner__meta">
+                            <div className="operations-banner__meta-item">
+                                <span className="operations-meta-label">
+                                    <FaMapMarkerAlt aria-hidden="true" /> Sites
+                                </span>
+                                <span className="operations-meta-value">{sites.length}</span>
+                            </div>
+                            <div className="operations-banner__meta-item">
+                                <span className="operations-meta-label">
+                                    <FaUsers aria-hidden="true" /> Engineers
+                                </span>
+                                <span className="operations-meta-value">{assignedEngineers.length}</span>
+                            </div>
+                            <div className="operations-banner__meta-item">
+                                <span className="operations-meta-label">
+                                    <FaFileAlt aria-hidden="true" /> Reports
+                                </span>
+                                <span className="operations-meta-value">{reports.length}</span>
+                            </div>
+                            <div className="operations-banner__meta-item">
+                                <span className="operations-meta-label">
+                                    <FaImage aria-hidden="true" /> Gallery
+                                </span>
+                                <span className="operations-meta-value">{galleryImages.length}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="operations-banner__actions">
                         {hasPermission('PROJECT_UPDATE') && !project.isArchived && (
-                            <Button variant="outline-warning" className="me-2" onClick={() => navigate(`/projects/edit/${id}`)}>
-                                <FaEdit className="me-2" /> Edit Project
-                            </Button>
+                            <button
+                                className="operations-btn operations-btn--green"
+                                onClick={() => navigate(`/projects/edit/${id}`)}
+                            >
+                                <FaEdit aria-hidden="true" />
+                                <span>Edit Project</span>
+                            </button>
                         )}
                         {hasPermission('FIELD_REPORT_SUBMIT') && !project.isArchived && (
-                            <Button variant="primary" onClick={() => setShowReportModal(true)}>
-                                <FaPlus className="me-2" /> Submit Daily Report
-                            </Button>
+                            <button
+                                className="operations-btn operations-btn--gold"
+                                onClick={() => setShowReportModal(true)}
+                            >
+                                <FaPlus aria-hidden="true" />
+                                <span>Submit Report</span>
+                            </button>
                         )}
                     </div>
                 </div>
+            </div>
 
-                {/* THE FIX: Show a prominent banner if the project is archived */}
-                {project.isArchived && (
-                    <Alert variant="secondary" className="d-flex align-items-center">
-                        <FaArchive className="me-3" size={24}/>
-                        <div>
-                            <Alert.Heading>This Project is Archived</Alert.Heading>
-                            <p className="mb-0">This is a read-only historical record. No further modifications are allowed.</p>
+            {/* Archived Warning */}
+            {project.isArchived && (
+                <div style={{
+                    padding: '1.25rem 1.5rem',
+                    borderRadius: '14px',
+                    background: 'rgba(148, 163, 184, 0.1)',
+                    border: '1.5px solid rgba(148, 163, 184, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem'
+                }} data-animate="fade-up" data-delay="0.08">
+                    <FaArchive size={24} style={{ color: 'var(--operations-text-muted)' }} />
+                    <div>
+                        <h4 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: '700' }}>
+                            This Project is Archived
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--operations-text-muted)' }}>
+                            This is a read-only historical record. No further modifications are allowed.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Tabs Navigation */}
+            <div style={{
+                display: 'flex',
+                gap: '0.5rem',
+                padding: '0.75rem',
+                borderRadius: '14px',
+                background: 'var(--operations-surface-secondary)',
+                border: '1px solid var(--operations-border)',
+                overflowX: 'auto'
+            }} data-animate="fade-up" data-delay="0.12">
+                <button
+                    className={`operations-btn ${activeTab === 'reports' ? 'operations-btn--gold' : 'operations-btn--secondary'}`}
+                    onClick={() => setActiveTab('reports')}
+                    style={{ whiteSpace: 'nowrap' }}
+                >
+                    <FaFileAlt aria-hidden="true" />
+                    <span>Daily Reports ({reports.length})</span>
+                </button>
+                <button
+                    className={`operations-btn ${activeTab === 'gallery' ? 'operations-btn--gold' : 'operations-btn--secondary'}`}
+                    onClick={() => setActiveTab('gallery')}
+                    style={{ whiteSpace: 'nowrap' }}
+                >
+                    <FaImage aria-hidden="true" />
+                    <span>Gallery ({galleryImages.length})</span>
+                </button>
+                <button
+                    className={`operations-btn ${activeTab === 'sites' ? 'operations-btn--gold' : 'operations-btn--secondary'}`}
+                    onClick={() => setActiveTab('sites')}
+                    style={{ whiteSpace: 'nowrap' }}
+                >
+                    <FaMapMarkerAlt aria-hidden="true" />
+                    <span>Sites ({sites.length})</span>
+                </button>
+                <button
+                    className={`operations-btn ${activeTab === 'engineers' ? 'operations-btn--gold' : 'operations-btn--secondary'}`}
+                    onClick={() => setActiveTab('engineers')}
+                    style={{ whiteSpace: 'nowrap' }}
+                >
+                    <FaUsers aria-hidden="true" />
+                    <span>Engineers ({assignedEngineers.length})</span>
+                </button>
+            </div>
+
+            {/* Tab Content */}
+            <div data-animate="fade-up" data-delay="0.16">
+                {/* Reports Tab */}
+                {activeTab === 'reports' && (
+                    <div className="operations-form-shell" style={{ padding: '2rem' }}>
+                        <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            marginBottom: '1.5rem'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ fontWeight: '600' }}>Filter by site:</span>
+                                <select
+                                    className="operations-select"
+                                    value={selectedSiteFilter}
+                                    onChange={handleSiteFilterChange}
+                                    disabled={sites.length === 0}
+                                    style={{ minWidth: '220px' }}
+                                >
+                                    <option value="">All sites</option>
+                                    {sites.map((site) => (
+                                        <option key={site.id} value={site.id}>
+                                            {site.name}{site.location ? ` - ${site.location}` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                {reportsLoading && <span className="operations-spinner" style={{ width: '24px', height: '24px' }} />}
+                                <button
+                                    className="operations-btn operations-btn--green operations-btn--icon"
+                                    onClick={() => handleExport('excel')}
+                                    disabled={downloadingFormat !== null}
+                                    title="Export Excel"
+                                >
+                                    <FaFileExcel aria-hidden="true" />
+                                </button>
+                                <button
+                                    className="operations-btn operations-btn--red operations-btn--icon"
+                                    onClick={() => handleExport('pdf')}
+                                    disabled={downloadingFormat !== null}
+                                    title="Export PDF"
+                                >
+                                    <FaFilePdf aria-hidden="true" />
+                                </button>
+                            </div>
                         </div>
-                    </Alert>
-                )}
-                
-                <Card className="shadow-sm mb-4">
-                    <Card.Header as="h2" className="d-flex justify-content-between align-items-center">
-                        {project.name}
-                        {getStatusBadge(project.status)}
-                    </Card.Header>
-                    <Card.Body>
-                        <p><strong>Client:</strong> {project.clientName}</p>
-                        <p>{project.description}</p>
-                    </Card.Body>
-                </Card>
 
-                <Tabs defaultActiveKey="reports" id="project-details-tabs" className="mb-3">
-                    <Tab eventKey="reports" title={`Daily Reports (${reports.length})`}>
-                        <Card className="shadow-sm">
-                            <Card.Body>
-                                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
-                                    <div className="d-flex align-items-center">
-                                        <span className="me-2 fw-semibold">Filter by site:</span>
-                                        <Form.Select
-                                            value={selectedSiteFilter}
-                                            onChange={handleSiteFilterChange}
-                                            style={{ minWidth: '220px' }}
-                                            disabled={sites.length === 0}
-                                        >
-                                            <option value="">All sites</option>
-                                            {sites.map((site) => (
-                                                <option key={site.id} value={site.id}>
-                                                    {site.name}{site.location ? ` - ${site.location}` : ''}
-                                                </option>
-                                            ))}
-                                        </Form.Select>
-                                    </div>
-                                    <div className="d-flex align-items-center mt-3 mt-md-0">
-                                        {reportsLoading && <Spinner animation="border" size="sm" className="me-3" />}
-                                        <Button
-                                            variant="outline-success"
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={() => handleExport('excel')}
-                                            disabled={downloadingFormat !== null}
-                                        >
-                                            {downloadingFormat === 'excel' ? 'Exporting…' : <><FaFileExcel className="me-2"/>Export Excel</>}
-                                        </Button>
-                                        <Button
-                                            variant="outline-danger"
-                                            size="sm"
-                                            onClick={() => handleExport('pdf')}
-                                            disabled={downloadingFormat !== null}
-                                        >
-                                            {downloadingFormat === 'pdf' ? 'Exporting…' : <><FaFilePdf className="me-2"/>Export PDF</>}
-                                        </Button>
-                                    </div>
-                                </div>
-                                {reports.length > 0 ? (
-                                    <Table striped bordered hover responsive size="sm">
-                                        <thead>
-                                            <tr><th>Report Date</th><th>Site</th><th>Submitted By</th><th>Update Summary</th><th>Attachment</th></tr>
-                                        </thead>
-                                        <tbody>
-                                            {reports.map(report => (
-                                                <tr key={report.id} onClick={() => setSelectedReport(report)} style={{ cursor: 'pointer' }}>
-                                                    <td>{new Date(report.reportDate).toLocaleDateString()}</td>
-                                                    <td>
-                                                        {report.site ? (
-                                                            <>
-                                                                <div>{report.site.name}</div>
-                                                                {report.site.location && <div className="text-muted small">{report.site.location}</div>}
-                                                            </>
-                                                        ) : (
-                                                            <span className="text-muted">Whole project</span>
-                                                        )}
-                                                    </td>
-                                                    <td>{report.submittedBy.username}</td>
-                                                    <td>{report.workProgressUpdate.substring(0, 100)}{report.workProgressUpdate.length > 100 ? '...' : ''}</td>
-                                                    <td>{report.reportFileUrl ? 'Yes' : 'No'}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </Table>
-                                ) : (
-                                    <p className="text-muted">No daily reports have been submitted for this project yet.</p>
-                                )}
-                            </Card.Body>
-                        </Card>
-                    </Tab>
-                    <Tab eventKey="gallery" title="Project Gallery">
-                        <Card className="shadow-sm">
-                             <Card.Header className="d-flex justify-content-between align-items-center">
-                                <h5>Image Gallery</h5>
-                                {hasPermission('PROJECT_UPDATE') && !project.isArchived && (
-                                    <Button variant="outline-primary" size="sm" onClick={() => setShowGalleryModal(true)}>
-                                        <FaImage className="me-2" /> Add Image
-                                    </Button>
-                                )}
-                             </Card.Header>
-                             <Card.Body>
-                                {galleryImages.length > 0 ? (
-                                    <Row xs={2} md={3} lg={4} className="g-3">
-                                        {galleryImages.map(img => (
-                                            <Col key={img.id}>
-                                                <div className="gallery-image-container" onClick={() => setLightboxImage(img)}>
-                                                    <Image src={`http://localhost:8080${img.imageUrl}`} thumbnail />
-                                                    {hasPermission('PROJECT_DELETE') && !project.isArchived && (
-                                                        <div className="gallery-image-overlay">
-                                                            <button className="delete-icon-btn" title="Delete Image" onClick={(e) => handleImageDelete(img.id, e)}>
-                                                                <FaTrash />
-                                                            </button>
-                                                        </div>
+                        {reports.length > 0 ? (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{
+                                    width: '100%',
+                                    borderCollapse: 'separate',
+                                    borderSpacing: '0'
+                                }}>
+                                    <thead>
+                                        <tr style={{
+                                            background: 'var(--operations-surface-tertiary)',
+                                            borderBottom: '2px solid var(--operations-border)'
+                                        }}>
+                                            <th style={{ padding: '0.85rem 1rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Report Date</th>
+                                            <th style={{ padding: '0.85rem 1rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Site</th>
+                                            <th style={{ padding: '0.85rem 1rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Submitted By</th>
+                                            <th style={{ padding: '0.85rem 1rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Update Summary</th>
+                                            <th style={{ padding: '0.85rem 1rem', textAlign: 'left', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Attachment</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {reports.map(report => (
+                                            <tr
+                                                key={report.id}
+                                                onClick={() => setSelectedReport(report)}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    borderBottom: '1px solid var(--operations-border)',
+                                                    transition: 'background-color 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--operations-surface-tertiary)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <td style={{ padding: '1rem' }}>{new Date(report.reportDate).toLocaleDateString()}</td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    {report.site ? (
+                                                        <>
+                                                            <div style={{ fontWeight: '600' }}>{report.site.name}</div>
+                                                            {report.site.location && <div style={{ fontSize: '0.85rem', color: 'var(--operations-text-muted)' }}>{report.site.location}</div>}
+                                                        </>
+                                                    ) : (
+                                                        <span style={{ color: 'var(--operations-text-muted)' }}>Whole project</span>
                                                     )}
-                                                </div>
-                                                <small className="text-muted d-block mt-1">{img.description}</small>
-                                            </Col>
+                                                </td>
+                                                <td style={{ padding: '1rem' }}>{report.submittedBy.username}</td>
+                                                <td style={{ padding: '1rem', maxWidth: '300px' }}>
+                                                    {report.workProgressUpdate.substring(0, 100)}{report.workProgressUpdate.length > 100 ? '...' : ''}
+                                                </td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    {report.reportFileUrl ? (
+                                                        <span className="operations-badge operations-badge--completed">Yes</span>
+                                                    ) : (
+                                                        <span style={{ color: 'var(--operations-text-muted)' }}>No</span>
+                                                    )}
+                                                </td>
+                                            </tr>
                                         ))}
-                                    </Row>
-                                 ) : (
-                                    <p className="text-muted">No images have been added to the gallery yet.</p>
-                                )}
-                             </Card.Body>
-                        </Card>
-                    </Tab>
-                    <Tab eventKey="sites" title={`Sites (${sites.length})`}>
-                        <Card className="shadow-sm">
-                            <Card.Header className="d-flex justify-content-between align-items-center">
-                                <h5 className="mb-0">Project Sites</h5>
-                                {hasPermission('PROJECT_UPDATE') && !project.isArchived && (
-                                    <Button variant="outline-primary" size="sm" onClick={() => openSiteModal()}>
-                                        <FaPlus className="me-2" /> Add Site
-                                    </Button>
-                                )}
-                            </Card.Header>
-                            <Card.Body>
-                                {sites.length > 0 ? (
-                                    <ListGroup variant="flush">
-                                        {sites.map((site) => {
-                                            const summary = reportSummaries.find((s) => s.siteId === site.id);
-                                            const reportCount = summary ? summary.reportCount : 0;
-                                            return (
-                                                <ListGroup.Item key={site.id} className="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
-                                                    <div>
-                                                        <div className="fw-semibold">{site.name}</div>
-                                                        {site.location && <div className="text-muted small">{site.location}</div>}
-                                                        <div className="text-muted small">{reportCount} {reportCount === 1 ? 'report' : 'reports'} submitted</div>
-                                                    </div>
-                                                {hasPermission('PROJECT_UPDATE') && !project.isArchived && (
-                                                    <div className="mt-3 mt-md-0">
-                                                        <Button
-                                                            variant="outline-secondary"
-                                                            size="sm"
-                                                            className="me-2"
-                                                            onClick={() => openSiteModal(site)}
-                                                        >
-                                                            <FaEdit className="me-1" /> Edit
-                                                        </Button>
-                                                        {hasPermission('PROJECT_DELETE') && (
-                                                            <Button
-                                                                variant="outline-danger"
-                                                                size="sm"
-                                                                onClick={() => handleSiteDelete(site)}
-                                                            >
-                                                                <FaTrash className="me-1" /> Delete
-                                                            </Button>
-                                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="operations-empty" style={{ padding: '3rem 2rem' }}>
+                                <div className="operations-empty__icon" style={{ width: '60px', height: '60px', fontSize: '2rem' }}>
+                                    <FaFileAlt aria-hidden="true" />
+                                </div>
+                                <h3 className="operations-empty__title" style={{ fontSize: '1.25rem' }}>No Daily Reports</h3>
+                                <p className="operations-empty__subtitle">
+                                    No daily reports have been submitted for this project yet.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Gallery Tab */}
+                {activeTab === 'gallery' && (
+                    <div className="operations-form-shell" style={{ padding: '2rem' }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '1.5rem'
+                        }}>
+                            <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: '700' }}>Image Gallery</h3>
+                            {hasPermission('PROJECT_UPDATE') && !project.isArchived && (
+                                <button
+                                    className="operations-btn operations-btn--green"
+                                    onClick={() => setShowGalleryModal(true)}
+                                >
+                                    <FaImage aria-hidden="true" />
+                                    <span>Add Image</span>
+                                </button>
+                            )}
+                        </div>
+
+                        {galleryImages.length > 0 ? (
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                gap: '1.5rem'
+                            }}>
+                                {galleryImages.map(img => (
+                                    <div key={img.id} style={{ position: 'relative' }}>
+                                        <div
+                                            onClick={() => setLightboxImage(img)}
+                                            style={{
+                                                position: 'relative',
+                                                borderRadius: '12px',
+                                                overflow: 'hidden',
+                                                cursor: 'pointer',
+                                                border: '1px solid var(--operations-border)',
+                                                transition: 'transform 0.2s, box-shadow 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.transform = 'translateY(-4px)';
+                                                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.15)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = 'none';
+                                            }}
+                                        >
+                                            <img
+                                                src={`http://localhost:8080${img.imageUrl}`}
+                                                alt={img.description || 'Gallery image'}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '200px',
+                                                    objectFit: 'cover',
+                                                    display: 'block'
+                                                }}
+                                            />
+                                            {hasPermission('PROJECT_DELETE') && !project.isArchived && (
+                                                <button
+                                                    onClick={(e) => confirmImageDelete(img.id, e)}
+                                                    className="operations-btn operations-btn--red operations-btn--icon"
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: '0.5rem',
+                                                        right: '0.5rem'
+                                                    }}
+                                                    title="Delete Image"
+                                                >
+                                                    <FaTrash aria-hidden="true" />
+                                                </button>
+                                            )}
+                                        </div>
+                                        {img.description && (
+                                            <small style={{
+                                                display: 'block',
+                                                marginTop: '0.5rem',
+                                                color: 'var(--operations-text-muted)',
+                                                fontSize: '0.85rem'
+                                            }}>
+                                                {img.description}
+                                            </small>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="operations-empty" style={{ padding: '3rem 2rem' }}>
+                                <div className="operations-empty__icon" style={{ width: '60px', height: '60px', fontSize: '2rem' }}>
+                                    <FaImage aria-hidden="true" />
+                                </div>
+                                <h3 className="operations-empty__title" style={{ fontSize: '1.25rem' }}>No Images</h3>
+                                <p className="operations-empty__subtitle">
+                                    No images have been added to the gallery yet.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Sites Tab */}
+                {activeTab === 'sites' && (
+                    <div className="operations-form-shell" style={{ padding: '2rem' }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '1.5rem'
+                        }}>
+                            <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: '700' }}>Project Sites</h3>
+                            {hasPermission('PROJECT_UPDATE') && !project.isArchived && (
+                                <button
+                                    className="operations-btn operations-btn--gold"
+                                    onClick={() => openSiteModal()}
+                                >
+                                    <FaPlus aria-hidden="true" />
+                                    <span>Add Site</span>
+                                </button>
+                            )}
+                        </div>
+
+                        {sites.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {sites.map((site) => {
+                                    const summary = reportSummaries.find((s) => s.siteId === site.id);
+                                    const reportCount = summary ? summary.reportCount : 0;
+                                    return (
+                                        <div
+                                            key={site.id}
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                padding: '1.25rem 1.5rem',
+                                                borderRadius: '12px',
+                                                background: 'var(--operations-surface-tertiary)',
+                                                border: '1px solid var(--operations-border)',
+                                                flexWrap: 'wrap',
+                                                gap: '1rem'
+                                            }}
+                                        >
+                                            <div style={{ flex: 1, minWidth: '200px' }}>
+                                                <div style={{ fontWeight: '700', fontSize: '1.05rem', marginBottom: '0.35rem' }}>
+                                                    {site.name}
+                                                </div>
+                                                {site.location && (
+                                                    <div style={{ fontSize: '0.9rem', color: 'var(--operations-text-muted)', marginBottom: '0.25rem' }}>
+                                                        <FaMapMarkerAlt aria-hidden="true" style={{ marginRight: '0.35rem' }} />
+                                                        {site.location}
                                                     </div>
                                                 )}
-                                                </ListGroup.Item>
-                                            );
-                                        })}
-                                    </ListGroup>
-                                ) : (
-                                    <p className="text-muted mb-0">No sites registered for this project yet.</p>
-                                )}
-                            </Card.Body>
-                        </Card>
-                    </Tab>
-                    <Tab eventKey="engineers" title={`Assigned Engineers (${assignedEngineers.length})`}>
-                        <Card className="shadow-sm">
-                            <ListGroup variant="flush">
-                                {assignedEngineers.map(eng => (
-                                    <ListGroup.Item key={eng.id} className="d-flex align-items-center">
-                                        {eng.profilePictureUrl ? (
-                                             <Image src={`http://localhost:8080${eng.profilePictureUrl}`} roundedCircle width={30} height={30} className="me-2" style={{objectFit: 'cover'}}/>
-                                        ) : (
-                                            <FaUser size={30} className="me-2 text-secondary"/>
-                                        )}
-                                        {eng.firstName} {eng.lastName}
-                                    </ListGroup.Item>
-                                ))}
-                            </ListGroup>
-                        </Card>
-                    </Tab>
-                </Tabs>
-            </Container>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--operations-text-muted)' }}>
+                                                    {reportCount} {reportCount === 1 ? 'report' : 'reports'} submitted
+                                                </div>
+                                            </div>
+                                            {hasPermission('PROJECT_UPDATE') && !project.isArchived && (
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <button
+                                                        className="operations-btn operations-btn--green operations-btn--icon"
+                                                        onClick={() => openSiteModal(site)}
+                                                        title="Edit Site"
+                                                    >
+                                                        <FaEdit aria-hidden="true" />
+                                                    </button>
+                                                    {hasPermission('PROJECT_DELETE') && (
+                                                        <button
+                                                            className="operations-btn operations-btn--red operations-btn--icon"
+                                                            onClick={() => confirmSiteDelete(site)}
+                                                            title="Delete Site"
+                                                        >
+                                                            <FaTrash aria-hidden="true" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="operations-empty" style={{ padding: '3rem 2rem' }}>
+                                <div className="operations-empty__icon" style={{ width: '60px', height: '60px', fontSize: '2rem' }}>
+                                    <FaMapMarkerAlt aria-hidden="true" />
+                                </div>
+                                <h3 className="operations-empty__title" style={{ fontSize: '1.25rem' }}>No Sites</h3>
+                                <p className="operations-empty__subtitle">
+                                    No sites registered for this project yet.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
 
+                {/* Engineers Tab */}
+                {activeTab === 'engineers' && (
+                    <div className="operations-form-shell" style={{ padding: '2rem' }}>
+                        <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.35rem', fontWeight: '700' }}>
+                            Assigned Engineers
+                        </h3>
+
+                        {assignedEngineers.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {assignedEngineers.map(eng => (
+                                    <div
+                                        key={eng.id}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '1rem',
+                                            padding: '1.25rem 1.5rem',
+                                            borderRadius: '12px',
+                                            background: 'var(--operations-surface-tertiary)',
+                                            border: '1px solid var(--operations-border)'
+                                        }}
+                                    >
+                                        {eng.profilePictureUrl ? (
+                                            <img
+                                                src={`http://localhost:8080${eng.profilePictureUrl}`}
+                                                alt={`${eng.firstName} ${eng.lastName}`}
+                                                style={{
+                                                    width: '48px',
+                                                    height: '48px',
+                                                    borderRadius: '50%',
+                                                    objectFit: 'cover',
+                                                    border: '2px solid var(--operations-border)'
+                                                }}
+                                            />
+                                        ) : (
+                                            <div style={{
+                                                width: '48px',
+                                                height: '48px',
+                                                borderRadius: '50%',
+                                                background: 'var(--operations-surface-primary)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                border: '2px solid var(--operations-border)'
+                                            }}>
+                                                <FaUser size={24} style={{ color: 'var(--operations-text-muted)' }} />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <div style={{ fontWeight: '700', fontSize: '1.05rem' }}>
+                                                {eng.firstName} {eng.lastName}
+                                            </div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--operations-text-muted)' }}>
+                                                {eng.role?.name || 'Field Engineer'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="operations-empty" style={{ padding: '3rem 2rem' }}>
+                                <div className="operations-empty__icon" style={{ width: '60px', height: '60px', fontSize: '2rem' }}>
+                                    <FaUsers aria-hidden="true" />
+                                </div>
+                                <h3 className="operations-empty__title" style={{ fontSize: '1.25rem' }}>No Engineers Assigned</h3>
+                                <p className="operations-empty__subtitle">
+                                    No engineers have been assigned to this project yet.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Site Modal */}
+            {showSiteModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'var(--operations-overlay)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '1rem'
+                }}>
+                    <div style={{
+                        background: 'var(--operations-surface-primary)',
+                        borderRadius: '16px',
+                        maxWidth: '500px',
+                        width: '100%',
+                        border: '1px solid var(--operations-border)',
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+                    }}>
+                        <div style={{
+                            padding: '1.5rem 1.75rem',
+                            borderBottom: '1px solid var(--operations-border)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: '700' }}>
+                                {editingSite ? 'Edit Site' : 'Add Site'}
+                            </h3>
+                            <button
+                                onClick={() => closeSiteModal()}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '0.5rem',
+                                    color: 'var(--operations-text-muted)'
+                                }}
+                            >
+                                <FaTimes size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleSiteSubmit}>
+                            <div style={{ padding: '1.75rem' }}>
+                                <div className="operations-form-group" style={{ marginBottom: '1.25rem' }}>
+                                    <label htmlFor="siteName">Site Name</label>
+                                    <input
+                                        id="siteName"
+                                        name="name"
+                                        className="operations-input"
+                                        value={siteForm.name}
+                                        onChange={handleSiteFormChange}
+                                        required
+                                        placeholder="e.g., Main Construction Area"
+                                    />
+                                </div>
+                                <div className="operations-form-group">
+                                    <label htmlFor="siteLocation">Location / Notes</label>
+                                    <input
+                                        id="siteLocation"
+                                        name="location"
+                                        className="operations-input"
+                                        value={siteForm.location}
+                                        onChange={handleSiteFormChange}
+                                        placeholder="e.g., Plot 12, Kampala"
+                                    />
+                                </div>
+                            </div>
+                            <div style={{
+                                padding: '1.25rem 1.75rem',
+                                borderTop: '1px solid var(--operations-border)',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '0.75rem'
+                            }}>
+                                <button
+                                    type="button"
+                                    className="operations-btn operations-btn--blue"
+                                    onClick={() => closeSiteModal()}
+                                    disabled={siteSubmitting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className={`operations-btn ${editingSite ? 'operations-btn--green' : 'operations-btn--gold'}`}
+                                    disabled={siteSubmitting}
+                                >
+                                    {siteSubmitting ? 'Saving...' : editingSite ? 'Update Site' : 'Create Site'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modals */}
             <FieldReportModal
                 show={showReportModal}
                 handleClose={() => setShowReportModal(false)}
@@ -464,61 +918,37 @@ const ProjectDetailsPage = () => {
                 onReportSubmit={fetchData}
             />
 
-            <ReportViewModal 
+            <ReportViewModal
                 show={selectedReport !== null}
                 handleClose={() => setSelectedReport(null)}
                 report={selectedReport}
             />
-            
+
             <GalleryUploadModal
                 show={showGalleryModal}
                 handleClose={() => setShowGalleryModal(false)}
                 project={project}
                 onUploadSuccess={fetchData}
             />
-            <ImageLightbox 
+
+            <ImageLightbox
                 show={lightboxImage !== null}
                 handleClose={() => setLightboxImage(null)}
                 image={lightboxImage}
             />
 
-            <Modal show={showSiteModal} onHide={closeSiteModal} centered>
-                <Form onSubmit={handleSiteSubmit}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>{editingSite ? 'Edit Site' : 'Add Site'}</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Site Name</Form.Label>
-                            <Form.Control
-                                name="name"
-                                value={siteForm.name}
-                                onChange={handleSiteFormChange}
-                                required
-                                placeholder="e.g., Main Construction Area"
-                            />
-                        </Form.Group>
-                        <Form.Group>
-                            <Form.Label>Location / Notes</Form.Label>
-                            <Form.Control
-                                name="location"
-                                value={siteForm.location}
-                                onChange={handleSiteFormChange}
-                                placeholder="e.g., Plot 12, Kampala"
-                            />
-                        </Form.Group>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={closeSiteModal} disabled={siteSubmitting}>
-                            Cancel
-                        </Button>
-                        <Button variant="primary" type="submit" disabled={siteSubmitting}>
-                            {siteSubmitting ? 'Saving...' : editingSite ? 'Update Site' : 'Create Site'}
-                        </Button>
-                    </Modal.Footer>
-                </Form>
-            </Modal>
-        </>
+            <ConfirmDialog
+                open={dialogConfig.open}
+                title={dialogConfig.title}
+                message={dialogConfig.message}
+                detail={dialogConfig.detail}
+                tone={dialogConfig.tone}
+                confirmLabel={dialogConfig.confirmLabel}
+                cancelLabel={dialogConfig.cancelLabel}
+                onConfirm={dialogConfig.onConfirm}
+                onCancel={closeDialog}
+            />
+        </section>
     );
 };
 
