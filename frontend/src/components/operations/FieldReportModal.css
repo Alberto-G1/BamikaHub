@@ -1,0 +1,649 @@
+/* ========================================
+   Field Report Modal Styles
+   Beautiful, animated modal for daily reports
+   ======================================== */
+
+/* Backdrop */
+.field-report-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 999998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.field-report-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Modal Container */
+.field-report-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999999;
+    display: flex;
+    align-items: flex-start; /* Align to top to allow scrolling */
+    justify-content: center;
+    padding: 40px 20px; /* Add more padding for spacing */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+}
+
+.field-report-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.field-report-modal.show .field-report-modal-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* Modal Content */
+.field-report-modal-content {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 800px;
+    width: 100%;
+    /* max-height is removed to allow content to define height */
+    overflow: visible; /* Allow shadows to be seen */
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    margin: auto 0; /* Center vertically within the scrollable container */
+}
+
+/* Header */
+.field-report-modal-header {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky; /* Make header sticky */
+    top: 0;
+    z-index: 10;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+
+.field-report-modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.field-report-modal-icon {
+    width: 48px;
+    height: 48px;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 12px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.field-report-modal-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.field-report-modal-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 4px 0 0 0;
+    font-weight: 500;
+}
+
+.field-report-modal-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(10px);
+}
+
+.field-report-modal-close:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.25);
+    transform: rotate(90deg);
+}
+
+.field-report-modal-close:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Body */
+.field-report-modal-body {
+    padding: 28px;
+    overflow-y: auto;
+    flex: 1;
+    background: #ffffff;
+}
+
+.field-report-modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.field-report-modal-body::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.field-report-modal-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.field-report-modal-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Sections */
+.field-report-section {
+    margin-bottom: 28px;
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.field-report-section:last-child {
+    margin-bottom: 0;
+}
+
+.field-report-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+/* Form Groups */
+.field-report-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.field-report-form-group {
+    margin-bottom: 16px;
+}
+
+.field-report-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.field-report-label-icon {
+    color: #F59E0B;
+    font-size: 16px;
+}
+
+.field-report-required {
+    color: #ef4444;
+    margin-left: 4px;
+}
+
+.field-report-input,
+.field-report-select,
+.field-report-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #1e293b;
+    background: #ffffff;
+    transition: all 0.25s ease;
+    font-family: inherit;
+}
+
+.field-report-input:focus,
+.field-report-select:focus,
+.field-report-textarea:focus {
+    outline: none;
+    border-color: #F59E0B;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.field-report-input::placeholder,
+.field-report-textarea::placeholder {
+    color: #94a3b8;
+}
+
+.field-report-select:disabled {
+    background: #f8fafc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.field-report-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.field-report-help-text {
+    display: block;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 6px;
+}
+
+/* Toggle Buttons */
+.field-report-toggle-group {
+    display: flex;
+    gap: 12px;
+}
+
+.field-report-toggle-btn {
+    flex: 1;
+    padding: 16px 24px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.field-report-toggle-btn svg {
+    font-size: 18px;
+}
+
+.field-report-toggle-btn:hover:not(.active) {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.field-report-toggle-btn.active {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    border-color: #10B981;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* File Upload Section */
+.field-report-upload-section {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.field-report-dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f8fafc;
+    position: relative;
+    overflow: hidden;
+}
+
+.field-report-dropzone::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.field-report-dropzone:hover::before,
+.field-report-dropzone.dragging::before {
+    opacity: 1;
+}
+
+.field-report-dropzone.dragging {
+    border-color: #3B82F6;
+    background: rgba(59, 130, 246, 0.05);
+    transform: scale(1.02);
+}
+
+.field-report-dropzone.has-file {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.field-report-dropzone-content {
+    position: relative;
+    z-index: 1;
+}
+
+.field-report-upload-icon {
+    font-size: 48px;
+    color: #3B82F6;
+    margin-bottom: 16px;
+    animation: float 3s ease-in-out infinite;
+}
+
+.field-report-dropzone-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+}
+
+.field-report-dropzone-subtext {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0 0 12px 0;
+}
+
+/* File Preview */
+.field-report-file-preview {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.field-report-file-icon {
+    font-size: 40px;
+    flex-shrink: 0;
+}
+
+.field-report-file-icon.success {
+    color: #10b981;
+    animation: scaleIn 0.4s ease-out;
+}
+
+.field-report-file-info {
+    flex: 1;
+    text-align: left;
+}
+
+.field-report-file-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 4px 0;
+    word-break: break-word;
+}
+
+.field-report-file-size {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.field-report-file-remove {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+}
+
+.field-report-file-remove:hover {
+    background: #ef4444;
+    color: #ffffff;
+    transform: scale(1.1);
+}
+
+/* Form Content Animation */
+.field-report-form-content {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+/* Footer */
+.field-report-modal-footer {
+    padding: 20px 28px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    position: sticky; /* Make footer sticky */
+    bottom: 0;
+    z-index: 10;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+}
+
+/* Buttons */
+.field-report-btn {
+    padding: 12px 28px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    min-width: 140px;
+}
+
+.field-report-btn svg {
+    font-size: 18px;
+}
+
+.field-report-btn--cancel {
+    background: #EFF6FF;
+    color: #3B82F6;
+    border: 2px solid #3B82F6;
+}
+
+.field-report-btn--cancel:hover:not(:disabled) {
+    background: #DBEAFE;
+    color: #2563EB;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.field-report-btn--submit {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.field-report-btn--submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+.field-report-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Spinner */
+.field-report-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Dark Theme Support - Explicitly disabled to maintain light mode */
+body.dark-theme .field-report-modal-content,
+body.dark-theme .field-report-modal-body,
+body.dark-theme .field-report-modal-footer,
+body.dark-theme .field-report-input,
+body.dark-theme .field-report-select,
+body.dark-theme .field-report-textarea,
+body.dark-theme .field-report-toggle-btn,
+body.dark-theme .field-report-dropzone,
+body.dark-theme .field-report-file-preview {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .field-report-modal {
+        padding: 10px;
+    }
+
+    .field-report-modal-content {
+        max-height: 95vh;
+        border-radius: 16px;
+    }
+
+    .field-report-modal-header {
+        padding: 20px;
+    }
+
+    .field-report-modal-icon {
+        width: 40px;
+        height: 40px;
+        padding: 10px;
+    }
+
+    .field-report-modal-title {
+        font-size: 20px;
+    }
+
+    .field-report-modal-subtitle {
+        font-size: 13px;
+    }
+
+    .field-report-modal-body {
+        padding: 20px;
+    }
+
+    .field-report-row {
+        grid-template-columns: 1fr;
+    }
+
+    .field-report-toggle-group {
+        flex-direction: column;
+    }
+
+    .field-report-dropzone {
+        padding: 30px 20px;
+    }
+
+    .field-report-upload-icon {
+        font-size: 40px;
+    }
+
+    .field-report-modal-footer {
+        padding: 16px 20px;
+        flex-direction: column-reverse;
+    }
+
+    .field-report-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .field-report-modal-header-content {
+        gap: 12px;
+    }
+
+    .field-report-modal-title {
+        font-size: 18px;
+    }
+
+    .field-report-file-preview {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .field-report-section-title {
+        font-size: 15px;
+    }
+}

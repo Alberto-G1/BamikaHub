@@ -1,32 +1,44 @@
 import React, { useState, useEffect } from 'react';
+import { FaEdit, FaTrash, FaCheckCircle, FaTimesCircle, FaClipboardCheck, FaArrowLeft } from 'react-icons/fa';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Card, Row, Col, Button, Spinner, Badge, Table, Form, ListGroup, Alert } from 'react-bootstrap';
-import { FaArrowLeft, FaEdit, FaTrash, FaHistory } from 'react-icons/fa';import api from '../../api/api.js';
+import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import FulfillmentModal from '../../components/finance/FulfillmentModal.jsx';
+import './FinanceStyles.css';
 
-// Helper to get a color for the requisition status
-const getStatusBadge = (status) => {
+const getStatusBadgeClass = (status) => {
     switch (status) {
-        case 'PENDING': return <Badge bg="warning" text="dark">Pending Approval</Badge>;
-        case 'APPROVED_BY_FINANCE': return <Badge bg="success">Approved</Badge>;
-        case 'REJECTED': return <Badge bg="danger">Rejected</Badge>;
-        case 'FULFILLED': return <Badge bg="info">Fulfilled</Badge>;
-        case 'CLOSED': return <Badge bg="secondary">Closed</Badge>;
-        default: return <Badge bg="light" text="dark">{status}</Badge>;
+        case 'PENDING': return 'finance-badge--pending';
+        case 'APPROVED': return 'finance-badge--approved';
+        case 'REJECTED': return 'finance-badge--rejected';
+        case 'FULFILLED': return 'finance-badge--fulfilled';
+        case 'CLOSED': return 'finance-badge--closed';
+        case 'RESUBMITTED': return 'finance-badge--resubmitted';
+        default: return 'finance-badge--pending';
     }
 };
 
-// Reusable currency formatter for UGX
+const formatStatus = (status) => {
+    return status ? status.replace('_', ' ') : 'Pending';
+};
+
+const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+};
+
 const formatCurrency = (amount) => {
-    if (amount === null || amount === undefined || isNaN(amount)) return 'USh 0';
     return new Intl.NumberFormat('en-UG', {
         style: 'currency',
         currency: 'UGX',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount || 0);
 };
 
 const RequisitionDetailsPage = () => {
@@ -35,255 +47,417 @@ const RequisitionDetailsPage = () => {
     const { user, hasPermission } = useAuth();
     const [requisition, setRequisition] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [notes, setNotes] = useState('');
+    const [dialogConfig, setDialogConfig] = useState({ open: false });
     const [showFulfillmentModal, setShowFulfillmentModal] = useState(false);
+    const [actionLoading, setActionLoading] = useState('');
 
-    const fetchData = async () => {
+    useEffect(() => {
+        fetchRequisition();
+    }, [id]);
+
+    const fetchRequisition = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/requisitions/${id}`);
-            setRequisition(res.data);
+            const response = await api.get(`/requisitions/${id}`);
+            setRequisition(response.data);
         } catch (error) {
-            toast.error("Failed to load requisition details.");
+            toast.error('Failed to load requisition details.');
             navigate('/requisitions');
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { 
-        fetchData(); 
-    }, [id, navigate]);
+    const closeDialog = () => setDialogConfig(prev => ({ ...prev, open: false }));
 
-    // A generic handler for all state-changing actions
-    const handleAction = async (action) => {
-        if ((action === 'reject' || action === 'close') && !notes.trim()) {
-            toast.error("Notes or a reason are required for this action.");
-            return;
-        }
+    const confirmDelete = () => {
+        setDialogConfig({
+            open: true,
+            tone: 'danger',
+            title: 'Delete Requisition',
+            message: `Delete requisition REQ-${String(requisition.id).padStart(4, '0')}?`,
+            detail: 'This action cannot be undone. All associated data will be permanently removed.',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            onConfirm: handleDelete,
+        });
+    };
 
-        const endpoint = `/requisitions/${id}/${action}`;
-        const payload = { notes };
+    const handleDelete = async () => {
+        closeDialog();
         try {
-            await api.post(endpoint, payload);
-            toast.success(`Requisition has been ${action}ed successfully.`);
-            setNotes(''); // Clear notes field after action
-            fetchData(); // Refresh data to show the new status and history
+            await api.delete(`/requisitions/${id}`);
+            toast.success('Requisition deleted successfully.');
+            navigate('/requisitions');
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Action failed.');
+            toast.error(error.response?.data?.message || 'Failed to delete requisition.');
         }
     };
-    
-    const handleDelete = async () => {
-        const toastId = toast.error(
-            <div>
-                <p><strong>Permanently delete this requisition?</strong></p>
-                <p className="small text-muted">This action cannot be undone.</p>
-                <div className="mt-2">
-                    <Button variant="danger" size="sm" className="me-2" onClick={async () => {
-                        try {
-                            await api.delete(`/requisitions/${id}`);
-                            toast.warn("Requisition has been deleted.");
-                            navigate('/requisitions');
-                        } catch (error) {
-                            toast.error(error.response?.data?.message || "Failed to delete requisition.");
-                        }
-                        toast.dismiss(toastId);
-                    }}>
-                        Confirm Delete
-                    </Button>
-                    <Button variant="light" size="sm" onClick={() => toast.dismiss(toastId)}>
-                        Cancel
-                    </Button>
-                </div>
-            </div>,
-            { autoClose: false, closeOnClick: false, position: "top-center", theme: "colored" }
-        );
+
+    const handleApproval = async (action, notes = '') => {
+        setActionLoading(action);
+        try {
+            await api.post(`/requisitions/${id}/${action}`, { notes });
+            toast.success(`Requisition ${action}d successfully.`);
+            fetchRequisition();
+        } catch (error) {
+            toast.error(error.response?.data?.message || `Failed to ${action} requisition.`);
+        } finally {
+            setActionLoading('');
+        }
+    };
+
+    const handleClose = async (notes) => {
+        setActionLoading('close');
+        try {
+            await api.post(`/requisitions/${id}/close`, { notes });
+            toast.success('Requisition closed successfully.');
+            fetchRequisition();
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to close requisition.');
+        } finally {
+            setActionLoading('');
+        }
+    };
+
+    const canEdit = () => {
+        return hasPermission('REQUISITION_UPDATE') && 
+               (requisition.status === 'PENDING' || requisition.status === 'REJECTED') &&
+               requisition.requestedBy?.id === user?.id;
+    };
+
+    const canDelete = () => {
+        return hasPermission('REQUISITION_DELETE') && 
+               requisition.status === 'PENDING' &&
+               requisition.requestedBy?.id === user?.id;
+    };
+
+    const canApprove = () => {
+        return hasPermission('REQUISITION_APPROVE') && requisition.status === 'PENDING';
+    };
+
+    const canFulfill = () => {
+        return hasPermission('REQUISITION_FULFILL') && requisition.status === 'APPROVED';
+    };
+
+    const canClose = () => {
+        return hasPermission('REQUISITION_CLOSE') && requisition.status === 'FULFILLED';
     };
 
     if (loading) {
-         return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
-                <Spinner animation="border" />
-            </div>
+        return (
+            <section className="finance-page">
+                <div className="finance-loading">
+                    <span className="finance-spinner" aria-hidden="true" />
+                    <p>Loading requisition details...</p>
+                </div>
+            </section>
         );
     }
 
-    if (!requisition) return null;
-
-    const totalEstimatedCost = requisition.items.reduce((acc, item) => {
-        const cost = item.estimatedUnitCost || 0;
-        const quantity = item.quantity || 0;
-        return acc + (quantity * cost);
-    }, 0);
-
-    const renderActionCard = () => {
-        // Finance Manager sees Approve/Reject for PENDING requisitions
-       if (hasPermission('REQUISITION_APPROVE') && requisition.status === 'PENDING') {
-            return (
-                <Card className="shadow-sm">
-                    <Card.Header as="h5">Approval Action</Card.Header>
-                    <Card.Body>
-                        {requisition.submissionCount > 1 && requisition.notesHistory && (
-                            <Alert variant="warning">
-                                <Alert.Heading><FaHistory className="me-2" /> Resubmission History</Alert.Heading>
-                                <p className="mb-1 small">This requisition was previously rejected. Review the reason below before approving.</p>
-                                <hr />
-                                <pre style={{ whiteSpace: 'pre-wrap', fontSize: '0.8rem', maxHeight: '150px', overflowY: 'auto' }}>
-                                    {requisition.notesHistory}
-                                </pre>
-                            </Alert>
-                        )}
-                        <Form.Group className="mb-3">
-                            <Form.Label>Notes / Reason for Rejection</Form.Label>
-                            <Form.Control as="textarea" rows={4} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Required for rejection..."/>
-                        </Form.Group>
-                        <div className="d-grid gap-2">
-                            <Button variant="success" onClick={() => handleAction('approve')}>Approve</Button>
-                            <Button variant="danger" onClick={() => handleAction('reject')}>Reject</Button>
-                        </div>
-                    </Card.Body>
-                </Card>
-            );
-        }
-        
-        // Inventory Manager sees Fulfill for APPROVED requisitions
-        if (hasPermission('ITEM_UPDATE') && requisition.status === 'APPROVED_BY_FINANCE') {
-            return (
-                 <Card className="shadow-sm">
-                    <Card.Header as="h5">Fulfillment Action</Card.Header>
-                    <Card.Body>
-                        <p className="text-muted">Procure the requested items and record the fulfillment action.</p>
-                        <div className="d-grid">
-                            <Button variant="primary" onClick={() => setShowFulfillmentModal(true)}>
-                                Fulfill Requisition
-                            </Button>
-                        </div>
-                    </Card.Body>
-                </Card>
-            );
-        }
-        
-        // Finance Manager sees Close for FULFILLED requisitions
-        if (hasPermission('REQUISITION_APPROVE') && requisition.status === 'FULFILLED') {
-             return (
-                 <Card className="shadow-sm">
-                    <Card.Header as="h5">Closing Action</Card.Header>
-                    <Card.Body>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Closing Notes</Form.Label>
-                            <Form.Control as="textarea" rows={4} value={notes} onChange={e => setNotes(e.target.value)} required />
-                        </Form.Group>
-                        <div className="d-grid">
-                            <Button variant="secondary" onClick={() => handleAction('close')}>Close Requisition</Button>
-                        </div>
-                    </Card.Body>
-                </Card>
-            );
-        }
-
-        // Default: Show history card for all other states or if user has no action permissions
+    if (!requisition) {
         return (
-             <Card className="shadow-sm">
-                <Card.Header as="h5">Action History</Card.Header>
-                <Card.Body>
-                    <p className="mb-1"><strong>Final Status:</strong> {getStatusBadge(requisition.status)}</p>
-                    <p className="mb-1"><strong>Action By:</strong> {requisition.approvedBy?.username || 'N/A'}</p>
-                    <p className="mb-1"><strong>Action Date:</strong> {requisition.approvedAt ? new Date(requisition.approvedAt).toLocaleString() : 'N/A'}</p>
-                    <hr/>
-                    <p className="mb-0"><strong>Notes / Reason:</strong></p>
-                    <p className="text-muted">{requisition.approvalNotes || 'No notes provided.'}</p>
-                </Card.Body>
-             </Card>
+            <section className="finance-page">
+                <div className="finance-empty-state">
+                    <h3 className="finance-empty-state__title">Requisition not found</h3>
+                    <p className="finance-empty-state__message">
+                        The requested requisition could not be found or you don't have permission to view it.
+                    </p>
+                    <button
+                        className="finance-btn finance-btn--blue"
+                        onClick={() => navigate('/requisitions')}
+                    >
+                        Back to Requisitions
+                    </button>
+                </div>
+            </section>
         );
-    };
+    }
+
+    const totalEstimatedCost = requisition.items?.reduce((total, item) => {
+        return total + (item.quantity * (item.estimatedUnitCost || 0));
+    }, 0) || 0;
 
     return (
-        <>
-            <Container>
-                <Button variant="outline-secondary" size="sm" className="mb-3" onClick={() => navigate('/requisitions')}>
-                    <FaArrowLeft className="me-2" /> Back to Requisitions
-                </Button>
-                <Row>
-                    <Col md={8}>
-                        <Card className="shadow-sm">
-                            <Card.Header>
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h3>Requisition REQ-{String(requisition.id).padStart(4, '0')}</h3>
-                                        {requisition.submissionCount > 1 && <Badge bg="info" className="me-2">Resubmitted</Badge>}
-                                        {getStatusBadge(requisition.status)}
-                                    </div>
-                                    <div>
-                                        {user && requisition.requestedBy.id === user.id && ['PENDING', 'REJECTED'].includes(requisition.status) && (
-                                            <Button variant="outline-warning" size="sm" className="me-2" onClick={() => navigate(`/requisitions/edit/${id}`)} title="Edit Requisition">
-                                                <FaEdit />
-                                            </Button>
-                                        )}
-                                        {user && ((requisition.requestedBy.id === user.id && requisition.status === 'PENDING') || hasPermission('REQUISITION_APPROVE')) && (
-                                            <Button variant="outline-danger" size="sm" onClick={handleDelete} title="Delete Requisition">
-                                                <FaTrash />
-                                            </Button>
-                                        )}
+        <section className="finance-page">
+            {/* Header */}
+            <div className="finance-banner" data-animate="fade-up">
+                <div className="finance-banner__content">
+                    <div className="finance-banner__info">
+                        <button
+                            className="finance-btn finance-btn--secondary finance-btn--sm"
+                            onClick={() => navigate('/requisitions')}
+                            style={{ marginBottom: '1rem', alignSelf: 'flex-start' }}
+                        >
+                            <FaArrowLeft aria-hidden="true" />
+                            <span>Back to Requisitions</span>
+                        </button>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                            <h1 className="finance-banner__title" style={{ margin: 0 }}>
+                                REQ-{String(requisition.id).padStart(4, '0')}
+                            </h1>
+                            <span className={`finance-badge ${getStatusBadgeClass(requisition.status)}`}>
+                                {formatStatus(requisition.status)}
+                            </span>
+                            {requisition.status === 'RESUBMITTED' && (
+                                <span className="finance-badge finance-badge--resubmitted">
+                                    Resubmitted
+                                </span>
+                            )}
+                        </div>
+                        
+                        <p className="finance-banner__subtitle" style={{ margin: '0.5rem 0 0 0' }}>
+                            Material requisition for {requisition.project?.name}
+                        </p>
+                    </div>
+
+                    <div className="finance-banner__actions">
+                        {canEdit() && (
+                            <button
+                                className="finance-btn finance-btn--green"
+                                onClick={() => navigate(`/requisitions/${id}/edit`)}
+                            >
+                                <FaEdit aria-hidden="true" />
+                                <span>Edit</span>
+                            </button>
+                        )}
+                        {canDelete() && (
+                            <button
+                                className="finance-btn finance-btn--red"
+                                onClick={confirmDelete}
+                            >
+                                <FaTrash aria-hidden="true" />
+                                <span>Delete</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', alignItems: 'flex-start' }}>
+                {/* Main Content */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {/* Requisition Info */}
+                    <div className="finance-table-container" data-animate="fade-up" data-delay="0.08">
+                        <div style={{ padding: '1.75rem' }}>
+                            <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.1rem', fontWeight: '700', color: 'var(--finance-text-primary)' }}>
+                                Requisition Information
+                            </h3>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+                                <div>
+                                    <div className="finance-label">Project</div>
+                                    <div style={{ fontWeight: '600', color: 'var(--finance-text-primary)' }}>
+                                        {requisition.project?.name || 'Unknown'}
                                     </div>
                                 </div>
-                            </Card.Header>
-                            <Card.Body>
-                                <ListGroup variant="flush" className="mb-3">
-                                    <ListGroup.Item><strong>Project:</strong> {requisition.project.name}</ListGroup.Item>
-                                    <ListGroup.Item><strong>Requested By:</strong> {requisition.requestedBy.username}</ListGroup.Item>
-                                    <ListGroup.Item><strong>Date Requested:</strong> {new Date(requisition.createdAt).toLocaleString()}</ListGroup.Item>
-                                    <ListGroup.Item><strong>Date Needed By:</strong> {new Date(requisition.dateNeeded).toLocaleDateString()}</ListGroup.Item>
-                                    <ListGroup.Item><strong>Justification:</strong> {requisition.justification}</ListGroup.Item>
-                                </ListGroup>
+                                <div>
+                                    <div className="finance-label">Requester</div>
+                                    <div style={{ fontWeight: '600', color: 'var(--finance-text-primary)' }}>
+                                        {requisition.requestedBy?.fullName || 'Unknown'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="finance-label">Date Requested</div>
+                                    <div style={{ fontWeight: '600', color: 'var(--finance-text-primary)' }}>
+                                        {formatDate(requisition.createdAt)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="finance-label">Date Needed</div>
+                                    <div style={{ fontWeight: '600', color: 'var(--finance-text-primary)' }}>
+                                        {formatDate(requisition.dateNeeded)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {requisition.justification && (
+                                <div style={{ marginTop: '1.25rem' }}>
+                                    <div className="finance-label">Justification</div>
+                                    <div style={{ fontWeight: '600', color: 'var(--finance-text-primary)', marginTop: '0.5rem', lineHeight: '1.5' }}>
+                                        {requisition.justification}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Items Table */}
+                    <div className="finance-table-container" data-animate="fade-up" data-delay="0.12">
+                        <div style={{ padding: '1.75rem' }}>
+                            <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.1rem', fontWeight: '700', color: 'var(--finance-text-primary)' }}>
+                                Requested Items
+                            </h3>
+                            
+                            <table className="finance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>Description</th>
+                                        <th>Quantity</th>
+                                        <th>Unit</th>
+                                        <th>Est. Unit Cost</th>
+                                        <th>Total Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {requisition.items?.map((item, index) => (
+                                        <tr key={index}>
+                                            <td style={{ fontWeight: '600' }}>{item.itemName}</td>
+                                            <td>{item.description || 'N/A'}</td>
+                                            <td>{item.quantity}</td>
+                                            <td>{item.unit || 'pcs'}</td>
+                                            <td>{formatCurrency(item.estimatedUnitCost)}</td>
+                                            <td style={{ fontWeight: '600' }}>
+                                                {formatCurrency(item.quantity * (item.estimatedUnitCost || 0))}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr style={{ borderTop: '2px solid var(--finance-border)', fontWeight: '700' }}>
+                                        <td colSpan={5} style={{ textAlign: 'right', padding: '1.25rem' }}>
+                                            Total Estimated Cost:
+                                        </td>
+                                        <td style={{ fontSize: '1.1rem', color: 'var(--finance-gold-hover)' }}>
+                                            {formatCurrency(totalEstimatedCost)}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sidebar Actions */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {/* Pending Actions */}
+                    {requisition.status === 'PENDING' && canApprove() && (
+                        <div className="finance-table-container" data-animate="fade-up" data-delay="0.16">
+                            <div style={{ padding: '1.75rem' }}>
+                                <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.1rem', fontWeight: '700', color: 'var(--finance-text-primary)' }}>
+                                    Approval Actions
+                                </h3>
                                 
-                                <h5 className="mt-4">Requested Items</h5>
-                                <Table bordered size="sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Item</th>
-                                            <th className="text-end">Qty</th>
-                                            <th>Unit</th>
-                                            <th className="text-end">Est. Unit Cost</th>
-                                            <th className="text-end">Est. Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {requisition.items.map(item => (
-                                            <tr key={item.id}>
-                                                <td>{item.itemName}</td>
-                                                <td className="text-end">{item.quantity}</td>
-                                                <td>{item.unitOfMeasure}</td>
-                                                <td className="text-end">{formatCurrency(item.estimatedUnitCost)}</td>
-                                                <td className="text-end">{formatCurrency(item.quantity * (item.estimatedUnitCost || 0))}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr className="fw-bold">
-                                            <td colSpan="4" className="text-end">Total Estimated Cost:</td>
-                                            <td className="text-end">{formatCurrency(totalEstimatedCost)}</td>
-                                        </tr>
-                                    </tfoot>
-                                </Table>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col md={4}>
-                        {renderActionCard()}
-                    </Col>
-                </Row>
-            </Container>
-            
-            {requisition && (
-                <FulfillmentModal
-                    show={showFulfillmentModal}
-                    handleClose={() => setShowFulfillmentModal(false)}
-                    requisition={requisition}
-                    onFulfillmentSuccess={fetchData}
-                />
-            )}
-        </>
+                                {requisition.resubmissionHistory && requisition.resubmissionHistory.length > 0 && (
+                                    <div className="finance-alert finance-alert--info" style={{ marginBottom: '1rem' }}>
+                                        <strong>Resubmission History:</strong>
+                                        <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.25rem' }}>
+                                            {requisition.resubmissionHistory.map((entry, index) => (
+                                                <li key={index} style={{ fontSize: '0.9rem' }}>
+                                                    {entry.notes} - {formatDate(entry.date)}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                                
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    <button
+                                        className="finance-btn finance-btn--green"
+                                        onClick={() => handleApproval('approve')}
+                                        disabled={actionLoading === 'approve'}
+                                    >
+                                        <FaCheckCircle aria-hidden="true" />
+                                        <span>{actionLoading === 'approve' ? 'Approving...' : 'Approve'}</span>
+                                    </button>
+                                    <button
+                                        className="finance-btn finance-btn--red"
+                                        onClick={() => {
+                                            const notes = prompt('Rejection reason (optional):');
+                                            if (notes !== null) handleApproval('reject', notes);
+                                        }}
+                                        disabled={actionLoading === 'reject'}
+                                    >
+                                        <FaTimesCircle aria-hidden="true" />
+                                        <span>{actionLoading === 'reject' ? 'Rejecting...' : 'Reject'}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Approved Actions */}
+                    {requisition.status === 'APPROVED' && canFulfill() && (
+                        <div className="finance-table-container" data-animate="fade-up" data-delay="0.16">
+                            <div style={{ padding: '1.75rem' }}>
+                                <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.1rem', fontWeight: '700', color: 'var(--finance-text-primary)' }}>
+                                    Fulfillment Actions
+                                </h3>
+                                <button
+                                    className="finance-btn finance-btn--blue"
+                                    onClick={() => setShowFulfillmentModal(true)}
+                                >
+                                    <FaClipboardCheck aria-hidden="true" />
+                                    <span>Fulfill Requisition</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Fulfilled Actions */}
+                    {requisition.status === 'FULFILLED' && canClose() && (
+                        <div className="finance-table-container" data-animate="fade-up" data-delay="0.16">
+                            <div style={{ padding: '1.75rem' }}>
+                                <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.1rem', fontWeight: '700', color: 'var(--finance-text-primary)' }}>
+                                    Close Requisition
+                                </h3>
+                                <button
+                                    className="finance-btn finance-btn--secondary"
+                                    onClick={() => {
+                                        const notes = prompt('Closing notes (optional):');
+                                        if (notes !== null) handleClose(notes);
+                                    }}
+                                    disabled={actionLoading === 'close'}
+                                >
+                                    <FaCheckCircle aria-hidden="true" />
+                                    <span>{actionLoading === 'close' ? 'Closing...' : 'Mark as Closed'}</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Status History */}
+                    <div className="finance-table-container" data-animate="fade-up" data-delay="0.20">
+                        <div style={{ padding: '1.75rem' }}>
+                            <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.1rem', fontWeight: '700', color: 'var(--finance-text-primary)' }}>
+                                Status History
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--finance-text-secondary)' }}>
+                                    <strong>Created:</strong> {formatDate(requisition.createdAt)}
+                                </div>
+                                {requisition.approvedAt && (
+                                    <div style={{ fontSize: '0.9rem', color: 'var(--finance-text-secondary)' }}>
+                                        <strong>Approved:</strong> {formatDate(requisition.approvedAt)}
+                                    </div>
+                                )}
+                                {requisition.fulfilledAt && (
+                                    <div style={{ fontSize: '0.9rem', color: 'var(--finance-text-secondary)' }}>
+                                        <strong>Fulfilled:</strong> {formatDate(requisition.fulfilledAt)}
+                                    </div>
+                                )}
+                                {requisition.closedAt && (
+                                    <div style={{ fontSize: '0.9rem', color: 'var(--finance-text-secondary)' }}>
+                                        <strong>Closed:</strong> {formatDate(requisition.closedAt)}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Modals */}
+            <ConfirmDialog {...dialogConfig} onClose={closeDialog} />
+            <FulfillmentModal
+                show={showFulfillmentModal}
+                handleClose={() => setShowFulfillmentModal(false)}
+                requisition={requisition}
+                onFulfillmentSuccess={fetchRequisition}
+            />
+        </section>
     );
 };
 
