@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Spinner, Card, Modal, Form } from 'react-bootstrap';
-import { FaPlus, FaEdit, FaTrash, FaTruck } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaTruck, FaTimes } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
+import './SupplierStyles.css';
 
 const SupplierPage = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -109,23 +109,56 @@ const SupplierPage = () => {
     };
 
 
-    if (loading) return <Spinner animation="border" />;
+    if (loading) {
+        return (
+            <section className="supplier-page">
+                <div className="supplier-loading">
+                    <span className="supplier-spinner" aria-hidden="true" />
+                    <p>Loading suppliers...</p>
+                </div>
+            </section>
+        );
+    }
 
     return (
-        <>
-            <Card className="shadow-sm">
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                    <Card.Title as="h3" className="mb-0 d-flex align-items-center">
-                        <FaTruck className="me-3" /> Supplier Management
-                    </Card.Title>
-                    {hasPermission('SUPPLIER_CREATE') && (
-                        <Button variant="primary" onClick={handleShowCreateModal}>
-                            <FaPlus className="me-2" /> Add Supplier
-                        </Button>
-                    )}
-                </Card.Header>
-                <Card.Body>
-                    <Table striped bordered hover responsive>
+        <section className="supplier-page">
+            {/* Hero Banner */}
+            <div className="supplier-banner" data-animate="fade-up">
+                <div className="supplier-banner__content">
+                    <div className="supplier-banner__info">
+                        <div className="supplier-banner__eyebrow">
+                            <FaTruck aria-hidden="true" />
+                            <span>Supply Chain</span>
+                        </div>
+                        <h1 className="supplier-banner__title">Supplier Management</h1>
+                        <p className="supplier-banner__subtitle">
+                            Manage your trusted partners, track contact details, and maintain strong relationships with your supply chain network.
+                        </p>
+                    </div>
+
+                    <div className="supplier-banner__actions">
+                        {hasPermission('SUPPLIER_CREATE') && (
+                            <button 
+                                type="button" 
+                                className="supplier-btn supplier-btn--gold" 
+                                onClick={handleShowCreateModal}
+                            >
+                                <FaPlus aria-hidden="true" />
+                                <span>Add Supplier</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Table Container */}
+            <div className="supplier-table-container" data-animate="fade-up" data-delay="0.08">
+                {suppliers.length === 0 ? (
+                    <div className="supplier-empty-state">
+                        No suppliers found. Create your first supplier to start building your supply chain network.
+                    </div>
+                ) : (
+                    <table className="supplier-table">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -138,65 +171,149 @@ const SupplierPage = () => {
                         <tbody>
                             {suppliers.map(supplier => (
                                 <tr key={supplier.id}>
-                                    <td>{supplier.name}</td>
+                                    <td><strong>{supplier.name}</strong></td>
                                     <td>{supplier.contactPerson || 'N/A'}</td>
                                     <td>{supplier.email || 'N/A'}</td>
                                     <td>{supplier.phone || 'N/A'}</td>
                                     <td>
-                                        {hasPermission('SUPPLIER_UPDATE') && (
-                                            <Button variant="outline-warning" size="sm" className="me-2" onClick={() => handleShowEditModal(supplier)}>
-                                                <FaEdit />
-                                            </Button>
-                                        )}
-                                        {hasPermission('SUPPLIER_DELETE') && (
-                                            // UPDATED: Calls the new confirmation toast function
-                                            <Button variant="outline-danger" size="sm" onClick={() => confirmDelete(supplier.id, supplier.name)}>
-                                                <FaTrash />
-                                            </Button>
-                                        )}
+                                        <div className="supplier-table__actions">
+                                            {hasPermission('SUPPLIER_UPDATE') && (
+                                                <button 
+                                                    type="button"
+                                                    className="supplier-btn supplier-btn--icon supplier-btn--gold" 
+                                                    onClick={() => handleShowEditModal(supplier)}
+                                                    title="Edit Supplier"
+                                                >
+                                                    <FaEdit />
+                                                </button>
+                                            )}
+                                            {hasPermission('SUPPLIER_DELETE') && (
+                                                <button 
+                                                    type="button"
+                                                    className="supplier-btn supplier-btn--icon supplier-btn--red" 
+                                                    onClick={() => confirmDelete(supplier.id, supplier.name)}
+                                                    title="Delete Supplier"
+                                                >
+                                                    <FaTrash />
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
-                    </Table>
-                </Card.Body>
-            </Card>
+                    </table>
+                )}
+            </div>
 
             {/* Add/Edit Supplier Modal */}
-            <Modal show={showModal} onHide={handleCloseModal} centered>
-                <Modal.Header closeButton>
-                    <Modal.Title>{isEditMode ? 'Edit Supplier' : 'Add New Supplier'}</Modal.Title>
-                </Modal.Header>
-                <Form onSubmit={handleSave}>
-                    <Modal.Body>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Supplier Name</Form.Label>
-                            <Form.Control type="text" name="name" value={currentSupplier.name} onChange={handleFormChange} required />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Contact Person</Form.Label>
-                            <Form.Control type="text" name="contactPerson" value={currentSupplier.contactPerson || ''} onChange={handleFormChange} />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Email</Form.Label>
-                            <Form.Control type="email" name="email" value={currentSupplier.email || ''} onChange={handleFormChange} />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Phone</Form.Label>
-                            <Form.Control type="tel" name="phone" value={currentSupplier.phone || ''} onChange={handleFormChange} placeholder="+256..." />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Address</Form.Label>
-                            <Form.Control as="textarea" rows={2} name="address" value={currentSupplier.address || ''} onChange={handleFormChange} />
-                        </Form.Group>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={handleCloseModal}>Cancel</Button>
-                        <Button variant="primary" type="submit">Save Supplier</Button>
-                    </Modal.Footer>
-                </Form>
-            </Modal>
-        </>
+            {showModal && (
+                <div className="supplier-modal" onClick={(e) => {
+                    if (e.target.className === 'supplier-modal') handleCloseModal();
+                }}>
+                    <div className="supplier-modal__dialog">
+                        <div className="supplier-modal__header">
+                            <h2 className="supplier-modal__title">
+                                {isEditMode ? 'Edit Supplier' : 'Add New Supplier'}
+                            </h2>
+                            <button 
+                                type="button" 
+                                className="supplier-modal__close"
+                                onClick={handleCloseModal}
+                                aria-label="Close modal"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSave}>
+                            <div className="supplier-modal__body">
+                                <div className="supplier-form">
+                                    <div className="supplier-form-group">
+                                        <label htmlFor="supplierName">Supplier Name</label>
+                                        <input
+                                            id="supplierName"
+                                            type="text"
+                                            name="name"
+                                            className="supplier-input"
+                                            value={currentSupplier.name}
+                                            onChange={handleFormChange}
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
+
+                                    <div className="supplier-form-group">
+                                        <label htmlFor="contactPerson">Contact Person</label>
+                                        <input
+                                            id="contactPerson"
+                                            type="text"
+                                            name="contactPerson"
+                                            className="supplier-input"
+                                            value={currentSupplier.contactPerson || ''}
+                                            onChange={handleFormChange}
+                                        />
+                                    </div>
+
+                                    <div className="supplier-form-group">
+                                        <label htmlFor="email">Email</label>
+                                        <input
+                                            id="email"
+                                            type="email"
+                                            name="email"
+                                            className="supplier-input"
+                                            value={currentSupplier.email || ''}
+                                            onChange={handleFormChange}
+                                        />
+                                    </div>
+
+                                    <div className="supplier-form-group">
+                                        <label htmlFor="phone">Phone</label>
+                                        <input
+                                            id="phone"
+                                            type="tel"
+                                            name="phone"
+                                            className="supplier-input"
+                                            value={currentSupplier.phone || ''}
+                                            onChange={handleFormChange}
+                                            placeholder="+256..."
+                                        />
+                                    </div>
+
+                                    <div className="supplier-form-group">
+                                        <label htmlFor="address">Address</label>
+                                        <textarea
+                                            id="address"
+                                            name="address"
+                                            className="supplier-textarea"
+                                            rows={3}
+                                            value={currentSupplier.address || ''}
+                                            onChange={handleFormChange}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="supplier-modal__footer">
+                                <button 
+                                    type="button" 
+                                    className="supplier-btn supplier-btn--blue"
+                                    onClick={handleCloseModal}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    className="supplier-btn supplier-btn--gold"
+                                >
+                                    <span>{isEditMode ? 'Update' : 'Save'} Supplier</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </section>
     );
 };
 

@@ -117,7 +117,7 @@ const InventoryForm = () => {
 
     if (loading) {
         return (
-            <section className="inventory-page inventory-page--centered">
+            <section className="inventory-page">
                 <div className="inventory-loading">
                     <span className="inventory-spinner" aria-hidden="true" />
                     <p>Loading item configuration...</p>
@@ -129,7 +129,12 @@ const InventoryForm = () => {
     return (
         <section className="inventory-page inventory-form-page">
             <div className="inventory-form-banner" data-animate="fade-up">
-                <button type="button" className="inventory-ghost-btn" onClick={() => navigate(-1)}>
+                <button 
+                    type="button" 
+                    className="inventory-ghost-btn inventory-btn--blue" 
+                    onClick={() => navigate(-1)}
+                    style={{ border: 'none', background: 'transparent', boxShadow: 'none', padding: '0.5rem 0' }}
+                >
                     <FaArrowLeft aria-hidden="true" />
                     <span>Back</span>
                 </button>
@@ -285,15 +290,37 @@ const InventoryForm = () => {
                                 onChange={handleImageUpload}
                             />
 
-                            <button
-                                type="button"
-                                className="inventory-secondary-btn inventory-secondary-btn--wide"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={uploading}
-                            >
-                                <FaUpload aria-hidden="true" />
-                                <span>{uploading ? 'Uploading...' : 'Upload Image'}</span>
-                            </button>
+                            <div className="inventory-upload-area">
+                                <div className="inventory-upload-area__icon">
+                                    <FaUpload aria-hidden="true" />
+                                </div>
+                                <div className="inventory-upload-area__text">
+                                    <h4 className="inventory-upload-area__title">
+                                        {uploading ? 'Uploading Image...' : 'Update Item Image'}
+                                    </h4>
+                                    <p className="inventory-upload-area__subtitle">
+                                        Click below to select a new image
+                                    </p>
+                                    <p className="inventory-upload-area__formats">
+                                        Supported: PNG, JPG, GIF • Max 5MB
+                                    </p>
+                                </div>
+                                {uploading && (
+                                    <div className="inventory-upload-progress">
+                                        <div className="inventory-upload-progress__bar" style={{ width: '100%' }} />
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    className="inventory-secondary-btn inventory-btn--green"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={uploading}
+                                    style={{ width: '100%', justifyContent: 'center' }}
+                                >
+                                    <FaUpload aria-hidden="true" />
+                                    <span>{uploading ? 'Uploading...' : 'Choose Image'}</span>
+                                </button>
+                            </div>
                         </aside>
                     )}
                 </section>
@@ -348,7 +375,6 @@ const InventoryForm = () => {
                                     checked={formData.isActive}
                                     onChange={handleFormChange}
                                 />
-                                <span className="inventory-toggle__slider" aria-hidden="true" />
                                 <span className="inventory-toggle__label">
                                     {formData.isActive ? 'Active in catalogue' : 'Hidden from listings'}
                                 </span>
@@ -399,12 +425,19 @@ const InventoryForm = () => {
                 </section>
 
                 <footer className="inventory-form-actions">
-                    <button type="button" className="inventory-secondary-btn" onClick={() => navigate('/inventory')}>
+                    <button 
+                        type="button" 
+                        className="inventory-secondary-btn inventory-btn--blue" 
+                        onClick={() => navigate('/inventory')}
+                    >
                         Cancel
                     </button>
-                    <button type="submit" className="inventory-primary-btn">
+                    <button 
+                        type="submit" 
+                        className={`inventory-primary-btn ${isEditMode ? 'inventory-btn--green' : 'inventory-btn--gold'}`}
+                    >
                         <FaSave aria-hidden="true" />
-                        <span>{isEditMode ? 'Update Item' : 'Create Item'}</span>
+                        <span>{isEditMode ? 'Update Item' : 'Save Item'}</span>
                     </button>
                 </footer>
             </form>
