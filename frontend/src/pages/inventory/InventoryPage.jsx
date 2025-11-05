@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaBoxes, FaDolly, FaExclamationTriangle, FaPlus, FaSearch } from 'react-icons/fa';
+import { FaBoxes, FaDolly, FaExclamationTriangle, FaMoneyBillWave, FaPlus, FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
@@ -60,6 +60,59 @@ const InventoryPage = () => {
         };
     }, [items]);
 
+    const visibleItemsCount = filteredItems.length;
+
+    const bannerMetrics = useMemo(() => ([
+        {
+            label: 'Tracked Items',
+            value: items.length,
+            icon: FaBoxes,
+            modifier: 'inventory-banner__meta-icon--accent'
+        },
+        {
+            label: 'Visible',
+            value: visibleItemsCount,
+            icon: FaSearch,
+            modifier: 'inventory-banner__meta-icon--green'
+        },
+        {
+            label: 'Low Stock',
+            value: lowStockItems,
+            icon: FaExclamationTriangle,
+            modifier: 'inventory-banner__meta-icon--danger'
+        },
+        {
+            label: 'Out of Stock',
+            value: outOfStockItems,
+            icon: FaDolly,
+            modifier: 'inventory-banner__meta-icon--purple'
+        }
+    ]), [items.length, visibleItemsCount, lowStockItems, outOfStockItems]);
+
+    const spotlightCards = useMemo(() => ([
+        {
+            label: 'Total Stock Value',
+            value: formatCurrency(totalStockValue),
+            hint: `Across ${items.length} tracked items`,
+            icon: FaMoneyBillWave,
+            tone: 'primary'
+        },
+        {
+            label: 'Low Stock Alerts',
+            value: lowStockItems,
+            hint: 'Requires reorder attention',
+            icon: FaExclamationTriangle,
+            tone: 'warning'
+        },
+        {
+            label: 'Out of Stock',
+            value: outOfStockItems,
+            hint: 'Ready for restock',
+            icon: FaDolly,
+            tone: 'danger'
+        }
+    ]), [items.length, totalStockValue, lowStockItems, outOfStockItems]);
+
     const getStockStatus = (item) => {
         if (item.quantity === 0) return 'out';
         if (item.quantity <= item.reorderLevel) return 'low';
@@ -89,55 +142,81 @@ const InventoryPage = () => {
     }
 
     return (
-        <section className="inventory-page inventory-dashboard" data-page-pattern="hero">
-            <div className="inventory-hero" data-animate="fade-up">
-                <div className="inventory-hero__content">
-                    <div className="inventory-banner__eyebrow">Inventory Pulse</div>
-                    <h2 className="inventory-banner__title">Warehouse Command Center</h2>
-                    <p className="inventory-banner__subtitle">
-                        Monitor valuation, spot low stock signals, and keep your fulfilment teams aligned in real time.
-                    </p>
+        <section className="inventory-page">
+            <div className="inventory-banner" data-animate="fade-up">
+                <div className="inventory-banner__content">
+                    <div className="inventory-banner__info">
+                        <span className="inventory-banner__eyebrow">
+                            <FaBoxes aria-hidden="true" />
+                            Inventory Pulse
+                        </span>
+                        <h1 className="inventory-banner__title">Warehouse Command Center</h1>
+                        <p className="inventory-banner__subtitle">
+                            Monitor valuation, spot low stock signals, and keep your fulfilment teams aligned in real time.
+                        </p>
+                    </div>
 
-                    <div className="inventory-hero__actions">
+                    <div className="inventory-banner__actions">
                         {hasPermission('ITEM_CREATE') && (
-                            <button type="button" className="inventory-primary-btn" onClick={() => navigate('/inventory/new')}>
+                            <button
+                                type="button"
+                                className="inventory-primary-btn"
+                                onClick={() => navigate('/inventory/new')}
+                            >
                                 <FaPlus aria-hidden="true" />
                                 <span>Add New Item</span>
                             </button>
                         )}
-                        <div className="inventory-hero__hint">{filteredItems.length} of {items.length} items visible</div>
+                        <button
+                            type="button"
+                            className="inventory-ghost-btn"
+                            onClick={fetchItems}
+                            disabled={loading}
+                        >
+                            Refresh
+                        </button>
                     </div>
                 </div>
 
-                <div className="inventory-hero__stats">
-                    <div className="inventory-hero-card">
-                        <div className="inventory-hero-card__icon inventory-hero-card__icon--primary">
-                            <FaBoxes aria-hidden="true" />
-                        </div>
-                        <span className="inventory-hero-card__label">Total Stock Value</span>
-                        <span className="inventory-hero-card__value">{formatCurrency(totalStockValue)}</span>
-                        <span className="inventory-hero-card__hint">Across {items.length} tracked items</span>
-                    </div>
-                    <div className="inventory-hero-card">
-                        <div className="inventory-hero-card__icon inventory-hero-card__icon--warning">
-                            <FaExclamationTriangle aria-hidden="true" />
-                        </div>
-                        <span className="inventory-hero-card__label">Low Stock Alerts</span>
-                        <span className="inventory-hero-card__value">{lowStockItems}</span>
-                        <span className="inventory-hero-card__hint">Requires reorder attention</span>
-                    </div>
-                    <div className="inventory-hero-card">
-                        <div className="inventory-hero-card__icon inventory-hero-card__icon--danger">
-                            <FaDolly aria-hidden="true" />
-                        </div>
-                        <span className="inventory-hero-card__label">Out of Stock</span>
-                        <span className="inventory-hero-card__value">{outOfStockItems}</span>
-                        <span className="inventory-hero-card__hint">Ready for restock</span>
-                    </div>
+                <div className="inventory-banner__meta">
+                    {bannerMetrics.map((metric) => {
+                        const MetricIcon = metric.icon;
+                        return (
+                            <div key={metric.label} className="inventory-banner__meta-item">
+                                <div className={`inventory-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
+                                    <MetricIcon />
+                                </div>
+                                <div className="inventory-banner__meta-content">
+                                    <span className="inventory-banner__meta-label">{metric.label}</span>
+                                    <span className="inventory-banner__meta-value">{metric.value}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
-            <div className="inventory-search-panel" data-animate="fade-up" data-delay="0.08">
+            <div className="inventory-hero-grid" data-animate="fade-up" data-delay="0.08">
+                {spotlightCards.map((card, index) => {
+                    const CardIcon = card.icon;
+                    return (
+                        <div
+                            key={card.label}
+                            className="inventory-hero-card"
+                            style={{ animationDelay: `${index * 0.06}s` }}
+                        >
+                            <div className={`inventory-hero-card__icon inventory-hero-card__icon--${card.tone}`} aria-hidden="true">
+                                <CardIcon />
+                            </div>
+                            <span className="inventory-hero-card__label">{card.label}</span>
+                            <span className="inventory-hero-card__value">{card.value}</span>
+                            <span className="inventory-hero-card__hint">{card.hint}</span>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="inventory-search-panel" data-animate="fade-up" data-delay="0.12">
                 <div className="inventory-search-panel__field">
                     <FaSearch aria-hidden="true" />
                     <input
@@ -149,7 +228,7 @@ const InventoryPage = () => {
                 </div>
                 <div className="inventory-search-panel__meta">
                     <span>
-                        Showing <strong>{filteredItems.length}</strong> of <strong>{items.length}</strong> items
+                        Showing <strong>{visibleItemsCount}</strong> of <strong>{items.length}</strong> items
                     </span>
                     <span className="inventory-search-panel__meta-divider" aria-hidden="true">•</span>
                     <span>

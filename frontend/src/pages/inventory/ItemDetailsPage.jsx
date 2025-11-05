@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaEdit, FaExchangeAlt, FaLayerGroup, FaWarehouse } from 'react-icons/fa';
+import { FaArrowLeft, FaBoxes, FaEdit, FaExchangeAlt, FaLayerGroup, FaMoneyBillWave, FaTags, FaWarehouse } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -66,6 +66,36 @@ const ItemDetailsPage = () => {
         fetchData();
     }, [id, navigate]);
 
+    const bannerMetrics = useMemo(() => {
+        if (!item) return [];
+        return [
+            {
+                label: 'On Hand',
+                value: item.quantity.toLocaleString(),
+                icon: FaBoxes,
+                modifier: 'inventory-banner__meta-icon--accent'
+            },
+            {
+                label: 'Total Value',
+                value: formatCurrency(item.quantity * item.unitPrice),
+                icon: FaMoneyBillWave,
+                modifier: 'inventory-banner__meta-icon--gold'
+            },
+            {
+                label: 'Reorder Level',
+                value: item.reorderLevel,
+                icon: FaLayerGroup,
+                modifier: 'inventory-banner__meta-icon--green'
+            },
+            {
+                label: 'SKU',
+                value: item.sku,
+                icon: FaTags,
+                modifier: 'inventory-banner__meta-icon--purple'
+            }
+        ];
+    }, [item]);
+
     if (loading) {
         return (
             <section className="inventory-page inventory-page--centered">
@@ -87,31 +117,40 @@ const ItemDetailsPage = () => {
 
     return (
         <section className="inventory-page">
-            <div className="inventory-banner inventory-banner--item" data-animate="fade-up">
-                <button type="button" className="inventory-ghost-btn" onClick={() => navigate('/inventory')}>
-                    <FaArrowLeft aria-hidden="true" />
-                    <span>Back to Inventory</span>
-                </button>
-
+            <div className="inventory-banner" data-animate="fade-up">
                 <div className="inventory-banner__content">
-                    <div className="inventory-banner__eyebrow">Item Overview</div>
-                    <h2 className="inventory-banner__title">{item.name}</h2>
-                    <p className="inventory-banner__subtitle">Manage stock, suppliers, and traceability in one place.</p>
-
-                    <div className="inventory-banner__meta">
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">On Hand</span>
-                            <span className="inventory-meta-value">{item.quantity.toLocaleString()}</span>
-                        </div>
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">Total Value</span>
-                            <span className="inventory-meta-value">{formatCurrency(item.quantity * item.unitPrice)}</span>
-                        </div>
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">SKU</span>
-                            <span className="inventory-meta-value">{item.sku}</span>
-                        </div>
+                    <div className="inventory-banner__info">
+                        <span className="inventory-banner__eyebrow">
+                            <FaWarehouse aria-hidden="true" />
+                            Item Overview
+                        </span>
+                        <h1 className="inventory-banner__title">{item.name}</h1>
+                        <p className="inventory-banner__subtitle">Manage stock, suppliers, and traceability in one place.</p>
                     </div>
+
+                    <div className="inventory-banner__actions">
+                        <button type="button" className="inventory-ghost-btn" onClick={() => navigate('/inventory')}>
+                            <FaArrowLeft aria-hidden="true" />
+                            <span>Back to inventory</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="inventory-banner__meta">
+                    {bannerMetrics.map((metric) => {
+                        const MetricIcon = metric.icon;
+                        return (
+                            <div key={metric.label} className="inventory-banner__meta-item">
+                                <div className={`inventory-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
+                                    <MetricIcon />
+                                </div>
+                                <div className="inventory-banner__meta-content">
+                                    <span className="inventory-banner__meta-label">{metric.label}</span>
+                                    <span className="inventory-banner__meta-value">{metric.value}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 

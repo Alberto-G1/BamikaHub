@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaBoxOpen, FaSave, FaUpload, FaWarehouse } from 'react-icons/fa';
+import { FaArrowLeft, FaBoxOpen, FaLayerGroup, FaSave, FaTags, FaUpload, FaWarehouse } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import placeholderImage from '../../assets/images/placeholder.jpg';
@@ -12,6 +12,7 @@ const InventoryForm = () => {
     const isEditMode = Boolean(id);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const fileInputRef = useRef(null);
 
     const [formData, setFormData] = useState({
@@ -101,6 +102,7 @@ const InventoryForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         try {
             if (isEditMode) {
                 await api.put(`/inventory/items/${id}`, formData);
@@ -112,8 +114,43 @@ const InventoryForm = () => {
             navigate('/inventory');
         } catch (err) {
             toast.error(err.response?.data?.message || "An error occurred.");
+        } finally {
+            setSubmitting(false);
         }
     };
+
+    const supplierName = useMemo(() => {
+        if (!formData.supplierId) return 'Unassigned';
+        const supplier = suppliers.find(currentSupplier => String(currentSupplier.id) === String(formData.supplierId));
+        return supplier?.name || 'Unassigned';
+    }, [suppliers, formData.supplierId]);
+
+    const bannerMetrics = useMemo(() => ([
+        {
+            label: 'Status',
+            value: formData.isActive ? 'Active' : 'Inactive',
+            icon: FaBoxOpen,
+            modifier: formData.isActive ? 'inventory-banner__meta-icon--green' : 'inventory-banner__meta-icon--danger'
+        },
+        {
+            label: 'Reorder Level',
+            value: formData.reorderLevel || 0,
+            icon: FaLayerGroup,
+            modifier: 'inventory-banner__meta-icon--gold'
+        },
+        {
+            label: 'Supplier',
+            value: supplierName,
+            icon: FaWarehouse,
+            modifier: supplierName === 'Unassigned' ? 'inventory-banner__meta-icon--accent' : 'inventory-banner__meta-icon--green'
+        },
+        {
+            label: 'Tracking SKU',
+            value: formData.sku || 'Pending',
+            icon: FaTags,
+            modifier: 'inventory-banner__meta-icon--accent'
+        }
+    ]), [formData.isActive, formData.reorderLevel, formData.sku, supplierName]);
 
     if (loading) {
         return (
@@ -129,43 +166,50 @@ const InventoryForm = () => {
     return (
         <section className="inventory-page inventory-form-page">
             <div className="inventory-form-banner" data-animate="fade-up">
-                <button 
-                    type="button" 
-                    className="inventory-ghost-btn inventory-btn--blue" 
-                    onClick={() => navigate(-1)}
-                    style={{ border: 'none', background: 'transparent', boxShadow: 'none', padding: '0.5rem 0' }}
-                >
-                    <FaArrowLeft aria-hidden="true" />
-                    <span>Back</span>
-                </button>
-
-                <div className="inventory-form-banner__content">
-                    <div className="inventory-banner__eyebrow">Inventory Control</div>
-                    <h2 className="inventory-banner__title">
-                        {isEditMode ? 'Edit Item Details' : 'Create New Inventory Item'}
-                    </h2>
-                    <p className="inventory-banner__subtitle">
-                        {isEditMode
-                            ? 'Refresh product details, supplier links, and reorder thresholds to keep inventory accurate.'
-                            : 'Create a new catalogue entry with supplier links and replenishment settings.'}
-                    </p>
-
-                    <div className="inventory-banner__meta">
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">Status</span>
-                            <span className="inventory-meta-value">
-                                {formData.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                        </div>
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">Reorder Level</span>
-                            <span className="inventory-meta-value">{formData.reorderLevel || 0}</span>
-                        </div>
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">Tracking SKU</span>
-                            <span className="inventory-meta-value">{formData.sku || 'Pending'}</span>
-                        </div>
+                <div className="inventory-form-banner__content inventory-banner__content">
+                    <div className="inventory-banner__info">
+                        <span className="inventory-banner__eyebrow">
+                            <FaWarehouse aria-hidden="true" />
+                            Inventory Control
+                        </span>
+                        <h1 className="inventory-banner__title">
+                            {isEditMode ? 'Edit Item Details' : 'Create New Inventory Item'}
+                        </h1>
+                        <p className="inventory-banner__subtitle">
+                            {isEditMode
+                                ? 'Refresh product details, supplier links, and reorder thresholds to keep inventory accurate.'
+                                : 'Create a new catalogue entry with supplier links and replenishment settings.'}
+                        </p>
                     </div>
+
+                    <div className="inventory-banner__actions">
+                        <button
+                            type="button"
+                            className="inventory-ghost-btn"
+                            onClick={() => navigate('/inventory')}
+                            disabled={submitting}
+                        >
+                            <FaArrowLeft aria-hidden="true" />
+                            <span>Back to inventory</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="inventory-banner__meta">
+                    {bannerMetrics.map((metric) => {
+                        const MetricIcon = metric.icon;
+                        return (
+                            <div key={metric.label} className="inventory-banner__meta-item">
+                                <div className={`inventory-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
+                                    <MetricIcon />
+                                </div>
+                                <div className="inventory-banner__meta-content">
+                                    <span className="inventory-banner__meta-label">{metric.label}</span>
+                                    <span className="inventory-banner__meta-value">{metric.value}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -435,9 +479,10 @@ const InventoryForm = () => {
                     <button 
                         type="submit" 
                         className={`inventory-primary-btn ${isEditMode ? 'inventory-btn--green' : 'inventory-btn--gold'}`}
+                        disabled={submitting}
                     >
                         <FaSave aria-hidden="true" />
-                        <span>{isEditMode ? 'Update Item' : 'Save Item'}</span>
+                        <span>{submitting ? 'Saving…' : isEditMode ? 'Update Item' : 'Save Item'}</span>
                     </button>
                 </footer>
             </form>

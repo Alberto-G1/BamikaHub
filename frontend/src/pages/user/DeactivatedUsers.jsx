@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FaUndo, FaArrowLeft, FaUserCircle } from 'react-icons/fa';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FaArrowLeft, FaEnvelope, FaUndo, FaUserCircle, FaUserShield, FaUserTag, FaUsers } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
@@ -32,6 +32,31 @@ const DeactivatedUsers = () => {
     };
 
     const closeDialog = () => setDialogConfig(prev => ({ ...prev, open: false }));
+
+    const bannerMetrics = useMemo(() => {
+        const withEmail = users.filter(user => Boolean(user.email)).length;
+        const withRole = users.filter(user => Boolean(user.role?.name)).length;
+        return [
+            {
+                label: 'Deactivated Accounts',
+                value: users.length.toLocaleString(),
+                icon: FaUsers,
+                modifier: 'users-banner__meta-icon--blue'
+            },
+            {
+                label: 'With Contact Email',
+                value: withEmail.toLocaleString(),
+                icon: FaEnvelope,
+                modifier: 'users-banner__meta-icon--gold'
+            },
+            {
+                label: 'Keep Assigned Role',
+                value: withRole.toLocaleString(),
+                icon: FaUserTag,
+                modifier: 'users-banner__meta-icon--teal'
+            }
+        ];
+    }, [users]);
 
     const requestReactivate = user => {
         const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
@@ -74,16 +99,38 @@ const DeactivatedUsers = () => {
         <section className="users-page">
             <div className="users-banner users-banner--compact" data-animate="fade-up">
                 <div className="users-banner__content">
-                    <div className="users-banner__eyebrow">User Admin</div>
-                    <h2 className="users-banner__title">Deactivated Users</h2>
-                    <p className="users-banner__subtitle">Review inactive accounts and bring team members back when needed.</p>
+                    <div className="users-banner__info">
+                        <span className="users-banner__eyebrow">
+                            <FaUserShield aria-hidden="true" />
+                            Account Recovery
+                        </span>
+                        <h1 className="users-banner__title">Deactivated Users</h1>
+                        <p className="users-banner__subtitle">Review inactive accounts and bring team members back when needed.</p>
+                    </div>
+
+                    <div className="users-banner__actions">
+                        <button type="button" className="users-secondary-btn" onClick={() => navigate('/users')}>
+                            <FaArrowLeft />
+                            <span>Back to Active Users</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div className="users-banner__actions">
-                    <button type="button" className="users-secondary-btn" onClick={() => navigate('/users')}>
-                        <FaArrowLeft />
-                        <span>Back to Active Users</span>
-                    </button>
+                <div className="users-banner__meta">
+                    {bannerMetrics.map(metric => {
+                        const MetricIcon = metric.icon;
+                        return (
+                            <div key={metric.label} className="users-banner__meta-item">
+                                <div className={`users-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
+                                    <MetricIcon />
+                                </div>
+                                <div className="users-banner__meta-content">
+                                    <span className="users-banner__meta-label">{metric.label}</span>
+                                    <span className="users-banner__meta-value">{metric.value}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 

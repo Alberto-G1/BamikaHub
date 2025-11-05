@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { FaUserCircle } from 'react-icons/fa';
+import { FaCalendarAlt, FaEnvelope, FaMapMarkerAlt, FaPhoneAlt, FaUserCircle, FaUserShield, FaUserTag } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import './ProfilePage.css';
@@ -144,68 +144,93 @@ const ProfileEditPage = () => {
     const locationLabel = [formData.city, formData.country].filter(Boolean).join(', ');
     const bannerSubtitle = locationLabel || formData.address || 'Review and update your information below.';
     const genderDisplay = formData.gender ? genderMap[formData.gender] || formData.gender : '';
+    const joinedAt = profileData.createdAt ? formatDate(profileData.createdAt) : '—';
+
+    const bannerMetrics = [
+        {
+            label: 'Email',
+            value: formatValue(profileData.email),
+            icon: FaEnvelope,
+            modifier: 'profile-banner__meta-icon--teal'
+        },
+        {
+            label: 'Contact',
+            value: formatValue(formData.phoneNumber),
+            icon: FaPhoneAlt,
+            modifier: 'profile-banner__meta-icon--gold'
+        },
+        {
+            label: 'Role',
+            value: roleLabel,
+            icon: FaUserTag,
+            modifier: 'profile-banner__meta-icon--purple'
+        },
+        {
+            label: 'Joined',
+            value: joinedAt,
+            icon: FaCalendarAlt,
+            modifier: 'profile-banner__meta-icon--teal'
+        },
+        {
+            label: 'Location',
+            value: locationLabel || formatValue(formData.address),
+            icon: FaMapMarkerAlt,
+            modifier: 'profile-banner__meta-icon--gold'
+        }
+    ];
 
     return (
         <section className="profile-page">
             <div className="profile-banner">
-                <div className="profile-banner__avatar">
-                    <div className="profile-avatar-wrapper">
-                        {uploading && (
-                            <div className="profile-avatar-overlay">
-                                <Spinner animation="border" variant="light" />
-                            </div>
-                        )}
+                <div className="profile-banner__header">
+                    <div className="profile-banner__avatar">
+                        <div className="profile-avatar-wrapper">
+                            {uploading && (
+                                <div className="profile-avatar-overlay">
+                                    <Spinner animation="border" variant="light" />
+                                </div>
+                            )}
 
-                        {profileData.profilePictureUrl ? (
-                            <img
-                                src={`http://localhost:8080${profileData.profilePictureUrl}`}
-                                alt={`${fullName}'s profile`}
-                                className="profile-avatar-image"
-                            />
-                        ) : (
-                            <FaUserCircle className="profile-avatar-placeholder" />
-                        )}
+                            {profileData.profilePictureUrl ? (
+                                <img
+                                    src={`http://localhost:8080${profileData.profilePictureUrl}`}
+                                    alt={`${fullName}'s profile`}
+                                    className="profile-avatar-image"
+                                />
+                            ) : (
+                                <FaUserCircle className="profile-avatar-placeholder" />
+                            )}
+                        </div>
+
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            accept="image/png, image/jpeg"
+                            style={{ display: 'none' }}
+                        />
+
+                        <span className="profile-chip">{roleLabel}</span>
                     </div>
 
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        accept="image/png, image/jpeg"
-                        style={{ display: 'none' }}
-                    />
-
-                    <button
-                        type="button"
-                        className="profile-upload-btn"
-                        onClick={handlePictureButtonClick}
-                        disabled={uploading}
-                    >
-                        {uploading ? 'Uploading...' : 'Change Photo'}
-                    </button>
-                </div>
-
-                <div className="profile-banner__text">
-                    <span className="profile-chip">Profile Editor</span>
-                    <h1>{fullName}</h1>
-                    <p className="profile-banner__subtitle">{bannerSubtitle}</p>
-
-                    <div className="profile-banner__meta">
-                        <div className="meta-item">
-                            <span className="meta-label">Email</span>
-                            <span className="meta-value">{formatValue(profileData.email)}</span>
-                        </div>
-                        <div className="meta-item">
-                            <span className="meta-label">Phone</span>
-                            <span className="meta-value">{formatValue(formData.phoneNumber)}</span>
-                        </div>
-                        <div className="meta-item">
-                            <span className="meta-label">Role</span>
-                            <span className="meta-value">{roleLabel}</span>
-                        </div>
+                    <div className="profile-banner__info">
+                        <span className="profile-banner__eyebrow">
+                            <FaUserShield aria-hidden="true" />
+                            Profile Editor
+                        </span>
+                        <h1 className="profile-banner__title">{fullName}</h1>
+                        <p className="profile-banner__subtitle">{bannerSubtitle}</p>
                     </div>
 
                     <div className="profile-banner__actions">
+                        <button
+                            type="button"
+                            className="profile-secondary-btn"
+                            onClick={handlePictureButtonClick}
+                            disabled={uploading}
+                        >
+                            {uploading ? 'Uploading…' : 'Change Photo'}
+                        </button>
                         <button
                             type="button"
                             className="profile-secondary-btn"
@@ -214,6 +239,23 @@ const ProfileEditPage = () => {
                             Cancel &amp; Go Back
                         </button>
                     </div>
+                </div>
+
+                <div className="profile-banner__meta">
+                    {bannerMetrics.map(metric => {
+                        const MetricIcon = metric.icon;
+                        return (
+                            <div key={metric.label} className="profile-banner__meta-item">
+                                <div className={`profile-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
+                                    <MetricIcon />
+                                </div>
+                                <div className="profile-banner__meta-content">
+                                    <span className="profile-banner__meta-label">{metric.label}</span>
+                                    <span className="profile-banner__meta-value">{metric.value}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
