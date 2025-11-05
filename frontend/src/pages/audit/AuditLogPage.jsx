@@ -1,126 +1,162 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Card, Table, Form, Row, Col, Button, Badge, Spinner, InputGroup } from 'react-bootstrap';
-import { FaHistory, FaFilter, FaFileExport, FaFileCsv, FaFilePdf, FaFileExcel, FaSearch } from 'react-icons/fa';
-import api from '../../api/api.js';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+    FaHistory,
+    FaFilter,
+    FaFileCsv,
+    FaFilePdf,
+    FaFileExcel,
+    FaSync,
+    FaUserShield,
+    FaListUl,
+    FaGlobeAfrica
+} from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import api from '../../api/api.js';
+import './AuditStyles.css';
+
+const initialFilters = {
+    userId: '',
+    action: '',
+    entityType: '',
+    entityId: '',
+    severity: '',
+    startDate: '',
+    endDate: ''
+};
+
+const trimToNull = (value) => {
+    if (value === undefined || value === null) {
+        return null;
+    }
+    if (typeof value !== 'string') {
+        return value;
+    }
+    const trimmed = value.trim();
+    return trimmed === '' ? null : trimmed;
+};
+
+const sanitizeFilters = (filters) => {
+    const sanitizedUserId = trimToNull(filters.userId);
+    const sanitizedEntityId = trimToNull(filters.entityId);
+
+    return {
+        userId: sanitizedUserId !== null ? Number(sanitizedUserId) : null,
+        action: trimToNull(filters.action),
+        entityType: trimToNull(filters.entityType),
+        entityId: sanitizedEntityId !== null ? Number(sanitizedEntityId) : null,
+        severity: trimToNull(filters.severity),
+        startDate: trimToNull(filters.startDate),
+        endDate: trimToNull(filters.endDate)
+    };
+};
+
+const hasActiveFilters = (payload) => Object.values(payload).some((value) => value !== null);
+
+const severityToClass = {
+    CRITICAL: 'audit-pill--critical',
+    WARNING: 'audit-pill--warning',
+    INFO: 'audit-pill--info'
+};
+
+const severityRowClass = {
+    CRITICAL: 'audit-row--critical',
+    WARNING: 'audit-row--warning',
+    INFO: 'audit-row--info'
+};
+
+const actionPalette = [
+    'audit-action--blue',
+    'audit-action--gold',
+    'audit-action--green',
+    'audit-action--purple',
+    'audit-action--red',
+    'audit-action--teal',
+    'audit-action--pink',
+    'audit-action--slate'
+];
 
 const AuditLogPage = () => {
     const [loading, setLoading] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [logs, setLogs] = useState([]);
     const [actionTypes, setActionTypes] = useState([]);
-    const [filters, setFilters] = useState({
-        userId: '',
-        action: '',
-        entityType: '',
-        entityId: '',
-        severity: '',
-        startDate: '',
-        endDate: ''
-    });
+    const [filters, setFilters] = useState(initialFilters);
 
-    useEffect(() => {
-        fetchActionTypes();
-    }, []);
+    const sanitizedFilters = useMemo(() => sanitizeFilters(filters), [filters]);
 
-    // Auto-apply filters when they change
-    useEffect(() => {
-        fetchLogs();
-    }, [filters]);
-
-    const fetchActionTypes = async () => {
+    const fetchActionTypes = useCallback(async () => {
         try {
             const response = await api.get('/audit/action-types');
-            setActionTypes(response.data);
+            setActionTypes(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Failed to fetch action types:', error);
         }
-    };
+    }, []);
 
-    const sanitizeFilters = () => {
-        const trimOrNull = (value) => {
-            if (value === undefined || value === null) return null;
-            const trimmed = typeof value === 'string' ? value.trim() : value;
-            return trimmed === '' ? null : trimmed;
-        };
-
-        const sanitizedUserId = trimOrNull(filters.userId);
-        const sanitizedEntityId = trimOrNull(filters.entityId);
-
-        return {
-            userId: sanitizedUserId !== null ? Number(sanitizedUserId) : null,
-            action: trimOrNull(filters.action),
-            entityType: trimOrNull(filters.entityType),
-            entityId: sanitizedEntityId !== null ? Number(sanitizedEntityId) : null,
-            severity: trimOrNull(filters.severity),
-            startDate: trimOrNull(filters.startDate),
-            endDate: trimOrNull(filters.endDate)
-        };
-    };
-
-    const hasActiveFilters = (payload) => Object.values(payload).some(value => value !== null);
-
-    const fetchLogs = async () => {
-        setLoading(true);
-        try {
-            const payload = sanitizeFilters();
-            const response = await api.post('/audit/query', payload);
-            setLogs(response.data);
-            if (response.data.length === 0 && hasActiveFilters(payload)) {
-                toast.info('No audit logs found matching your filters');
+    const fetchLogs = useCallback(
+        async (payload = sanitizedFilters) => {
+            setLoading(true);
+            try {
+                const response = await api.post('/audit/query', payload);
+                const records = Array.isArray(response.data) ? response.data : [];
+                setLogs(records);
+                if (records.length === 0 && hasActiveFilters(payload)) {
+                    toast.info('No audit logs found matching your filters');
+                }
+            } catch (error) {
+                console.error('Error fetching logs:', error);
+                if (error.response?.status === 403) {
+                    toast.error('You do not have permission to view audit logs. Please contact your administrator.');
+                } else if (error.response?.status === 401) {
+                    toast.error('Your session has expired. Please log in again.');
+                } else {
+                    toast.error('Failed to fetch audit logs. Please try again.');
+                }
+                setLogs([]);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Error fetching logs:', error);
-            if (error.response?.status === 403) {
-                toast.error('You do not have permission to view audit logs. Please contact your administrator.');
-            } else if (error.response?.status === 401) {
-                toast.error('Your session has expired. Please log in again.');
-            } else {
-                toast.error('Failed to fetch audit logs. Please try again.');
-            }
-            setLogs([]); // Clear logs on error
-        } finally {
-            setLoading(false);
-        }
-    };
+        },
+        [sanitizedFilters]
+    );
+
+    useEffect(() => {
+        fetchActionTypes();
+    }, [fetchActionTypes]);
+
+    useEffect(() => {
+        fetchLogs(sanitizedFilters);
+    }, [fetchLogs, sanitizedFilters]);
 
     const handleFilterChange = (field, value) => {
-        setFilters(prev => ({ ...prev, [field]: value }));
+        setFilters((prev) => ({ ...prev, [field]: value }));
     };
 
     const handleResetFilters = () => {
-        setFilters({
-            userId: '',
-            action: '',
-            entityType: '',
-            entityId: '',
-            severity: '',
-            startDate: '',
-            endDate: ''
-        });
+        setFilters(initialFilters);
     };
 
     const handleExport = async (format) => {
+        if (!logs.length) {
+            toast.info('Load data before exporting.');
+            return;
+        }
         setExporting(true);
         try {
-            const response = await api.post(`/audit/export/${format}`, filters, {
+            const response = await api.post(`/audit/export/${format}`, sanitizedFilters, {
                 responseType: 'blob'
             });
-
             const blob = new Blob([response.data]);
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const extension = format === 'csv' ? 'csv' : format === 'pdf' ? 'pdf' : 'xlsx';
             link.download = `audit_log_${timestamp}.${extension}`;
-            
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
-
             toast.success(`Audit log exported as ${format.toUpperCase()}`);
         } catch (error) {
             toast.error(`Failed to export as ${format.toUpperCase()}`);
@@ -130,228 +166,421 @@ const AuditLogPage = () => {
         }
     };
 
-    const getSeverityBadge = (severity) => {
-        const variants = {
-            INFO: 'info',
-            WARNING: 'warning',
-            CRITICAL: 'danger'
+    const stats = useMemo(() => {
+        if (!logs.length) {
+            return {
+                totalRecords: 0,
+                uniqueActors: 0,
+                actionCount: 0,
+                uniqueIpCount: 0,
+                lastActivity: null,
+                severityCounts: {
+                    CRITICAL: 0,
+                    WARNING: 0,
+                    INFO: 0
+                }
+            };
+        }
+
+        const severityCounts = {
+            CRITICAL: 0,
+            WARNING: 0,
+            INFO: 0
         };
-        return <Badge bg={variants[severity] || 'secondary'}>{severity}</Badge>;
-    };
+        const actors = new Set();
+        const ipAddresses = new Set();
+        const actions = new Set();
+        let latest = null;
+
+        logs.forEach((log) => {
+            const severityKey = (log.severity || 'INFO').toUpperCase();
+            severityCounts[severityKey] = (severityCounts[severityKey] || 0) + 1;
+            if (log.actorEmail) {
+                actors.add(log.actorEmail);
+            } else if (log.actorName) {
+                actors.add(log.actorName);
+            }
+            if (log.action) {
+                actions.add(log.action);
+            }
+            if (log.ipAddress) {
+                ipAddresses.add(log.ipAddress);
+            }
+            if (log.timestamp) {
+                const value = new Date(log.timestamp).getTime();
+                if (!Number.isNaN(value)) {
+                    latest = latest === null ? value : Math.max(latest, value);
+                }
+            }
+        });
+
+        return {
+            totalRecords: logs.length,
+            uniqueActors: actors.size,
+            actionCount: actions.size,
+            uniqueIpCount: ipAddresses.size,
+            lastActivity: latest,
+            severityCounts: {
+                CRITICAL: severityCounts.CRITICAL || 0,
+                WARNING: severityCounts.WARNING || 0,
+                INFO: severityCounts.INFO || 0
+            }
+        };
+    }, [logs]);
+
+    const activeFilterCount = useMemo(() => {
+        return Object.values(sanitizedFilters).filter((value) => value !== null).length;
+    }, [sanitizedFilters]);
+
+    const actionColorClasses = useMemo(() => {
+        if (!logs.length) {
+            return {};
+        }
+        const uniqueActions = Array.from(
+            logs.reduce((set, log) => {
+                const rawAction = log.action;
+                if (!rawAction) {
+                    return set;
+                }
+                return set.add(rawAction.toUpperCase());
+            }, new Set())
+        ).sort();
+        const assignments = {};
+        uniqueActions.forEach((actionKey, index) => {
+            assignments[actionKey] = actionPalette[index % actionPalette.length];
+        });
+        return assignments;
+    }, [logs]);
 
     const formatTimestamp = (timestamp) => {
-        if (!timestamp) return '—';
-        return new Date(timestamp).toLocaleString();
+        if (!timestamp) {
+            return '—';
+        }
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) {
+            return '—';
+        }
+        return date.toLocaleString();
     };
 
-    const truncateDetails = (details, maxLength = 100) => {
-        if (!details) return '—';
-        if (details.length <= maxLength) return details;
-        return details.substring(0, maxLength) + '...';
+    const truncateDetails = (details, maxLength = 120) => {
+        if (!details) {
+            return '—';
+        }
+        if (details.length <= maxLength) {
+            return details;
+        }
+        return `${details.substring(0, maxLength)}…`;
     };
+
+    const manualRefresh = () => {
+        fetchLogs(sanitizedFilters);
+    };
+
+    const severityLevels = ['CRITICAL', 'WARNING', 'INFO'];
+    const lastActivityLabel = stats.lastActivity ? new Date(stats.lastActivity).toLocaleString() : 'No activity yet';
 
     return (
-        <Container fluid>
-            {/* Header */}
-            <Card className="shadow-sm mb-3">
-                <Card.Header className="d-flex align-items-center justify-content-between">
-                    <div className="d-flex align-items-center">
-                        <FaHistory size={24} className="me-3 text-primary" />
-                        <div>
-                            <h4 className="mb-0">Audit Trail</h4>
-                            <small className="text-muted">System-wide activity log and accountability tracking</small>
-                        </div>
+        <section className="audit-page">
+            <div className="audit-banner" data-animate="fade-up">
+                <div className="audit-banner__content">
+                    <div className="audit-banner__info">
+                        <span className="audit-banner__eyebrow">
+                            <FaHistory />
+                            Audit Centre
+                        </span>
+                        <h1 className="audit-banner__title">Audit Trail &amp; Accountability</h1>
+                        <p className="audit-banner__subtitle">
+                            Monitor sensitive changes, review user activity, and export evidence with the same elegant experience shared across operations, suppliers, reporting, and support.
+                        </p>
                     </div>
-                    <div className="d-flex gap-2">
-                        <Button
-                            variant="success"
-                            size="sm"
+                    <div className="audit-banner__actions">
+                        <button
+                            type="button"
+                            className="audit-btn audit-btn--green"
                             onClick={() => handleExport('csv')}
-                            disabled={exporting || logs.length === 0}
+                            disabled={exporting || loading || logs.length === 0}
                         >
-                            <FaFileCsv className="me-1" /> CSV
-                        </Button>
-                        <Button
-                            variant="primary"
-                            size="sm"
+                            <FaFileCsv />
+                            {exporting ? 'Exporting…' : 'Export CSV'}
+                        </button>
+                        <button
+                            type="button"
+                            className="audit-btn audit-btn--blue"
                             onClick={() => handleExport('excel')}
-                            disabled={exporting || logs.length === 0}
+                            disabled={exporting || loading || logs.length === 0}
                         >
-                            <FaFileExcel className="me-1" /> Excel
-                        </Button>
-                        <Button
-                            variant="danger"
-                            size="sm"
+                            <FaFileExcel />
+                            {exporting ? 'Exporting…' : 'Export Excel'}
+                        </button>
+                        <button
+                            type="button"
+                            className="audit-btn audit-btn--gold"
                             onClick={() => handleExport('pdf')}
-                            disabled={exporting || logs.length === 0}
+                            disabled={exporting || loading || logs.length === 0}
                         >
-                            <FaFilePdf className="me-1" /> PDF
-                        </Button>
+                            <FaFilePdf />
+                            {exporting ? 'Exporting…' : 'Export PDF'}
+                        </button>
                     </div>
-                </Card.Header>
-            </Card>
+                </div>
 
-            {/* Filters */}
-            <Card className="shadow-sm mb-3">
-                <Card.Header>
-                    <FaFilter className="me-2" />
-                    Advanced Filters
-                </Card.Header>
-                <Card.Body>
-                    <Row>
-                        <Col md={3}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>User ID</Form.Label>
-                                <Form.Control
-                                    type="number"
-                                    placeholder="Filter by user ID"
-                                    value={filters.userId}
-                                    onChange={(e) => handleFilterChange('userId', e.target.value)}
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={3}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Action Type</Form.Label>
-                                <Form.Select
-                                    value={filters.action}
-                                    onChange={(e) => handleFilterChange('action', e.target.value)}
-                                >
-                                    <option value="">All Actions</option>
-                                    {actionTypes.map(action => (
-                                        <option key={action} value={action}>{action}</option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
-                        <Col md={3}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Entity Type</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    placeholder="e.g., Project, User"
-                                    value={filters.entityType}
-                                    onChange={(e) => handleFilterChange('entityType', e.target.value)}
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={3}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Severity</Form.Label>
-                                <Form.Select
-                                    value={filters.severity}
-                                    onChange={(e) => handleFilterChange('severity', e.target.value)}
-                                >
-                                    <option value="">All Severities</option>
-                                    <option value="INFO">INFO</option>
-                                    <option value="WARNING">WARNING</option>
-                                    <option value="CRITICAL">CRITICAL</option>
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
-                    </Row>
-                    <Row>
-                        <Col md={4}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Start Date</Form.Label>
-                                <Form.Control
-                                    type="date"
-                                    value={filters.startDate}
-                                    onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>End Date</Form.Label>
-                                <Form.Control
-                                    type="date"
-                                    value={filters.endDate}
-                                    onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={4} className="d-flex align-items-end">
-                            <div className="d-flex gap-2 mb-3 w-100">
-                                <Button variant="outline-secondary" onClick={handleResetFilters} className="w-100">
-                                    Reset Filters
-                                </Button>
-                            </div>
-                        </Col>
-                    </Row>
-                </Card.Body>
-            </Card>
+                <div className="audit-banner__meta">
+                    <div className="audit-banner__meta-item">
+                        <div className="audit-banner__meta-icon audit-banner__meta-icon--blue">
+                            <FaUserShield />
+                        </div>
+                        <div className="audit-banner__meta-content">
+                            <span className="audit-banner__meta-label">Unique Actors</span>
+                            <span className="audit-banner__meta-value">{stats.uniqueActors}</span>
+                        </div>
+                    </div>
+                    <div className="audit-banner__meta-item">
+                        <div className="audit-banner__meta-icon audit-banner__meta-icon--gold">
+                            <FaListUl />
+                        </div>
+                        <div className="audit-banner__meta-content">
+                            <span className="audit-banner__meta-label">Tracked Actions</span>
+                            <span className="audit-banner__meta-value">{stats.actionCount}</span>
+                        </div>
+                    </div>
+                    <div className="audit-banner__meta-item">
+                        <div className="audit-banner__meta-icon audit-banner__meta-icon--purple">
+                            <FaGlobeAfrica />
+                        </div>
+                        <div className="audit-banner__meta-content">
+                            <span className="audit-banner__meta-label">Unique IPs</span>
+                            <span className="audit-banner__meta-value">{stats.uniqueIpCount}</span>
+                        </div>
+                    </div>
+                    <div className="audit-banner__meta-item">
+                        <div className="audit-banner__meta-icon audit-banner__meta-icon--green">
+                            <FaHistory />
+                        </div>
+                        <div className="audit-banner__meta-content">
+                            <span className="audit-banner__meta-label">Last Activity</span>
+                            <span className="audit-banner__meta-value">{stats.lastActivity ? new Date(stats.lastActivity).toLocaleTimeString() : '—'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            {/* Results */}
-            <Card className="shadow-sm">
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                    <span>Audit Log Results ({logs.length} records)</span>
-                    {loading && <Spinner animation="border" size="sm" />}
-                </Card.Header>
-                <Card.Body className="p-0">
-                    {loading ? (
-                        <div className="text-center p-5">
-                            <Spinner animation="border" />
-                            <p className="mt-2">Loading audit logs...</p>
+            <div className="audit-filters" data-animate="fade-up" data-delay="0.08">
+                <div className="audit-filters__header">
+                    <div className="audit-filters__icon">
+                        <FaFilter />
+                    </div>
+                    <div>
+                        <h2 className="audit-filters__title">Advanced Filters</h2>
+                        <p className="audit-filters__subtitle">Narrow down the log to specific actors, actions, and time periods.</p>
+                    </div>
+                </div>
+                <div className="audit-filters__grid">
+                    <div className="audit-filters__group">
+                        <label htmlFor="auditFilterUserId" className="audit-filters__label">User ID</label>
+                        <input
+                            id="auditFilterUserId"
+                            type="number"
+                            className="audit-input"
+                            placeholder="e.g. 42"
+                            value={filters.userId}
+                            onChange={(event) => handleFilterChange('userId', event.target.value)}
+                        />
+                    </div>
+                    <div className="audit-filters__group">
+                        <label htmlFor="auditFilterAction" className="audit-filters__label">Action</label>
+                        <select
+                            id="auditFilterAction"
+                            className="audit-select"
+                            value={filters.action}
+                            onChange={(event) => handleFilterChange('action', event.target.value)}
+                        >
+                            <option value="">All actions</option>
+                            {actionTypes.map((action) => (
+                                <option key={action} value={action}>
+                                    {action}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="audit-filters__group">
+                        <label htmlFor="auditFilterEntityType" className="audit-filters__label">Entity Type</label>
+                        <input
+                            id="auditFilterEntityType"
+                            type="text"
+                            className="audit-input"
+                            placeholder="Project, Supplier, User"
+                            value={filters.entityType}
+                            onChange={(event) => handleFilterChange('entityType', event.target.value)}
+                        />
+                    </div>
+                    <div className="audit-filters__group">
+                        <label htmlFor="auditFilterEntityId" className="audit-filters__label">Entity ID</label>
+                        <input
+                            id="auditFilterEntityId"
+                            type="number"
+                            className="audit-input"
+                            placeholder="Exact entity reference"
+                            value={filters.entityId}
+                            onChange={(event) => handleFilterChange('entityId', event.target.value)}
+                        />
+                    </div>
+                    <div className="audit-filters__group">
+                        <label htmlFor="auditFilterSeverity" className="audit-filters__label">Severity</label>
+                        <select
+                            id="auditFilterSeverity"
+                            className="audit-select"
+                            value={filters.severity}
+                            onChange={(event) => handleFilterChange('severity', event.target.value)}
+                        >
+                            <option value="">All severities</option>
+                            <option value="CRITICAL">Critical</option>
+                            <option value="WARNING">Warning</option>
+                            <option value="INFO">Information</option>
+                        </select>
+                    </div>
+                    <div className="audit-filters__group">
+                        <label htmlFor="auditFilterStart" className="audit-filters__label">Start Date</label>
+                        <input
+                            id="auditFilterStart"
+                            type="date"
+                            className="audit-input"
+                            value={filters.startDate}
+                            onChange={(event) => handleFilterChange('startDate', event.target.value)}
+                        />
+                    </div>
+                    <div className="audit-filters__group">
+                        <label htmlFor="auditFilterEnd" className="audit-filters__label">End Date</label>
+                        <input
+                            id="auditFilterEnd"
+                            type="date"
+                            className="audit-input"
+                            value={filters.endDate}
+                            onChange={(event) => handleFilterChange('endDate', event.target.value)}
+                        />
+                    </div>
+                </div>
+                <div className="audit-filters__footer">
+                    <button
+                        type="button"
+                        className="audit-btn audit-btn--secondary"
+                        onClick={handleResetFilters}
+                        disabled={!activeFilterCount}
+                    >
+                        Reset filters
+                    </button>
+                    <div className="audit-filters__status">
+                        {activeFilterCount ? `${activeFilterCount} active ${activeFilterCount === 1 ? 'filter' : 'filters'}` : 'No active filters'}
+                    </div>
+                </div>
+            </div>
+
+            <div className="audit-results" data-animate="fade-up" data-delay="0.16">
+                <div className="audit-results__header">
+                    <div>
+                        <h2 className="audit-results__title">Audit Log Results</h2>
+                        <p className="audit-results__meta">
+                            {stats.totalRecords} record{stats.totalRecords === 1 ? '' : 's'} • {lastActivityLabel}
+                            {activeFilterCount ? ` • ${activeFilterCount} active ${activeFilterCount === 1 ? 'filter' : 'filters'}` : ''}
+                        </p>
+                    </div>
+                    <div className="audit-results__controls">
+                        {loading && <span className="audit-spinner audit-spinner--sm" aria-hidden="true" />}
+                        <button
+                            type="button"
+                            className="audit-btn audit-btn--ghost"
+                            onClick={manualRefresh}
+                            disabled={loading}
+                        >
+                            <FaSync />
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div className="audit-summary">
+                    {severityLevels.map((level) => (
+                        <div key={level} className={`audit-summary__item audit-summary__item--${level.toLowerCase()}`}>
+                            <span className="audit-summary__label">{level}</span>
+                            <span className="audit-summary__value">{stats.severityCounts[level] || 0}</span>
                         </div>
-                    ) : logs.length === 0 ? (
-                        <div className="text-center p-5 text-muted">
-                            <FaHistory size={48} className="mb-3 opacity-50" />
-                            <p>No audit logs found matching the criteria</p>
-                        </div>
-                    ) : (
-                        <div className="table-responsive">
-                            <Table striped hover>
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Timestamp</th>
-                                        <th>Actor</th>
-                                        <th>Action</th>
-                                        <th>Severity</th>
-                                        <th>Entity</th>
-                                        <th>Details</th>
-                                        <th>IP Address</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {logs.map(log => (
-                                        <tr key={log.id}>
+                    ))}
+                </div>
+
+                {loading ? (
+                    <div className="audit-loading">
+                        <span className="audit-spinner" aria-hidden="true" />
+                        <p>Loading audit logs…</p>
+                    </div>
+                ) : logs.length === 0 ? (
+                    <div className="audit-empty">
+                        <FaHistory />
+                        <p>No audit logs found for the selected filters.</p>
+                    </div>
+                ) : (
+                    <div className="audit-table__wrapper">
+                        <table className="audit-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Timestamp</th>
+                                    <th scope="col">Actor</th>
+                                    <th scope="col">Action</th>
+                                    <th scope="col">Severity</th>
+                                    <th scope="col">Entity</th>
+                                    <th scope="col">Details</th>
+                                    <th scope="col">IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {logs.map((log) => {
+                                    const severityKey = (log.severity || 'INFO').toUpperCase();
+                                    const rowClass = severityRowClass[severityKey] || '';
+                                    const actionKey = (log.action || 'UNSPECIFIED').toUpperCase();
+                                    const actionClass = actionColorClasses[actionKey] || 'audit-action--default';
+                                    return (
+                                        <tr key={log.id} className={rowClass}>
                                             <td>{log.id}</td>
-                                            <td className="text-nowrap">{formatTimestamp(log.timestamp)}</td>
+                                            <td title={formatTimestamp(log.timestamp)}>{formatTimestamp(log.timestamp)}</td>
                                             <td>
-                                                <div>{log.actorName}</div>
-                                                <small className="text-muted">{log.actorEmail}</small>
+                                                <div className="audit-table__primary">{log.actorName || '—'}</div>
+                                                <div className="audit-table__secondary">{log.actorEmail || '—'}</div>
                                             </td>
                                             <td>
-                                                <code className="small">{log.action}</code>
+                                                <span className={`audit-action ${actionClass}`} title={log.action || '—'}>
+                                                    <span className="audit-action__dot" aria-hidden="true" />
+                                                    {log.action || '—'}
+                                                </span>
                                             </td>
-                                            <td>{getSeverityBadge(log.severity)}</td>
                                             <td>
-                                                {log.entityType && (
+                                                <span className={`audit-pill ${severityToClass[severityKey] || 'audit-pill--neutral'}`}>
+                                                    {severityKey}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {log.entityType ? (
                                                     <>
-                                                        <div className="fw-bold">{log.entityType}</div>
-                                                        {log.entityName && <small className="text-muted">{log.entityName}</small>}
-                                                        {log.entityId && <small className="text-muted"> (ID: {log.entityId})</small>}
+                                                        <div className="audit-table__primary">{log.entityType}</div>
+                                                        {log.entityName && <div className="audit-table__secondary">{log.entityName}</div>}
+                                                        {log.entityId && <div className="audit-table__secondary">ID: {log.entityId}</div>}
                                                     </>
+                                                ) : (
+                                                    '—'
                                                 )}
-                                                {!log.entityType && '—'}
                                             </td>
-                                            <td>
-                                                <small className="text-muted" title={log.details}>
-                                                    {truncateDetails(log.details)}
-                                                </small>
+                                            <td title={log.details || '—'}>
+                                                <div className="audit-table__secondary">{truncateDetails(log.details)}</div>
                                             </td>
-                                            <td className="text-muted small">{log.ipAddress || '—'}</td>
+                                            <td className="audit-table__secondary">{log.ipAddress || '—'}</td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </Table>
-                        </div>
-                    )}
-                </Card.Body>
-            </Card>
-        </Container>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </section>
     );
 };
 
