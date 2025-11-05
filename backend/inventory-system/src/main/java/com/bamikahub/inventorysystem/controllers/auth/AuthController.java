@@ -24,4 +24,10 @@ public class AuthController {
         authService.registerUser(registerRequest);
         return ResponseEntity.ok("User registered successfully! Awaiting admin approval.");
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        authService.logoutCurrentUser();
+        return ResponseEntity.ok("Logged out successfully.");
+    }
 }

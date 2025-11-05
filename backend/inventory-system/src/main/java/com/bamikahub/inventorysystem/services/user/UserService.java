@@ -12,6 +12,7 @@ import com.bamikahub.inventorysystem.models.user.User;
 import com.bamikahub.inventorysystem.services.FileStorageService;
 import com.bamikahub.inventorysystem.services.audit.AuditService;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.bamikahub.inventorysystem.util.ValidationUtil;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -62,15 +63,18 @@ public class UserService {
 
     @Transactional
     public UserDto createUser(UserCreateRequest request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email is already in use.");
-        }
-        User user = new User();
+        // Validate and sanitize fields similar to public registration
+        String validFirst = ValidationUtil.validateFirstName(request.getFirstName());
+        String validLast = ValidationUtil.validateLastName(request.getLastName());
+        String validUsername = ValidationUtil.validateUsername(request.getUsername(), userRepository);
+        String validEmail = ValidationUtil.validateEmail(request.getEmail(), userRepository);
+        ValidationUtil.validatePassword(request.getPassword(), validFirst, validLast, validUsername);
 
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
+        User user = new User();
+        user.setFirstName(validFirst);
+        user.setLastName(validLast);
+        user.setUsername(validUsername);
+        user.setEmail(validEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         Role role = roleRepository.findById(request.getRoleId()).orElseThrow(() -> new RuntimeException("Role not found"));
