@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaTags, FaTimes } from 'react-icons/fa';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FaPlus, FaEdit, FaTrash, FaTags, FaTimes, FaClock } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -16,6 +16,7 @@ const CategoryManagementPage = () => {
     const [currentCategory, setCurrentCategory] = useState({ id: null, name: '', description: '' });
     const [submitting, setSubmitting] = useState(false);
     const [dialogConfig, setDialogConfig] = useState({ open: false });
+    const [lastUpdated, setLastUpdated] = useState(new Date());
 
     useEffect(() => {
         fetchCategories();
@@ -26,6 +27,7 @@ const CategoryManagementPage = () => {
         try {
             const response = await api.get('/categories');
             setCategories(response.data);
+            setLastUpdated(new Date());
         } catch (err) {
             toast.error('Failed to fetch categories.');
         } finally {
@@ -112,6 +114,33 @@ const CategoryManagementPage = () => {
         }
     };
 
+    const categoriesWithDescriptions = useMemo(() => (
+        categories.filter(cat => Boolean(cat.description)).length
+    ), [categories]);
+
+    const bannerMetrics = useMemo(() => ([
+        {
+            label: 'Total Categories',
+            value: categories.length,
+            icon: FaTags,
+            modifier: 'inventory-banner__meta-icon--accent'
+        },
+        {
+            label: 'With Description',
+            value: categoriesWithDescriptions,
+            icon: FaEdit,
+            modifier: 'inventory-banner__meta-icon--green'
+        },
+        {
+            label: 'Last Updated',
+            value: lastUpdated.toLocaleDateString(),
+            icon: FaClock,
+            modifier: 'inventory-banner__meta-icon--gold'
+        }
+    ]), [categories.length, categoriesWithDescriptions, lastUpdated]);
+
+    const cardVariants = ['blue', 'gold', 'green', 'purple'];
+
     if (loading) {
         return (
             <section className="inventory-page inventory-page--centered">
@@ -125,37 +154,52 @@ const CategoryManagementPage = () => {
 
     return (
         <section className="inventory-page">
-            <div className="inventory-banner inventory-banner--categories" data-animate="fade-up">
+            <div className="inventory-banner" data-animate="fade-up">
                 <div className="inventory-banner__content">
-                    <div className="inventory-banner__eyebrow">Inventory Settings</div>
-                    <h2 className="inventory-banner__title">Category Management</h2>
-                    <p className="inventory-banner__subtitle">
-                        Organize your catalogue into meaningful groups to keep replenishment fast and reporting effortless.
-                    </p>
+                    <div className="inventory-banner__info">
+                        <span className="inventory-banner__eyebrow">
+                            <FaTags aria-hidden="true" />
+                            Inventory Settings
+                        </span>
+                        <h1 className="inventory-banner__title">Category Management</h1>
+                        <p className="inventory-banner__subtitle">
+                            Organize your catalogue into meaningful groups to keep replenishment fast and reporting effortless.
+                        </p>
+                    </div>
 
-                    <div className="inventory-banner__meta">
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">Categories</span>
-                            <span className="inventory-meta-value">{categories.length}</span>
-                        </div>
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">With Details</span>
-                            <span className="inventory-meta-value">{categories.filter(cat => cat.description).length}</span>
-                        </div>
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">Last Updated</span>
-                            <span className="inventory-meta-value">{new Date().toLocaleDateString()}</span>
-                        </div>
+                    <div className="inventory-banner__actions">
+                        {hasPermission('ITEM_CREATE') && (
+                            <button type="button" className="inventory-primary-btn" onClick={handleShowCreateModal}>
+                                <FaPlus aria-hidden="true" />
+                                <span>Add Category</span>
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            className="inventory-ghost-btn"
+                            onClick={fetchCategories}
+                            disabled={loading}
+                        >
+                            Refresh
+                        </button>
                     </div>
                 </div>
 
-                <div className="inventory-banner__actions">
-                    {hasPermission('ITEM_CREATE') && (
-                        <button type="button" className="inventory-primary-btn" onClick={handleShowCreateModal}>
-                            <FaPlus aria-hidden="true" />
-                            <span>Add Category</span>
-                        </button>
-                    )}
+                <div className="inventory-banner__meta">
+                    {bannerMetrics.map((metric) => {
+                        const MetricIcon = metric.icon;
+                        return (
+                            <div key={metric.label} className="inventory-banner__meta-item">
+                                <div className={`inventory-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
+                                    <MetricIcon />
+                                </div>
+                                <div className="inventory-banner__meta-content">
+                                    <span className="inventory-banner__meta-label">{metric.label}</span>
+                                    <span className="inventory-banner__meta-value">{metric.value}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -165,8 +209,14 @@ const CategoryManagementPage = () => {
                         No categories yet. Create your first category to start grouping items.
                     </div>
                 ) : (
-                    categories.map(category => (
-                        <article key={category.id} className="inventory-card">
+                    categories.map((category, index) => (
+                        <article
+                            key={category.id}
+                            className="inventory-card"
+                            data-variant={cardVariants[index % cardVariants.length]}
+                            style={{ animationDelay: `${index * 0.05}s` }}
+                            data-animate="fade-up"
+                        >
                             <header className="inventory-card__header">
                                 <div className="inventory-card__icon" aria-hidden="true">
                                     <FaTags />

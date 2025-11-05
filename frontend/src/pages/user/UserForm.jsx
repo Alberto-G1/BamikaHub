@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaSave, FaUserEdit, FaUserPlus, FaUserCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaAt, FaEnvelope, FaIdBadge, FaSave, FaUserCheck, FaUserEdit, FaUserPlus, FaUserCircle, FaUserShield } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import './UserManagementPage.css';
@@ -131,6 +131,35 @@ const UserForm = () => {
     const previewStatus = isEditMode ? selectedStatusName : 'Pending activation';
     const previewAccountTag = isEditMode ? 'Existing account' : 'New account draft';
 
+    const bannerMetrics = useMemo(() => ([
+        {
+            label: 'Account Status',
+            value: isEditMode ? selectedStatusName : 'Pending activation',
+            icon: FaUserCheck,
+            modifier: isEditMode && selectedStatusName === 'ACTIVE'
+                ? 'users-banner__meta-icon--teal'
+                : 'users-banner__meta-icon--gold'
+        },
+        {
+            label: 'Assigned Role',
+            value: selectedRoleName,
+            icon: FaIdBadge,
+            modifier: 'users-banner__meta-icon--blue'
+        },
+        {
+            label: 'Username',
+            value: username || 'Pending',
+            icon: FaAt,
+            modifier: 'users-banner__meta-icon--purple'
+        },
+        {
+            label: 'Email',
+            value: email || 'Pending',
+            icon: FaEnvelope,
+            modifier: 'users-banner__meta-icon--teal'
+        }
+    ]), [isEditMode, selectedStatusName, selectedRoleName, username, email]);
+
     if (loading) {
         return (
             <section className="users-page users-form-page">
@@ -146,51 +175,46 @@ const UserForm = () => {
         <section className="users-page users-form-page">
             <div className="users-banner users-banner--compact" data-animate="fade-up">
                 <div className="users-banner__content">
-                    <div className="users-banner__eyebrow">{bannerEyebrow}</div>
-                    <h2 className="users-banner__title">{pageTitle}</h2>
-                    <p className="users-banner__subtitle">{pageSubtitle}</p>
+                    <div className="users-banner__info">
+                        <span className="users-banner__eyebrow">
+                            <FaUserShield aria-hidden="true" />
+                            {bannerEyebrow}
+                        </span>
+                        <h1 className="users-banner__title">{pageTitle}</h1>
+                        <p className="users-banner__subtitle">{pageSubtitle}</p>
+                    </div>
 
-                    {isEditMode ? (
-                        <div className="users-banner__meta">
-                            <div className="users-banner__meta-item">
-                                <span className="users-meta-label">Full Name</span>
-                                <span className="users-meta-value">{profileDisplayName}</span>
-                            </div>
-                            <div className="users-banner__meta-item">
-                                <span className="users-meta-label">Role</span>
-                                <span className="users-meta-value">{selectedRoleName}</span>
-                            </div>
-                            <div className="users-banner__meta-item">
-                                <span className="users-meta-label">Status</span>
-                                <span className="users-meta-value">{selectedStatusName}</span>
-                            </div>
+                    <div className="users-banner__actions">
+                        <div className="users-banner__pictogram" aria-hidden="true">
+                            {heroIcon}
                         </div>
-                    ) : (
-                        <div className="users-banner__meta">
-                            <div className="users-banner__meta-item">
-                                <span className="users-meta-label">Role Options</span>
-                                <span className="users-meta-value">{roles.length}</span>
-                            </div>
-                            <div className="users-banner__meta-item">
-                                <span className="users-meta-label">Status Presets</span>
-                                <span className="users-meta-value">{statuses.length || '—'}</span>
-                            </div>
-                            <div className="users-banner__meta-item">
-                                <span className="users-meta-label">Setup Flow</span>
-                                <span className="users-meta-value">Profile &rarr; Access</span>
-                            </div>
-                        </div>
-                    )}
+                        <button
+                            type="button"
+                            className="users-secondary-btn"
+                            onClick={() => navigate('/users')}
+                            disabled={submitting}
+                        >
+                            <FaArrowLeft aria-hidden="true" />
+                            <span>Back to User Management</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div className="users-banner__actions">
-                    <div className="users-banner__icon" aria-hidden="true">
-                        {heroIcon}
-                    </div>
-                    <button type="button" className="users-secondary-btn" onClick={() => navigate('/users')}>
-                        <FaArrowLeft aria-hidden="true" />
-                        <span>Back to User Management</span>
-                    </button>
+                <div className="users-banner__meta">
+                    {bannerMetrics.map(metric => {
+                        const MetricIcon = metric.icon;
+                        return (
+                            <div key={metric.label} className="users-banner__meta-item">
+                                <div className={`users-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
+                                    <MetricIcon />
+                                </div>
+                                <div className="users-banner__meta-content">
+                                    <span className="users-banner__meta-label">{metric.label}</span>
+                                    <span className="users-banner__meta-value">{metric.value}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 

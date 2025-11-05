@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEdit, FaPlus, FaCheck, FaTimes, FaSearch, FaUserCircle, FaArchive } from 'react-icons/fa';
+import {
+    FaArchive,
+    FaCheck,
+    FaEdit,
+    FaHourglassHalf,
+    FaPlus,
+    FaSearch,
+    FaTimes,
+    FaUserCheck,
+    FaUserCircle,
+    FaUserShield,
+    FaUserSlash,
+    FaUsers
+} from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
@@ -132,6 +145,33 @@ const UserManagement = () => {
         return summary;
     }, [users]);
 
+    const bannerMetrics = useMemo(() => ([
+        {
+            label: 'Total Accounts',
+            value: totals.total.toLocaleString(),
+            icon: FaUsers,
+            modifier: 'users-banner__meta-icon--blue'
+        },
+        {
+            label: 'Active',
+            value: totals.active.toLocaleString(),
+            icon: FaUserCheck,
+            modifier: 'users-banner__meta-icon--teal'
+        },
+        {
+            label: 'Pending Approvals',
+            value: totals.pending.toLocaleString(),
+            icon: FaHourglassHalf,
+            modifier: 'users-banner__meta-icon--gold'
+        },
+        {
+            label: 'Suspended',
+            value: totals.suspended.toLocaleString(),
+            icon: FaUserSlash,
+            modifier: 'users-banner__meta-icon--danger'
+        }
+    ]), [totals]);
+
     const filteredUsers = useMemo(() => {
         return users
             .filter(user => {
@@ -165,39 +205,49 @@ const UserManagement = () => {
         <section className="users-page">
             <div className="users-banner" data-animate="fade-up">
                 <div className="users-banner__content">
-                    <div className="users-banner__eyebrow">User Admin</div>
-                    <h2 className="users-banner__title">User Management</h2>
-                    <p className="users-banner__subtitle">
-                        Manage approvals, roles, and access for every member of your organization.
-                    </p>
+                    <div className="users-banner__info">
+                        <span className="users-banner__eyebrow">
+                            <FaUserShield aria-hidden="true" />
+                            Workforce Control
+                        </span>
+                        <h1 className="users-banner__title">User Management</h1>
+                        <p className="users-banner__subtitle">
+                            Manage approvals, roles, and access for every member of your organization.
+                        </p>
+                    </div>
 
-                    <div className="users-banner__meta">
-                        <div className="users-banner__meta-item">
-                            <span className="users-meta-label">Total</span>
-                            <span className="users-meta-value">{totals.total}</span>
+                    <div className="users-banner__actions">
+                        <div className="users-banner__pictogram" aria-hidden="true">
+                            <FaUsers />
                         </div>
-                        <div className="users-banner__meta-item">
-                            <span className="users-meta-label">Active</span>
-                            <span className="users-meta-value">{totals.active}</span>
-                        </div>
-                        <div className="users-banner__meta-item">
-                            <span className="users-meta-label">Pending</span>
-                            <span className="users-meta-value">{totals.pending}</span>
-                        </div>
+                        <button type="button" className="users-secondary-btn" onClick={() => navigate('/users/deactivated')}>
+                            <FaArchive />
+                            <span>View Deactivated</span>
+                        </button>
+                        {hasPermission('USER_CREATE') && (
+                            <button type="button" className="users-primary-btn" onClick={() => navigate('/users/new')}>
+                                <FaPlus />
+                                <span>Add User</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                <div className="users-banner__actions">
-                    <button type="button" className="users-secondary-btn" onClick={() => navigate('/users/deactivated')}>
-                        <FaArchive />
-                        <span>View Deactivated</span>
-                    </button>
-                    {hasPermission('USER_CREATE') && (
-                        <button type="button" className="users-primary-btn" onClick={() => navigate('/users/new')}>
-                            <FaPlus />
-                            <span>Add User</span>
-                        </button>
-                    )}
+                <div className="users-banner__meta">
+                    {bannerMetrics.map(metric => {
+                        const MetricIcon = metric.icon;
+                        return (
+                            <div key={metric.label} className="users-banner__meta-item">
+                                <div className={`users-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
+                                    <MetricIcon />
+                                </div>
+                                <div className="users-banner__meta-content">
+                                    <span className="users-banner__meta-label">{metric.label}</span>
+                                    <span className="users-banner__meta-value">{metric.value}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 

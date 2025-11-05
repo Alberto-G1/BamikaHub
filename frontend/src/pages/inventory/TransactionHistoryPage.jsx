@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaFilter, FaHistory } from 'react-icons/fa';
+import { FaBoxes, FaDolly, FaFilter, FaHistory, FaSync } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import './InventoryStyles.css';
@@ -55,17 +55,55 @@ const TransactionHistoryPage = () => {
 
     const filteredTransactions = useMemo(() => {
         return transactions
-            .filter(t => typeFilter === 'ALL' || t.type === typeFilter)
-            .filter(t => {
+            .filter((transaction) => typeFilter === 'ALL' || transaction.type === typeFilter)
+            .filter((transaction) => {
                 const searchLower = searchQuery.toLowerCase();
                 return (
-                    t.item.name.toLowerCase().includes(searchLower) ||
-                    t.item.sku.toLowerCase().includes(searchLower) ||
-                    (t.reference && t.reference.toLowerCase().includes(searchLower)) ||
-                    (t.user.username && t.user.username.toLowerCase().includes(searchLower))
+                    transaction.item.name.toLowerCase().includes(searchLower) ||
+                    transaction.item.sku.toLowerCase().includes(searchLower) ||
+                    (transaction.reference && transaction.reference.toLowerCase().includes(searchLower)) ||
+                    (transaction.user.username && transaction.user.username.toLowerCase().includes(searchLower))
                 );
             });
     }, [transactions, searchQuery, typeFilter]);
+
+    const { inboundCount, outboundCount } = useMemo(() => {
+        return transactions.reduce(
+            (accumulator, transaction) => {
+                if (transaction.type === 'IN') accumulator.inboundCount += 1;
+                if (transaction.type === 'OUT') accumulator.outboundCount += 1;
+                return accumulator;
+            },
+            { inboundCount: 0, outboundCount: 0 }
+        );
+    }, [transactions]);
+
+    const bannerMetrics = useMemo(() => ([
+        {
+            label: 'Total Records',
+            value: transactions.length,
+            icon: FaHistory,
+            modifier: 'inventory-banner__meta-icon--accent'
+        },
+        {
+            label: 'Filtered',
+            value: filteredTransactions.length,
+            icon: FaFilter,
+            modifier: 'inventory-banner__meta-icon--purple'
+        },
+        {
+            label: 'Inbound Moves',
+            value: inboundCount,
+            icon: FaBoxes,
+            modifier: 'inventory-banner__meta-icon--green'
+        },
+        {
+            label: 'Outbound Moves',
+            value: outboundCount,
+            icon: FaDolly,
+            modifier: 'inventory-banner__meta-icon--danger'
+        }
+    ]), [transactions.length, filteredTransactions.length, inboundCount, outboundCount]);
 
     if (loading) {
         return (
@@ -82,21 +120,43 @@ const TransactionHistoryPage = () => {
         <section className="inventory-page">
             <div className="inventory-banner" data-animate="fade-up">
                 <div className="inventory-banner__content">
-                    <div className="inventory-banner__eyebrow">Inventory Intelligence</div>
-                    <h2 className="inventory-banner__title">Stock Transaction Log</h2>
-                    <p className="inventory-banner__subtitle">
-                        Audit every movement across the warehouse and catch anomalies before they impact fulfilment.
-                    </p>
-                    <div className="inventory-banner__meta">
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">Total Records</span>
-                            <span className="inventory-meta-value">{transactions.length}</span>
-                        </div>
-                        <div className="inventory-banner__meta-item">
-                            <span className="inventory-meta-label">Filtered</span>
-                            <span className="inventory-meta-value">{filteredTransactions.length}</span>
-                        </div>
+                    <div className="inventory-banner__info">
+                        <span className="inventory-banner__eyebrow">
+                            <FaHistory aria-hidden="true" />
+                            Movement Ledger
+                        </span>
+                        <h1 className="inventory-banner__title">Stock Transaction Log</h1>
+                        <p className="inventory-banner__subtitle">
+                            Audit every movement across the warehouse and catch anomalies before they impact fulfilment.
+                        </p>
                     </div>
+                    <div className="inventory-banner__actions">
+                        <button
+                            type="button"
+                            className="inventory-ghost-btn"
+                            onClick={fetchTransactions}
+                            disabled={loading}
+                        >
+                            <FaSync aria-hidden="true" />
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                </div>
+                <div className="inventory-banner__meta">
+                    {bannerMetrics.map((metric) => {
+                        const MetricIcon = metric.icon;
+                        return (
+                            <div key={metric.label} className="inventory-banner__meta-item">
+                                <div className={`inventory-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
+                                    <MetricIcon />
+                                </div>
+                                <div className="inventory-banner__meta-content">
+                                    <span className="inventory-banner__meta-label">{metric.label}</span>
+                                    <span className="inventory-banner__meta-value">{metric.value}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 

@@ -1,11 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEdit, FaTrash, FaPlus, FaShieldAlt, FaSearch } from 'react-icons/fa';
+import {
+    FaEdit,
+    FaTrash,
+    FaPlus,
+    FaShieldAlt,
+    FaSearch,
+    FaUsersCog,
+    FaKey,
+    FaLayerGroup
+} from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
-import './RoleManagement.css';
+import './RolesStyles.css';
 
 
 const RoleManagement = () => {
@@ -86,147 +95,197 @@ const RoleManagement = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <section className="roles-page">
-                <div className="roles-loading">
-                    <span className="roles-spinner" aria-hidden="true" />
-                    <p>Loading roles...</p>
-                </div>
-            </section>
-        );
-    }
+    const metrics = [
+        {
+            label: 'Total Roles',
+            value: summary.totalRoles,
+            icon: <FaUsersCog />,
+            modifier: 'roles-banner__meta-icon--blue'
+        },
+        {
+            label: 'Total Permissions',
+            value: summary.totalPermissions,
+            icon: <FaKey />,
+            modifier: 'roles-banner__meta-icon--gold'
+        },
+        {
+            label: 'Average Per Role',
+            value: summary.averagePerRole,
+            icon: <FaLayerGroup />,
+            modifier: 'roles-banner__meta-icon--green'
+        },
+        {
+            label: 'Roles With Access',
+            value: summary.withPermissions,
+            icon: <FaShieldAlt />,
+            modifier: 'roles-banner__meta-icon--red'
+        }
+    ];
+
+    const cardVariants = ['blue', 'gold', 'green', 'purple', 'red'];
 
     return (
         <section className="roles-page">
-            <div className="roles-banner" data-animate="fade-up">
-                <div className="roles-banner__content">
-                    <div className="roles-banner__eyebrow">Access Control</div>
-                    <h2 className="roles-banner__title">Roles &amp; Permissions</h2>
-                    <p className="roles-banner__subtitle">
-                        Curate who can access what by shaping focused roles and tailored permission sets.
-                    </p>
-
-                    <div className="roles-banner__meta">
-                        <div className="roles-banner__meta-item">
-                            <span className="roles-meta-label">Total Roles</span>
-                            <span className="roles-meta-value">{summary.totalRoles}</span>
+            {loading ? (
+                <div className="roles-loading" data-animate="fade-up">
+                    <span className="roles-spinner" aria-hidden="true" />
+                    <p>Loading roles...</p>
+                </div>
+            ) : (
+                <>
+                    <div className="roles-banner" data-animate="fade-up">
+                        <div className="roles-banner__content">
+                            <div className="roles-banner__info">
+                                <span className="roles-banner__eyebrow">
+                                    <FaShieldAlt />
+                                    Access Control
+                                </span>
+                                <h1 className="roles-banner__title">Roles &amp; Permissions</h1>
+                                <p className="roles-banner__subtitle">
+                                    Curate who can access what by tailoring permission bundles for each team profile.
+                                    Empower governance without sacrificing speed.
+                                </p>
+                            </div>
+                            <div className="roles-banner__actions">
+                                {hasPermission('ROLE_CREATE') && (
+                                    <button
+                                        type="button"
+                                        className="roles-btn roles-btn--gold"
+                                        onClick={() => navigate('/roles/new')}
+                                    >
+                                        <FaPlus />
+                                        Add role
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    className="roles-btn roles-btn--ghost"
+                                    onClick={fetchData}
+                                    disabled={loading}
+                                >
+                                    Refresh
+                                </button>
+                            </div>
                         </div>
-                        <div className="roles-banner__meta-item">
-                            <span className="roles-meta-label">Total Permissions</span>
-                            <span className="roles-meta-value">{summary.totalPermissions}</span>
-                        </div>
-                        <div className="roles-banner__meta-item">
-                            <span className="roles-meta-label">Avg / Role</span>
-                            <span className="roles-meta-value">{summary.averagePerRole}</span>
-                        </div>
-                        <div className="roles-banner__meta-item">
-                            <span className="roles-meta-label">Roles With Access</span>
-                            <span className="roles-meta-value">{summary.withPermissions}</span>
+                        <div className="roles-banner__meta">
+                            {metrics.map((metric) => (
+                                <div key={metric.label} className="roles-banner__meta-item">
+                                    <div className={`roles-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
+                                        {metric.icon}
+                                    </div>
+                                    <div className="roles-banner__meta-content">
+                                        <span className="roles-banner__meta-label">{metric.label}</span>
+                                        <span className="roles-banner__meta-value">{metric.value}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
-                </div>
 
-                <div className="roles-banner__actions">
-                    {hasPermission('ROLE_CREATE') && (
-                        <button type="button" className="roles-primary-btn" onClick={() => navigate('/roles/new')}>
-                            <FaPlus />
-                            <span>Add Role</span>
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            <div className="roles-toolbar" data-animate="fade-up" data-delay="0.05">
-                <div className="roles-filter-panel">
-                    <label className="roles-control">
-                        <span className="roles-label">Search</span>
-                        <div className="roles-input-wrapper">
-                            <FaSearch />
-                            <input
-                                className="roles-input"
-                                type="text"
-                                placeholder="Search by role name or permission"
-                                value={searchTerm}
-                                onChange={event => setSearchTerm(event.target.value)}
-                            />
+                    <div className="roles-filters" data-animate="fade-up" data-delay="0.08">
+                        <div className="roles-filters__header">
+                            <h2 className="roles-filters__title">Role Directory</h2>
+                            {error && <div className="roles-error" role="alert">{error}</div>}
                         </div>
-                    </label>
-                </div>
-                {error && <div className="roles-error" role="alert">{error}</div>}
-            </div>
+                        <div className="roles-filters__controls">
+                            <div className="roles-input-wrap">
+                                <FaSearch aria-hidden="true" />
+                                <input
+                                    className="roles-input"
+                                    type="text"
+                                    placeholder="Search by role name or permission"
+                                    value={searchTerm}
+                                    onChange={(event) => setSearchTerm(event.target.value)}
+                                />
+                            </div>
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    className="roles-btn roles-btn--ghost roles-btn--icon"
+                                    onClick={() => setSearchTerm('')}
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
-            <div className="roles-grid" data-animate="fade-up" data-delay="0.1">
-                {filteredRoles.length === 0 ? (
-                    <div className="roles-empty-state">No roles match your current filters.</div>
-                ) : (
-                    filteredRoles.map((role, index) => {
-                        const permissions = role.permissions || [];
-                        const previewPermissions = permissions.slice(0, 3);
-                        const remainingCount = Math.max(permissions.length - previewPermissions.length, 0);
+                    <div className="roles-grid" data-animate="fade-up" data-delay="0.12">
+                        {filteredRoles.length === 0 ? (
+                            <div className="roles-empty-state">No roles match your current filters.</div>
+                        ) : (
+                            filteredRoles.map((role, index) => {
+                                const permissions = role.permissions || [];
+                                const previewPermissions = permissions.slice(0, 3);
+                                const remainingCount = Math.max(permissions.length - previewPermissions.length, 0);
 
-                        return (
-                            <article
-                                key={role.id}
-                                className="roles-card"
-                                style={{ animationDelay: `${index * 0.04}s` }}
-                            >
-                                <header className="roles-card__header">
-                                    <div className="roles-card__icon" aria-hidden="true">
-                                        <FaShieldAlt />
-                                    </div>
-                                    <div>
-                                        <h3 className="roles-card__title">{role.name}</h3>
-                                        <p className="roles-card__subtitle">
-                                            {permissions.length} permission{permissions.length === 1 ? '' : 's'} assigned
-                                        </p>
-                                    </div>
-                                </header>
+                                return (
+                                    <article
+                                        key={role.id}
+                                        className="roles-card"
+                                        style={{ animationDelay: `${index * 0.04}s` }}
+                                        data-variant={cardVariants[index % cardVariants.length]}
+                                    >
+                                        <header className="roles-card__header">
+                                            <div className="roles-card__icon" aria-hidden="true">
+                                                <FaShieldAlt />
+                                            </div>
+                                            <div>
+                                                <h3 className="roles-card__title">{role.name}</h3>
+                                                <p className="roles-card__subtitle">
+                                                    {permissions.length} permission{permissions.length === 1 ? '' : 's'} assigned
+                                                </p>
+                                            </div>
+                                        </header>
 
-                                {permissions.length > 0 ? (
-                                    <ul className="roles-card__chips" aria-label="Permission preview">
-                                        {previewPermissions.map(permission => (
-                                            <li key={permission.id} className="roles-card__chip">
-                                                {permission.name}
-                                            </li>
-                                        ))}
-                                        {remainingCount > 0 && (
-                                            <li className="roles-card__chip roles-card__chip--muted">+{remainingCount} more</li>
+                                        {permissions.length > 0 ? (
+                                            <ul className="roles-card__chips" aria-label="Permission preview">
+                                                {previewPermissions.map((permission) => (
+                                                    <li key={permission.id} className="roles-card__chip">
+                                                        {permission.name}
+                                                    </li>
+                                                ))}
+                                                {remainingCount > 0 && (
+                                                    <li className="roles-card__chip roles-card__chip--muted">
+                                                        +{remainingCount} more
+                                                    </li>
+                                                )}
+                                            </ul>
+                                        ) : (
+                                            <p className="roles-card__empty">No permissions assigned yet.</p>
                                         )}
-                                    </ul>
-                                ) : (
-                                    <p className="roles-card__empty">No permissions assigned yet.</p>
-                                )}
 
-                                <footer className="roles-card__footer">
-                                    {hasPermission('ROLE_UPDATE') && (
-                                        <button
-                                            type="button"
-                                            className="roles-icon-btn roles-icon-btn--edit"
-                                            onClick={() => navigate(`/roles/edit/${role.id}`)}
-                                            aria-label={`Edit ${role.name}`}
-                                        >
-                                            <FaEdit />
-                                            <span>Edit</span>
-                                        </button>
-                                    )}
-                                    {hasPermission('ROLE_DELETE') && (
-                                        <button
-                                            type="button"
-                                            className="roles-icon-btn roles-icon-btn--danger"
-                                            onClick={() => confirmDelete(role)}
-                                            aria-label={`Delete ${role.name}`}
-                                        >
-                                            <FaTrash />
-                                            <span>Delete</span>
-                                        </button>
-                                    )}
-                                </footer>
-                            </article>
-                        );
-                    })
-                )}
-            </div>
+                                        <footer className="roles-card__actions">
+                                            {hasPermission('ROLE_UPDATE') && (
+                                                <button
+                                                    type="button"
+                                                    className="roles-btn roles-btn--secondary roles-btn--icon"
+                                                    onClick={() => navigate(`/roles/edit/${role.id}`)}
+                                                    aria-label={`Edit ${role.name}`}
+                                                >
+                                                    <FaEdit />
+                                                    Edit
+                                                </button>
+                                            )}
+                                            {hasPermission('ROLE_DELETE') && (
+                                                <button
+                                                    type="button"
+                                                    className="roles-btn roles-btn--danger roles-btn--icon"
+                                                    onClick={() => confirmDelete(role)}
+                                                    aria-label={`Delete ${role.name}`}
+                                                >
+                                                    <FaTrash />
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </footer>
+                                    </article>
+                                );
+                            })
+                        )}
+                    </div>
+                </>
+            )}
 
             <ConfirmDialog
                 open={dialogConfig.open}
