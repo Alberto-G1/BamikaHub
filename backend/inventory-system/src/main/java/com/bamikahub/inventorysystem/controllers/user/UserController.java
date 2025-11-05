@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -47,13 +48,13 @@ public class UserController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('USER_CREATE')")
-    public UserDto createUser(@RequestBody UserCreateRequest request) {
+    public UserDto createUser(@Valid @RequestBody UserCreateRequest request) {
         return userService.createUser(request);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('USER_UPDATE')")
-    public UserDto updateUser(@PathVariable Long id, @RequestBody UserUpdateRequest request) {
+    public UserDto updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
         return userService.updateUser(id, request);
     }
 

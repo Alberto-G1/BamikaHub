@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class ProjectController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('PROJECT_CREATE')")
-    public Project createProject(@RequestBody ProjectRequest request) {
+    public Project createProject(@Valid @RequestBody ProjectRequest request) {
         return operationsService.createProject(request);
     }
 
@@ -49,7 +50,7 @@ public class ProjectController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('PROJECT_UPDATE')")
-    public Project updateProject(@PathVariable Long id, @RequestBody ProjectRequest request) {
+    public Project updateProject(@PathVariable Long id, @Valid @RequestBody ProjectRequest request) {
         return operationsService.updateProject(id, request);
     }
 

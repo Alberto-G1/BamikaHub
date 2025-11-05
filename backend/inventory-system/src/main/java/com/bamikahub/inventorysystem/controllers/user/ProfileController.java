@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.validation.Valid;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -28,14 +29,14 @@ public class ProfileController {
     // Endpoint for a user to update their own profile
     @PutMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    public UserProfileDto updateMyProfile(@RequestBody ProfileUpdateRequest request) {
+    public UserProfileDto updateMyProfile(@Valid @RequestBody ProfileUpdateRequest request) {
         return userService.updateCurrentUserProfile(request);
     }
 
     // Endpoint for a user to change their own password
     @PostMapping("/change-password")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<String> changeMyPassword(@RequestBody PasswordChangeRequest request) {
+    public ResponseEntity<String> changeMyPassword(@Valid @RequestBody PasswordChangeRequest request) {
         userService.changeCurrentUserPassword(request);
         return ResponseEntity.ok("Password changed successfully.");
     }

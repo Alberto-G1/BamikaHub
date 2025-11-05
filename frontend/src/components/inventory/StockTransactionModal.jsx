@@ -28,17 +28,31 @@ const StockTransactionModal = ({ show, handleClose, item, onTransactionSuccess }
             return;
         }
 
-        if (!quantity) {
-            toast.warn('Please provide a quantity value.');
+        const qty = parseInt(quantity, 10);
+        if (!qty || isNaN(qty) || qty <= 0) {
+            toast.warn('Please enter a quantity greater than 0.');
             return;
+        }
+
+        if (transactionType === 'OUT' && qty > (item.quantity ?? 0)) {
+            toast.warn('Insufficient stock for this operation.');
+            return;
+        }
+
+        if (transactionType === 'IN') {
+            const cost = parseFloat(unitCost);
+            if (isNaN(cost) || cost < 0) {
+                toast.warn('Unit cost must be zero or a positive number.');
+                return;
+            }
         }
 
         const payload = {
             itemId: item.id,
             type: transactionType,
-            quantity: parseInt(quantity, 10),
+            quantity: qty,
             unitCost: transactionType === 'IN' ? parseFloat(unitCost) : 0, // Cost only relevant for 'IN'
-            reference: reference,
+            reference: reference?.slice(0, 255),
         };
 
         try {
@@ -113,7 +127,7 @@ const StockTransactionModal = ({ show, handleClose, item, onTransactionSuccess }
                             <input
                                 id="transactionQuantity"
                                 type="number"
-                                min="0"
+                                min="1"
                                 className="inventory-input"
                                 value={quantity}
                                 onChange={(event) => setQuantity(event.target.value)}
@@ -156,6 +170,7 @@ const StockTransactionModal = ({ show, handleClose, item, onTransactionSuccess }
                             rows={3}
                             value={reference}
                             onChange={(event) => setReference(event.target.value)}
+                            maxLength={255}
                             required
                             disabled={submitting}
                         />

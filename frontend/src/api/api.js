@@ -12,4 +12,20 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Normalize backend validation errors for easier consumption by UI
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const data = error?.response?.data;
+        if (data && typeof data === 'object') {
+            error.validation = {
+                message: data.message || 'Request failed',
+                status: data.status || error?.response?.status,
+                errors: data.errors || {},
+            };
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;

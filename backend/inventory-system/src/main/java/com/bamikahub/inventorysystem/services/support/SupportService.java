@@ -65,12 +65,12 @@ public class SupportService {
     public SupportTicket createTicket(TicketRequest request) {
         User currentUser = getCurrentUser();
     SupportTicket ticket = new SupportTicket();
-        ticket.setSubject(request.getSubject());
-        ticket.setDescription(request.getDescription());
+        ticket.setSubject(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getSubject()));
+        ticket.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getDescription()));
         ticket.setPriority(request.getPriority());
         ticket.setSubmittedBy(currentUser);
         ticket.setStatus(SupportTicket.TicketStatus.OPEN);
-    ticket.setSubmitterDepartment(request.getSubmitterDepartment());
+    ticket.setSubmitterDepartment(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getSubmitterDepartment()));
 
         // Set Category
         TicketCategory category = categoryRepository.findById(request.getCategoryId())

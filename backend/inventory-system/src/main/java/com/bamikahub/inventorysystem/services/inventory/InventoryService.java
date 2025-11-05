@@ -42,14 +42,19 @@ public class InventoryService {
 
     @Transactional
     public InventoryItem createItem(InventoryItemRequest request) {
+        // Enforce SKU uniqueness
+        itemRepository.findBySku(request.getSku()).ifPresent(existing -> {
+            throw new RuntimeException("An item with the same SKU already exists.");
+        });
+
         InventoryItem newItem = new InventoryItem();
-        newItem.setName(request.getName());
-        newItem.setSku(request.getSku());
-        newItem.setDescription(request.getDescription());
+        newItem.setName(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getName()));
+        newItem.setSku(request.getSku().trim());
+        newItem.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getDescription()));
         newItem.setQuantity(request.getQuantity());
         newItem.setReorderLevel(request.getReorderLevel());
         newItem.setUnitPrice(request.getUnitPrice());
-        newItem.setLocation(request.getLocation());
+        newItem.setLocation(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getLocation()));
         newItem.setActive(request.isActive());
 
         Category category = categoryRepository.findById(request.getCategoryId())
@@ -98,6 +103,13 @@ public class InventoryService {
         InventoryItem existingItem = itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item not found with id: " + id));
 
+        // Enforce SKU uniqueness for update (ignore current item)
+        itemRepository.findBySku(request.getSku()).ifPresent(other -> {
+            if (!other.getId().equals(existingItem.getId())) {
+                throw new RuntimeException("An item with the same SKU already exists.");
+            }
+        });
+
         Map<String, Object> before = new HashMap<>();
         before.put("name", existingItem.getName());
         before.put("sku", existingItem.getSku());
@@ -111,12 +123,12 @@ public class InventoryService {
         before.put("supplierId", existingItem.getSupplier() != null ? existingItem.getSupplier().getId() : null);
         before.put("supplierName", existingItem.getSupplier() != null ? existingItem.getSupplier().getName() : null);
 
-        existingItem.setName(request.getName());
-        existingItem.setSku(request.getSku());
-        existingItem.setDescription(request.getDescription());
+    existingItem.setName(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getName()));
+    existingItem.setSku(request.getSku().trim());
+    existingItem.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getDescription()));
         existingItem.setReorderLevel(request.getReorderLevel());
         existingItem.setUnitPrice(request.getUnitPrice());
-        existingItem.setLocation(request.getLocation());
+    existingItem.setLocation(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getLocation()));
         existingItem.setActive(request.isActive());
 
         Category category = categoryRepository.findById(request.getCategoryId())
