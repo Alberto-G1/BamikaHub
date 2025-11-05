@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Spinner, Card, Badge, Modal, Form, Row, Col, ButtonGroup } from 'react-bootstrap';
-import { FaPlus, FaTicketAlt, FaFileExcel, FaFilePdf } from 'react-icons/fa';
+import { FaPlus, FaTicketAlt, FaFileExcel, FaFilePdf, FaSearch, FaFilter, FaChartLine, FaClock, FaCheckCircle, FaHourglassHalf, FaTimes } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
+import './SupportStyles.css';
 
 const initialFilters = {
     status: '',
@@ -17,16 +17,13 @@ const initialFilters = {
     includeArchived: false
 };
 
-const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '—');
-
-const getStatusBadge = (status) => {
-    switch (status) {
-        case 'OPEN': return <Badge bg="primary">Open</Badge>;
-        case 'IN_PROGRESS': return <Badge bg="info">In Progress</Badge>;
-        case 'RESOLVED': return <Badge bg="success">Resolved</Badge>;
-        case 'CLOSED': return <Badge bg="secondary">Closed</Badge>;
-        default: return <Badge bg="light" text="dark">{status}</Badge>;
-    }
+const initialNewTicket = {
+    subject: '',
+    description: '',
+    priority: 'MEDIUM',
+    categoryId: '',
+    otherCategory: '',
+    submitterDepartment: ''
 };
 
 const sanitizeFilters = (filters) => {
@@ -68,16 +65,10 @@ const SupportTicketPage = () => {
     const [downloadingFormat, setDownloadingFormat] = useState(null);
 
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [isModalClosing, setIsModalClosing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showOtherCategory, setShowOtherCategory] = useState(false);
-    const [newTicket, setNewTicket] = useState({
-        subject: '',
-        description: '',
-        priority: 'MEDIUM',
-        categoryId: '',
-        otherCategory: '',
-        submitterDepartment: ''
-    });
+    const [newTicket, setNewTicket] = useState({ ...initialNewTicket });
 
     useEffect(() => {
         const loadReferenceData = async () => {
@@ -111,6 +102,20 @@ const SupportTicketPage = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canManageTickets]);
+
+    useEffect(() => {
+        if (!isModalClosing) {
+            return;
+        }
+        const timeout = setTimeout(() => {
+            setShowCreateModal(false);
+            setIsModalClosing(false);
+            setShowOtherCategory(false);
+            setNewTicket({ ...initialNewTicket });
+        }, 320);
+
+        return () => clearTimeout(timeout);
+    }, [isModalClosing]);
 
     const fetchTickets = async (params = {}) => {
         setLoadingTickets(true);
@@ -161,6 +166,13 @@ const SupportTicketPage = () => {
         setShowOtherCategory(Boolean(selectedCategory && selectedCategory.name === 'OTHER'));
     };
 
+    const openCreateModal = () => {
+        setShowCreateModal(true);
+        setIsModalClosing(false);
+        setShowOtherCategory(false);
+        setNewTicket({ ...initialNewTicket });
+    };
+
     const handleCreateTicket = async (event) => {
         event.preventDefault();
         setIsSubmitting(true);
@@ -182,16 +194,10 @@ const SupportTicketPage = () => {
     };
 
     const handleCloseModal = () => {
-        setShowCreateModal(false);
-        setShowOtherCategory(false);
-        setNewTicket({
-            subject: '',
-            description: '',
-            priority: 'MEDIUM',
-            categoryId: '',
-            otherCategory: '',
-            submitterDepartment: ''
-        });
+        if (!showCreateModal || isModalClosing) {
+            return;
+        }
+        setIsModalClosing(true);
     };
 
     const handleExport = async (format) => {
@@ -222,236 +228,300 @@ const SupportTicketPage = () => {
     const statusCounts = analytics?.ticketsByStatus || {};
 
     return (
-        <>
-            <Card className="shadow-sm mb-3">
-                <Card.Header className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center">
-                    <div className="d-flex align-items-center mb-3 mb-lg-0">
-                        <FaTicketAlt className="me-3" size={24} />
-                        <div>
-                            <Card.Title as="h3" className="mb-0">Technical Support Tickets</Card.Title>
-                            <small className="text-muted">Track requests, monitor SLAs, and export reports.</small>
-                        </div>
+        <section className="support-page">
+            {/* Hero Banner */}
+            <div className="support-banner" data-animate="fade-up">
+                <div className="support-banner__content">
+                    <div className="support-banner__info">
+                        <span className="support-banner__eyebrow">
+                            <FaTicketAlt />
+                            Support System
+                        </span>
+                        <h1 className="support-banner__title">Technical Support Tickets</h1>
+                        <p className="support-banner__subtitle">
+                            Track requests, monitor SLAs, and export reports. Real-time ticket management and analytics.
+                        </p>
                     </div>
-                    <div className="d-flex gap-2">
+                    <div className="support-banner__actions">
                         {canManageTickets && (
-                            <ButtonGroup>
-                                <Button
-                                    variant="outline-success"
+                            <>
+                                <button
+                                    className="support-btn support-btn--green"
                                     disabled={downloadingFormat === 'excel'}
                                     onClick={() => handleExport('excel')}
                                 >
-                                    {downloadingFormat === 'excel' ? 'Exporting…' : <><FaFileExcel className="me-2" />Export Excel</>}
-                                </Button>
-                                <Button
-                                    variant="outline-danger"
+                                    <FaFileExcel />
+                                    {downloadingFormat === 'excel' ? 'Exporting…' : 'Export Excel'}
+                                </button>
+                                <button
+                                    className="support-btn support-btn--red"
                                     disabled={downloadingFormat === 'pdf'}
                                     onClick={() => handleExport('pdf')}
                                 >
-                                    {downloadingFormat === 'pdf' ? 'Exporting…' : <><FaFilePdf className="me-2" />Export PDF</>}
-                                </Button>
-                            </ButtonGroup>
+                                    <FaFilePdf />
+                                    {downloadingFormat === 'pdf' ? 'Exporting…' : 'Export PDF'}
+                                </button>
+                            </>
                         )}
-                        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-                            <FaPlus className="me-2" /> Create Ticket
-                        </Button>
+                        <button className="support-btn support-btn--gold" onClick={openCreateModal}>
+                            <FaPlus /> Create Ticket
+                        </button>
                     </div>
-                </Card.Header>
-            </Card>
+                </div>
 
-            {canManageTickets && (
-                <Card className="shadow-sm mb-3">
-                    <Card.Header>Support Analytics</Card.Header>
-                    <Card.Body>
-                        {loadingAnalytics ? (
-                            <Spinner animation="border" size="sm" />
-                        ) : analytics ? (
-                            <Row className="g-3">
-                                <Col md={3} sm={6}>
-                                    <Card className="border-0 bg-light h-100">
-                                        <Card.Body>
-                                            <div className="text-muted text-uppercase small">Open Tickets</div>
-                                            <div className="display-6">{statusCounts.OPEN || 0}</div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={3} sm={6}>
-                                    <Card className="border-0 bg-light h-100">
-                                        <Card.Body>
-                                            <div className="text-muted text-uppercase small">In Progress</div>
-                                            <div className="display-6">{statusCounts.IN_PROGRESS || 0}</div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={3} sm={6}>
-                                    <Card className="border-0 bg-light h-100">
-                                        <Card.Body>
-                                            <div className="text-muted text-uppercase small">Resolved</div>
-                                            <div className="display-6">{statusCounts.RESOLVED || 0}</div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={3} sm={6}>
-                                    <Card className="border-0 bg-light h-100">
-                                        <Card.Body>
-                                            <div className="text-muted text-uppercase small">Closed</div>
-                                            <div className="display-6">{statusCounts.CLOSED || 0}</div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={4} sm={6}>
-                                    <Card className="border-0 bg-light h-100">
-                                        <Card.Body>
-                                            <div className="text-muted text-uppercase small">Avg Resolution (hrs)</div>
-                                            <div className="display-6">{analytics.averageResolutionHours?.toFixed(1) || 0}</div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={4} sm={6}>
-                                    <Card className="border-0 bg-light h-100">
-                                        <Card.Body>
-                                            <div className="text-muted text-uppercase small">Avg Response (hrs)</div>
-                                            <div className="display-6">{analytics.averageResponseHours?.toFixed(1) || 0}</div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={4} sm={6}>
-                                    <Card className="border-0 bg-light h-100">
-                                        <Card.Body>
-                                            <div className="text-muted text-uppercase small">SLA Compliance (%)</div>
-                                            <div className="display-6">{analytics.slaCompliancePercentage?.toFixed(0) || 0}</div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                            </Row>
-                        ) : (
-                            <div className="text-muted">No analytics available.</div>
-                        )}
-                    </Card.Body>
-                </Card>
-            )}
-
-            <Card className="shadow-sm mb-3">
-                <Card.Header>Filters</Card.Header>
-                <Card.Body>
-                    <Form onSubmit={(event) => event.preventDefault()}>
-                        <Row className="g-3">
-                            <Col md={3} sm={6}>
-                                <Form.Group controlId="filterStatus">
-                                    <Form.Label>Status</Form.Label>
-                                    <Form.Select name="status" value={filters.status} onChange={handleFilterChange}>
-                                        <option value="">All statuses</option>
-                                        <option value="OPEN">Open</option>
-                                        <option value="IN_PROGRESS">In Progress</option>
-                                        <option value="RESOLVED">Resolved</option>
-                                        <option value="CLOSED">Closed</option>
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
-                            <Col md={3} sm={6}>
-                                <Form.Group controlId="filterPriority">
-                                    <Form.Label>Priority</Form.Label>
-                                    <Form.Select name="priority" value={filters.priority} onChange={handleFilterChange}>
-                                        <option value="">All priorities</option>
-                                        <option value="LOW">Low</option>
-                                        <option value="MEDIUM">Medium</option>
-                                        <option value="HIGH">High</option>
-                                        <option value="URGENT">Urgent</option>
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
-                            <Col md={3} sm={6}>
-                                <Form.Group controlId="filterCategory">
-                                    <Form.Label>Category</Form.Label>
-                                    <Form.Select name="categoryId" value={filters.categoryId} onChange={handleFilterChange}>
-                                        <option value="">All categories</option>
-                                        {categories.map((category) => (
-                                            <option key={category.id} value={category.id}>{category.name.replace(/_/g, ' ')}</option>
-                                        ))}
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
-                            <Col md={3} sm={6}>
-                                <Form.Group controlId="filterDepartment">
-                                    <Form.Label>Department</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="department"
-                                        value={filters.department}
-                                        onChange={handleFilterChange}
-                                        placeholder="e.g., Finance"
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={3} sm={6}>
-                                <Form.Group controlId="filterStartDate">
-                                    <Form.Label>Start Date</Form.Label>
-                                    <Form.Control type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} />
-                                </Form.Group>
-                            </Col>
-                            <Col md={3} sm={6}>
-                                <Form.Group controlId="filterEndDate">
-                                    <Form.Label>End Date</Form.Label>
-                                    <Form.Control type="date" name="endDate" value={filters.endDate} onChange={handleFilterChange} />
-                                </Form.Group>
-                            </Col>
-                            <Col md={6}>
-                                <Form.Group controlId="filterSearch">
-                                    <Form.Label>Search</Form.Label>
-                                    <Form.Control
-                                        type="search"
-                                        name="search"
-                                        value={filters.search}
-                                        onChange={handleFilterChange}
-                                        placeholder="Search by subject, ticket number, or description"
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={3} sm={6} className="d-flex align-items-end">
-                                <Form.Check
-                                    type="switch"
-                                    id="filterIncludeArchived"
-                                    name="includeArchived"
-                                    label="Include archived"
-                                    checked={filters.includeArchived}
-                                    onChange={handleFilterChange}
-                                />
-                            </Col>
-                        </Row>
-                        <div className="d-flex gap-2 mt-3">
-                            <Button type="button" variant="outline-secondary" onClick={handleResetFilters}>Reset</Button>
+                {/* Status Stats */}
+                <div className="support-banner__meta">
+                    <div className="support-banner__meta-item">
+                        <div className="support-banner__meta-icon support-banner__meta-icon--blue">
+                            <FaHourglassHalf />
                         </div>
-                    </Form>
-                </Card.Body>
-            </Card>
+                        <div className="support-banner__meta-content">
+                            <span className="support-banner__meta-label">Open</span>
+                            <span className="support-banner__meta-value">{statusCounts.OPEN || 0}</span>
+                        </div>
+                    </div>
+                    <div className="support-banner__meta-item">
+                        <div className="support-banner__meta-icon support-banner__meta-icon--gold">
+                            <FaClock />
+                        </div>
+                        <div className="support-banner__meta-content">
+                            <span className="support-banner__meta-label">In Progress</span>
+                            <span className="support-banner__meta-value">{statusCounts.IN_PROGRESS || 0}</span>
+                        </div>
+                    </div>
+                    <div className="support-banner__meta-item">
+                        <div className="support-banner__meta-icon support-banner__meta-icon--green">
+                            <FaCheckCircle />
+                        </div>
+                        <div className="support-banner__meta-content">
+                            <span className="support-banner__meta-label">Resolved</span>
+                            <span className="support-banner__meta-value">{statusCounts.RESOLVED || 0}</span>
+                        </div>
+                    </div>
+                    <div className="support-banner__meta-item">
+                        <div className="support-banner__meta-icon support-banner__meta-icon--purple">
+                            <FaTimes />
+                        </div>
+                        <div className="support-banner__meta-content">
+                            <span className="support-banner__meta-label">Closed</span>
+                            <span className="support-banner__meta-value">{statusCounts.CLOSED || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            <Card className="shadow-sm">
-                <Card.Body className="p-0">
-                    {loadingTickets ? (
-                        <div className="p-4 text-center">
-                            <Spinner animation="border" />
+            {/* Support Analytics */}
+            {canManageTickets && (
+                <div className="support-analytics" data-animate="fade-up" data-delay="0.08">
+                    <div className="support-analytics__header">
+                        <div className="support-analytics__icon">
+                            <FaChartLine />
+                        </div>
+                        <h2 className="support-analytics__title">Support Analytics</h2>
+                    </div>
+                    {loadingAnalytics ? (
+                        <div className="support-loading">
+                            <div className="support-spinner"></div>
+                        </div>
+                    ) : analytics ? (
+                        <div className="support-analytics__grid">
+                            <div className="support-analytics__card support-analytics__card--primary">
+                                <div className="support-analytics__card-label">Open Tickets</div>
+                                <div className="support-analytics__card-value">{statusCounts.OPEN || 0}</div>
+                            </div>
+                            <div className="support-analytics__card support-analytics__card--warning">
+                                <div className="support-analytics__card-label">In Progress</div>
+                                <div className="support-analytics__card-value">{statusCounts.IN_PROGRESS || 0}</div>
+                            </div>
+                            <div className="support-analytics__card support-analytics__card--success">
+                                <div className="support-analytics__card-label">Resolved</div>
+                                <div className="support-analytics__card-value">{statusCounts.RESOLVED || 0}</div>
+                            </div>
+                            <div className="support-analytics__card support-analytics__card--info">
+                                <div className="support-analytics__card-label">Closed</div>
+                                <div className="support-analytics__card-value">{statusCounts.CLOSED || 0}</div>
+                            </div>
+                            <div className="support-analytics__card support-analytics__card--primary">
+                                <div className="support-analytics__card-label">Avg Resolution</div>
+                                <div className="support-analytics__card-value">
+                                    {analytics.averageResolutionHours?.toFixed(1) || 0}
+                                    <span className="support-analytics__card-unit">hrs</span>
+                                </div>
+                            </div>
+                            <div className="support-analytics__card support-analytics__card--success">
+                                <div className="support-analytics__card-label">Avg Response</div>
+                                <div className="support-analytics__card-value">
+                                    {analytics.averageResponseHours?.toFixed(1) || 0}
+                                    <span className="support-analytics__card-unit">hrs</span>
+                                </div>
+                            </div>
+                            <div className="support-analytics__card support-analytics__card--warning">
+                                <div className="support-analytics__card-label">SLA Compliance</div>
+                                <div className="support-analytics__card-value">
+                                    {analytics.slaCompliancePercentage?.toFixed(0) || 0}
+                                    <span className="support-analytics__card-unit">%</span>
+                                </div>
+                            </div>
                         </div>
                     ) : (
-                        <Table striped bordered hover responsive className="mb-0">
+                        <div className="support-empty-state">No analytics available.</div>
+                    )}
+                </div>
+            )}
+
+            {/* Filters */}
+            <div className="support-filters" data-animate="fade-up" data-delay="0.12">
+                <div className="support-filters__header">
+                    <div className="support-filters__icon">
+                        <FaFilter />
+                    </div>
+                    <h2 className="support-filters__title">Filters</h2>
+                </div>
+                <div className="support-filters__grid">
+                    <div className="support-filters__group">
+                        <label htmlFor="filterStatus" className="support-filters__label">Status</label>
+                        <select
+                            id="filterStatus"
+                            name="status"
+                            value={filters.status}
+                            onChange={handleFilterChange}
+                            className="support-filters__select"
+                        >
+                            <option value="">All statuses</option>
+                            <option value="OPEN">Open</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="RESOLVED">Resolved</option>
+                            <option value="CLOSED">Closed</option>
+                        </select>
+                    </div>
+                    <div className="support-filters__group">
+                        <label htmlFor="filterPriority" className="support-filters__label">Priority</label>
+                        <select
+                            id="filterPriority"
+                            name="priority"
+                            value={filters.priority}
+                            onChange={handleFilterChange}
+                            className="support-filters__select"
+                        >
+                            <option value="">All priorities</option>
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
+                            <option value="URGENT">Urgent</option>
+                        </select>
+                    </div>
+                    <div className="support-filters__group">
+                        <label htmlFor="filterCategory" className="support-filters__label">Category</label>
+                        <select
+                            id="filterCategory"
+                            name="categoryId"
+                            value={filters.categoryId}
+                            onChange={handleFilterChange}
+                            className="support-filters__select"
+                        >
+                            <option value="">All categories</option>
+                            {categories.map((category) => (
+                                <option key={category.id} value={category.id}>{category.name.replace(/_/g, ' ')}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="support-filters__group">
+                        <label htmlFor="filterDepartment" className="support-filters__label">Department</label>
+                        <input
+                            type="text"
+                            id="filterDepartment"
+                            name="department"
+                            value={filters.department}
+                            onChange={handleFilterChange}
+                            placeholder="e.g., Finance"
+                            className="support-filters__input"
+                        />
+                    </div>
+                    <div className="support-filters__group">
+                        <label htmlFor="filterStartDate" className="support-filters__label">Start Date</label>
+                        <input
+                            type="date"
+                            id="filterStartDate"
+                            name="startDate"
+                            value={filters.startDate}
+                            onChange={handleFilterChange}
+                            className="support-filters__input"
+                        />
+                    </div>
+                    <div className="support-filters__group">
+                        <label htmlFor="filterEndDate" className="support-filters__label">End Date</label>
+                        <input
+                            type="date"
+                            id="filterEndDate"
+                            name="endDate"
+                            value={filters.endDate}
+                            onChange={handleFilterChange}
+                            className="support-filters__input"
+                        />
+                    </div>
+                    <div className="support-filters__group">
+                        <label htmlFor="filterSearch" className="support-filters__label">
+                            <FaSearch /> Search
+                        </label>
+                        <input
+                            type="search"
+                            id="filterSearch"
+                            name="search"
+                            value={filters.search}
+                            onChange={handleFilterChange}
+                            placeholder="Search by subject, ticket number, or description"
+                            className="support-filters__input"
+                        />
+                    </div>
+                    <div className="support-filters__group">
+                        <label className="support-filters__label">Options</label>
+                        <div className="support-filters__checkbox">
+                            <input
+                                type="checkbox"
+                                id="filterIncludeArchived"
+                                name="includeArchived"
+                                checked={filters.includeArchived}
+                                onChange={handleFilterChange}
+                            />
+                            <label htmlFor="filterIncludeArchived">Include archived</label>
+                        </div>
+                    </div>
+                </div>
+                <div className="support-filters__actions">
+                    <button type="button" className="support-btn support-btn--secondary" onClick={handleResetFilters}>
+                        Reset Filters
+                    </button>
+                </div>
+            </div>
+
+            {/* Tickets Table */}
+            <div className="support-table-container" data-animate="fade-up" data-delay="0.16">
+                {loadingTickets ? (
+                    <div className="support-loading">
+                        <div className="support-spinner"></div>
+                        <p>Loading tickets...</p>
+                    </div>
+                ) : (
+                    <div className="support-table-wrapper">
+                        <table className="support-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
                                     <th>Subject</th>
                                     <th>Category</th>
                                     <th>Submitted By</th>
-                                    <th>Assigned To</th>
                                     <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Updated</th>
-                                    <th>Response Due</th>
-                                    <th>Resolution Due</th>
-                                    <th>SLA</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {tickets.length === 0 ? (
                                     <tr>
-                                        <td colSpan={12} className="text-center py-4 text-muted">No tickets match the selected filters.</td>
+                                        <td colSpan={6}>
+                                            <div className="support-empty-state">
+                                                No tickets match the selected filters.
+                                            </div>
+                                        </td>
                                     </tr>
                                 ) : (
                                     tickets.map((ticket) => (
@@ -460,128 +530,157 @@ const SupportTicketPage = () => {
                                             <td>{ticket.subject}</td>
                                             <td>{ticket.categoryName === 'OTHER' ? ticket.otherCategory : ticket.categoryName?.replace(/_/g, ' ') || '—'}</td>
                                             <td>{ticket.submittedByName || '—'}</td>
-                                            <td>{ticket.assignedToName || 'Unassigned'}</td>
                                             <td>
-                                                <Badge bg={['HIGH', 'URGENT'].includes(ticket.priority) ? 'danger' : 'info'}>
+                                                <span className={`support-badge ${['HIGH', 'URGENT'].includes(ticket.priority) ? 'support-badge--danger' : 'support-badge--info'}`}>
                                                     {ticket.priority}
-                                                </Badge>
-                                            </td>
-                                            <td>{getStatusBadge(ticket.status)}</td>
-                                            <td>{formatDateTime(ticket.updatedAt || ticket.createdAt)}</td>
-                                            <td>{formatDateTime(ticket.responseDueAt)}</td>
-                                            <td>{formatDateTime(ticket.resolutionDueAt)}</td>
-                                            <td className="text-nowrap">
-                                                <Badge bg={ticket.responseBreached ? 'danger' : 'success'} className="me-1">Response</Badge>
-                                                <Badge bg={ticket.resolutionBreached ? 'danger' : 'success'}>Resolution</Badge>
+                                                </span>
                                             </td>
                                             <td>
-                                                <Button variant="outline-primary" size="sm" onClick={() => navigate(`/support/tickets/${ticket.id}`)}>
+                                                <button 
+                                                    className="support-btn support-btn--blue support-btn--sm"
+                                                    onClick={() => navigate(`/support/tickets/${ticket.id}`)}
+                                                >
                                                     View
-                                                </Button>
+                                                </button>
                                             </td>
                                         </tr>
                                     ))
                                 )}
                             </tbody>
-                        </Table>
-                    )}
-                </Card.Body>
-            </Card>
+                        </table>
+                    </div>
+                )}
+            </div>
 
-            <Modal show={showCreateModal} onHide={handleCloseModal} centered size="lg">
-                <Modal.Header closeButton>
-                    <Modal.Title>Create Support Ticket</Modal.Title>
-                </Modal.Header>
-                <Form onSubmit={handleCreateTicket}>
-                    <Modal.Body>
-                        <Row className="g-3">
-                            <Col md={6}>
-                                <Form.Group controlId="newTicketCategory">
-                                    <Form.Label>Category</Form.Label>
-                                    <Form.Select name="categoryId" value={newTicket.categoryId} onChange={handleCategoryChange} required>
-                                        <option value="">Select a category</option>
-                                        {categories.map((category) => (
-                                            <option key={category.id} value={category.id}>{category.name.replace(/_/g, ' ')}</option>
-                                        ))}
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
-                            <Col md={6}>
-                                <Form.Group controlId="newTicketPriority">
-                                    <Form.Label>Priority</Form.Label>
-                                    <Form.Select name="priority" value={newTicket.priority} onChange={handleFormChange}>
-                                        <option value="LOW">Low</option>
-                                        <option value="MEDIUM">Medium</option>
-                                        <option value="HIGH">High</option>
-                                        <option value="URGENT">Urgent</option>
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
-                            {showOtherCategory && (
-                                <Col md={12}>
-                                    <Form.Group controlId="newTicketOtherCategory">
-                                        <Form.Label>Specify Category</Form.Label>
-                                        <Form.Control
+            {/* Create Ticket Modal */}
+            {showCreateModal && (
+                <div
+                    className={`support-modal ${isModalClosing ? 'support-modal--closing' : ''}`}
+                    onClick={handleCloseModal}
+                >
+                    <div
+                        className={`support-modal__dialog ${isModalClosing ? 'support-modal__dialog--closing' : ''}`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="support-modal__header">
+                            <h2 className="support-modal__title">Create Support Ticket</h2>
+                            <button className="support-modal__close" onClick={handleCloseModal}>
+                                <FaTimes size={18} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateTicket}>
+                            <div className="support-modal__body">
+                                <div className="support-form">
+                                    <div className="support-form-group">
+                                        <label htmlFor="newTicketCategory">Category</label>
+                                        <select
+                                            id="newTicketCategory"
+                                            name="categoryId"
+                                            value={newTicket.categoryId}
+                                            onChange={handleCategoryChange}
+                                            required
+                                            className="support-select"
+                                        >
+                                            <option value="">Select a category</option>
+                                            {categories.map((category) => (
+                                                <option key={category.id} value={category.id}>
+                                                    {category.name.replace(/_/g, ' ')}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="support-form-group">
+                                        <label htmlFor="newTicketPriority">Priority</label>
+                                        <select
+                                            id="newTicketPriority"
+                                            name="priority"
+                                            value={newTicket.priority}
+                                            onChange={handleFormChange}
+                                            className="support-select"
+                                        >
+                                            <option value="LOW">Low</option>
+                                            <option value="MEDIUM">Medium</option>
+                                            <option value="HIGH">High</option>
+                                            <option value="URGENT">Urgent</option>
+                                        </select>
+                                    </div>
+                                    {showOtherCategory && (
+                                        <div className="support-form-group">
+                                            <label htmlFor="newTicketOtherCategory">Specify Category</label>
+                                            <input
+                                                type="text"
+                                                id="newTicketOtherCategory"
+                                                name="otherCategory"
+                                                value={newTicket.otherCategory}
+                                                onChange={handleFormChange}
+                                                required
+                                                placeholder="e.g., Printer Issue, Site Access Request"
+                                                className="support-input"
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="support-form-group">
+                                        <label htmlFor="newTicketSubject">Subject</label>
+                                        <input
                                             type="text"
-                                            name="otherCategory"
-                                            value={newTicket.otherCategory}
+                                            id="newTicketSubject"
+                                            name="subject"
+                                            value={newTicket.subject}
                                             onChange={handleFormChange}
                                             required
-                                            placeholder="e.g., Printer Issue, Site Access Request"
+                                            placeholder="Brief summary of the request"
+                                            className="support-input"
                                         />
-                                    </Form.Group>
-                                </Col>
-                            )}
-                            <Col md={6}>
-                                <Form.Group controlId="newTicketSubject">
-                                    <Form.Label>Subject</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="subject"
-                                        value={newTicket.subject}
-                                        onChange={handleFormChange}
-                                        required
-                                        placeholder="Brief summary of the request"
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={6}>
-                                <Form.Group controlId="newTicketDepartment">
-                                    <Form.Label>Department</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="submitterDepartment"
-                                        value={newTicket.submitterDepartment}
-                                        onChange={handleFormChange}
-                                        placeholder="Department requesting support"
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={12}>
-                                <Form.Group controlId="newTicketDescription">
-                                    <Form.Label>Description</Form.Label>
-                                    <Form.Control
-                                        as="textarea"
-                                        rows={5}
-                                        name="description"
-                                        value={newTicket.description}
-                                        onChange={handleFormChange}
-                                        required
-                                        placeholder="Provide detailed information about the issue"
-                                    />
-                                </Form.Group>
-                            </Col>
-                        </Row>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={handleCloseModal} disabled={isSubmitting}>Cancel</Button>
-                        <Button variant="primary" type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Submitting…' : 'Submit Ticket'}
-                        </Button>
-                    </Modal.Footer>
-                </Form>
-            </Modal>
-        </>
+                                    </div>
+                                    <div className="support-form-group">
+                                        <label htmlFor="newTicketDepartment">Department</label>
+                                        <input
+                                            type="text"
+                                            id="newTicketDepartment"
+                                            name="submitterDepartment"
+                                            value={newTicket.submitterDepartment}
+                                            onChange={handleFormChange}
+                                            placeholder="Department requesting support"
+                                            className="support-input"
+                                        />
+                                    </div>
+                                    <div className="support-form-group">
+                                        <label htmlFor="newTicketDescription">Description</label>
+                                        <textarea
+                                            id="newTicketDescription"
+                                            name="description"
+                                            value={newTicket.description}
+                                            onChange={handleFormChange}
+                                            required
+                                            placeholder="Provide detailed information about the issue"
+                                            className="support-textarea"
+                                            rows={5}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="support-modal__footer">
+                                <button
+                                    type="button"
+                                    className="support-btn support-btn--secondary"
+                                    onClick={handleCloseModal}
+                                    disabled={isSubmitting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="support-btn support-btn--gold"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Submitting…' : 'Submit Ticket'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </section>
     );
 };
 
