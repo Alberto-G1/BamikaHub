@@ -1,20 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Card, Row, Col, Button, Spinner, Badge, Form, ListGroup } from 'react-bootstrap';
-import { FaArrowLeft, FaPaperPlane, FaDownload } from 'react-icons/fa';
+import { FaArrowLeft, FaPaperPlane, FaDownload, FaTimes, FaUserCheck, FaCheckCircle, FaTicketAlt, FaExclamationTriangle, FaClock, FaHourglassHalf } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
-
-const getStatusBadge = (status) => {
-    switch (status) {
-        case 'OPEN': return <Badge bg="primary">Open</Badge>;
-        case 'IN_PROGRESS': return <Badge bg="info">In Progress</Badge>;
-        case 'RESOLVED': return <Badge bg="success">Resolved</Badge>;
-        case 'CLOSED': return <Badge bg="secondary">Closed</Badge>;
-        default: return <Badge bg="light" text="dark">{status}</Badge>;
-    }
-};
+import './SupportStyles.css';
 
 const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '—');
 
@@ -120,212 +110,388 @@ const TicketDetailsPage = () => {
 
     if (loading) {
         return (
-            <div className="d-flex justify-content-center py-5">
-                <Spinner animation="border" />
-            </div>
+            <section className="support-page support-page--centered">
+                <div className="support-loading">
+                    <div className="support-spinner"></div>
+                    <p>Loading ticket details...</p>
+                </div>
+            </section>
         );
     }
 
     if (!ticket) {
-        return null;
+        return (
+            <section className="support-page support-page--centered">
+                <div className="support-empty-state">Ticket not found.</div>
+            </section>
+        );
     }
-
-    const commentCards = (ticket.comments || []).map((comment) => (
-        <Card key={comment.id} className={`mb-3 ${comment.fromSubmitter ? 'bg-white' : 'bg-light'}`}>
-            <Card.Body className="p-3">
-                <div className="fw-semibold mb-1">{comment.commenterName || 'System'}</div>
-                <p className="mb-2" style={{ whiteSpace: 'pre-wrap' }}>{comment.comment}</p>
-                {comment.fileUrl && (
-                    <Button
-                        as="a"
-                        href={comment.fileUrl.startsWith('http') ? comment.fileUrl : `http://localhost:8080${comment.fileUrl}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="outline-secondary"
-                        size="sm"
-                        className="me-2"
-                    >
-                        <FaDownload className="me-2" /> View Attachment
-                    </Button>
-                )}
-                <div className="text-muted text-end small">{formatDateTime(comment.createdAt)}</div>
-            </Card.Body>
-        </Card>
-    ));
 
     const attachments = ticket.attachments || [];
     const activityLog = ticket.activityLog || [];
     const isSubmitter = user?.id === ticket.submittedById;
+    const ticketNumber = `#${String(ticket.id).padStart(4, '0')}`;
+    const statusLabel = ticket.status.replace(/_/g, ' ');
+    const statusBadgeClass = `support-badge ${
+        ticket.status === 'OPEN' ? 'support-badge--primary' :
+        ticket.status === 'IN_PROGRESS' ? 'support-badge--warning' :
+        ticket.status === 'RESOLVED' ? 'support-badge--success' :
+        'support-badge--secondary'
+    }`;
+    const priorityBadgeClass = `support-badge ${['HIGH', 'URGENT'].includes(ticket.priority) ? 'support-badge--danger' : 'support-badge--info'}`;
+    const responseStatusClass = `support-badge ${ticket.responseBreached ? 'support-badge--danger' : 'support-badge--success'}`;
+    const resolutionStatusClass = `support-badge ${ticket.resolutionBreached ? 'support-badge--danger' : 'support-badge--success'}`;
+    const responseDueLabel = formatDateTime(ticket.responseDueAt);
+    const resolutionDueLabel = formatDateTime(ticket.resolutionDueAt);
 
     return (
-        <Container>
-            <Button variant="outline-secondary" size="sm" className="mb-3" onClick={() => navigate('/support/tickets')}>
-                <FaArrowLeft className="me-2" /> Back to Tickets
-            </Button>
-            <Row className="g-3">
-                <Col lg={8}>
-                    <Card className="shadow-sm mb-3">
-                        <Card.Header>
-                            <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <section className="support-page">
+            <div className="support-banner" data-animate="fade-up">
+                <div className="support-banner__content">
+                    <div className="support-banner__info">
+                        <span className="support-banner__eyebrow">
+                            <FaTicketAlt /> Ticket Details
+                        </span>
+                        <h1 className="support-banner__title">{ticket.subject}</h1>
+                        <p className="support-banner__subtitle">
+                            {ticketNumber} • Priority {ticket.priority} • Submitted by {ticket.submittedByName || '—'}
+                        </p>
+                    </div>
+                    <div className="support-banner__actions">
+                        <button className="support-btn support-btn--secondary" onClick={() => navigate('/support/tickets')}>
+                            <FaArrowLeft /> Back to Tickets
+                        </button>
+                    </div>
+                </div>
+                <div className="support-banner__meta">
+                    <div className="support-banner__meta-item">
+                        <div className="support-banner__meta-icon support-banner__meta-icon--blue">
+                            <FaTicketAlt />
+                        </div>
+                        <div className="support-banner__meta-content">
+                            <span className="support-banner__meta-label">Status</span>
+                            <span className="support-banner__meta-value">
+                                <span className={statusBadgeClass}>{statusLabel}</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div className="support-banner__meta-item">
+                        <div className="support-banner__meta-icon support-banner__meta-icon--gold">
+                            <FaExclamationTriangle />
+                        </div>
+                        <div className="support-banner__meta-content">
+                            <span className="support-banner__meta-label">Priority</span>
+                            <span className="support-banner__meta-value">
+                                <span className={priorityBadgeClass}>{ticket.priority}</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div className="support-banner__meta-item">
+                        <div className="support-banner__meta-icon support-banner__meta-icon--green">
+                            <FaUserCheck />
+                        </div>
+                        <div className="support-banner__meta-content">
+                            <span className="support-banner__meta-label">Assigned To</span>
+                            <span className="support-banner__meta-value">{ticket.assignedToName || 'Unassigned'}</span>
+                        </div>
+                    </div>
+                    <div className="support-banner__meta-item">
+                        <div className="support-banner__meta-icon support-banner__meta-icon--gold">
+                            <FaClock />
+                        </div>
+                        <div className="support-banner__meta-content">
+                            <span className="support-banner__meta-label">Response Due</span>
+                            <span className="support-banner__meta-value">{responseDueLabel}</span>
+                            <span className={`${responseStatusClass} support-badge--sm`}>
+                                {ticket.responseBreached ? 'Breached' : 'On Track'}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="support-banner__meta-item">
+                        <div className="support-banner__meta-icon support-banner__meta-icon--purple">
+                            <FaHourglassHalf />
+                        </div>
+                        <div className="support-banner__meta-content">
+                            <span className="support-banner__meta-label">Resolution Due</span>
+                            <span className="support-banner__meta-value">{resolutionDueLabel}</span>
+                            <span className={`${resolutionStatusClass} support-badge--sm`}>
+                                {ticket.resolutionBreached ? 'Breached' : 'On Track'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="support-details" data-animate="fade-up" data-delay="0.08">
+                <div className="support-details__grid" data-animate="fade-up" data-delay="0.12">
+                    <div className="support-details__main">
+                        {/* Ticket Information */}
+                        <div className="support-card">
+                            <div className="support-card__header">
                                 <div>
-                                    <h4 className="mb-1">{ticket.subject}</h4>
-                                    <small className="text-muted">Ticket #{String(ticket.id).padStart(4, '0')}</small>
+                                    <h2 className="support-card__title">{ticket.subject}</h2>
+                                    <p className="support-card__subtitle">
+                                        Ticket {ticketNumber}
+                                    </p>
                                 </div>
-                                <div className="mt-2 mt-md-0">{getStatusBadge(ticket.status)}</div>
+                                <span className={statusBadgeClass}>{statusLabel}</span>
                             </div>
-                        </Card.Header>
-                        <Card.Body>
-                            <p className="mb-4" style={{ whiteSpace: 'pre-wrap' }}>{ticket.description}</p>
-                            <Row className="g-3">
-                                <Col md={6}>
-                                    <ListGroup variant="flush">
-                                        <ListGroup.Item><strong>Submitted By:</strong> {ticket.submittedByName || '—'}</ListGroup.Item>
-                                        <ListGroup.Item><strong>Department:</strong> {ticket.submitterDepartment || '—'}</ListGroup.Item>
-                                        <ListGroup.Item><strong>Created:</strong> {formatDateTime(ticket.createdAt)}</ListGroup.Item>
-                                        <ListGroup.Item><strong>Updated:</strong> {formatDateTime(ticket.updatedAt)}</ListGroup.Item>
-                                    </ListGroup>
-                                </Col>
-                                <Col md={6}>
-                                    <ListGroup variant="flush">
-                                        <ListGroup.Item><strong>Category:</strong> {ticket.categoryName === 'OTHER' ? ticket.otherCategory : ticket.categoryName?.replace(/_/g, ' ') || '—'}</ListGroup.Item>
-                                        <ListGroup.Item><strong>Assigned To:</strong> {ticket.assignedToName || 'Unassigned'}</ListGroup.Item>
-                                        <ListGroup.Item><strong>Priority:</strong> <Badge bg={['HIGH', 'URGENT'].includes(ticket.priority) ? 'danger' : 'info'}>{ticket.priority}</Badge></ListGroup.Item>
-                                        <ListGroup.Item><strong>Related Item:</strong> {ticket.inventoryItemName || '—'}</ListGroup.Item>
-                                        <ListGroup.Item><strong>Project:</strong> {ticket.projectName || '—'}</ListGroup.Item>
-                                    </ListGroup>
-                                </Col>
-                            </Row>
-                        </Card.Body>
-                    </Card>
+                            <div className="support-card__content">
+                                <p className="support-card__description">
+                                    {ticket.description}
+                                </p>
+                                <div className="support-info-list">
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Submitted By</span>
+                                        <span className="support-info-value">{ticket.submittedByName || '—'}</span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Department</span>
+                                        <span className="support-info-value">{ticket.submitterDepartment || '—'}</span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Category</span>
+                                        <span className="support-info-value">
+                                            {ticket.categoryName === 'OTHER' ? ticket.otherCategory : ticket.categoryName?.replace(/_/g, ' ') || '—'}
+                                        </span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Assigned To</span>
+                                        <span className="support-info-value">{ticket.assignedToName || 'Unassigned'}</span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Priority</span>
+                                        <span className="support-info-value">
+                                            <span className={priorityBadgeClass}>{ticket.priority}</span>
+                                        </span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Created</span>
+                                        <span className="support-info-value">{formatDateTime(ticket.createdAt)}</span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Updated</span>
+                                        <span className="support-info-value">{formatDateTime(ticket.updatedAt)}</span>
+                                    </div>
+                                    {ticket.inventoryItemName && (
+                                        <div className="support-info-item">
+                                            <span className="support-info-label">Related Item</span>
+                                            <span className="support-info-value">{ticket.inventoryItemName}</span>
+                                        </div>
+                                    )}
+                                    {ticket.projectName && (
+                                        <div className="support-info-item">
+                                            <span className="support-info-label">Project</span>
+                                            <span className="support-info-value">{ticket.projectName}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
 
-                    <Card className="shadow-sm mb-3">
-                        <Card.Header>SLA Tracking</Card.Header>
-                        <Card.Body>
-                            <Row className="g-3">
-                                <Col md={6}>
-                                    <ListGroup variant="flush">
-                                        <ListGroup.Item><strong>Response Due:</strong> {formatDateTime(ticket.responseDueAt)}</ListGroup.Item>
-                                        <ListGroup.Item><strong>First Response:</strong> {formatDateTime(ticket.firstResponseAt)}</ListGroup.Item>
-                                        <ListGroup.Item><strong>Response Status:</strong> <Badge bg={ticket.responseBreached ? 'danger' : 'success'}>{ticket.responseBreached ? 'Breached' : 'On Track'}</Badge></ListGroup.Item>
-                                    </ListGroup>
-                                </Col>
-                                <Col md={6}>
-                                    <ListGroup variant="flush">
-                                        <ListGroup.Item><strong>Resolution Due:</strong> {formatDateTime(ticket.resolutionDueAt)}</ListGroup.Item>
-                                        <ListGroup.Item><strong>Resolved At:</strong> {formatDateTime(ticket.resolvedAt)}</ListGroup.Item>
-                                        <ListGroup.Item><strong>Resolution Status:</strong> <Badge bg={ticket.resolutionBreached ? 'danger' : 'success'}>{ticket.resolutionBreached ? 'Breached' : 'On Track'}</Badge></ListGroup.Item>
-                                    </ListGroup>
-                                </Col>
-                            </Row>
-                        </Card.Body>
-                    </Card>
+                        {/* SLA Tracking */}
+                        <div className="support-card">
+                            <div className="support-card__header">
+                                <h3 className="support-card__title">SLA Tracking</h3>
+                            </div>
+                            <div className="support-card__content">
+                                <div className="support-info-list">
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Response Due</span>
+                                        <span className="support-info-value">{responseDueLabel}</span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">First Response</span>
+                                        <span className="support-info-value">{formatDateTime(ticket.firstResponseAt)}</span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Response Status</span>
+                                        <span className="support-info-value">
+                                            <span className={responseStatusClass}>{ticket.responseBreached ? 'Breached' : 'On Track'}</span>
+                                        </span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Resolution Due</span>
+                                        <span className="support-info-value">{resolutionDueLabel}</span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Resolved At</span>
+                                        <span className="support-info-value">{formatDateTime(ticket.resolvedAt)}</span>
+                                    </div>
+                                    <div className="support-info-item">
+                                        <span className="support-info-label">Resolution Status</span>
+                                        <span className="support-info-value">
+                                            <span className={resolutionStatusClass}>{ticket.resolutionBreached ? 'Breached' : 'On Track'}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                    <Card className="shadow-sm mb-3">
-                        <Card.Header>Conversation</Card.Header>
-                        <Card.Body>
-                            {commentCards.length > 0 ? commentCards : <div className="text-muted">No updates yet.</div>}
-                            {ticket.status !== 'CLOSED' && (
-                                <Card className="mt-4 bg-light">
-                                    <Card.Body>
-                                        <Form onSubmit={handleAddComment}>
-                                            <Form.Group controlId="newComment">
-                                                <Form.Label>Add Comment</Form.Label>
-                                                <Form.Control
-                                                    as="textarea"
-                                                    rows={3}
-                                                    value={newComment}
-                                                    onChange={(event) => setNewComment(event.target.value)}
-                                                    placeholder="Share progress updates or request more info"
-                                                />
-                                            </Form.Group>
-                                            <Form.Group className="mt-2" controlId="newCommentAttachment">
-                                                <Form.Label>Attach File (optional)</Form.Label>
-                                                <Form.Control type="file" ref={fileInputRef} onChange={(event) => setAttachmentFile(event.target.files[0])} />
-                                            </Form.Group>
-                                            <Button variant="primary" size="sm" className="mt-3" type="submit" disabled={isSubmittingComment}>
-                                                {isSubmittingComment ? 'Posting…' : <><FaPaperPlane className="me-2" /> Post Update</>}
-                                            </Button>
-                                        </Form>
-                                    </Card.Body>
-                                </Card>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>
+                        {/* Conversation */}
+                        <div className="support-card">
+                            <div className="support-card__header">
+                                <h3 className="support-card__title">Conversation</h3>
+                            </div>
+                            <div className="support-card__content">
+                                {(ticket.comments || []).length > 0 ? (
+                                    (ticket.comments || []).map((comment) => (
+                                        <div key={comment.id} className={`support-comment ${comment.fromSubmitter ? 'support-comment--submitter' : ''}`}>
+                                            <div className="support-comment__header">
+                                                <span className="support-comment__author">{comment.commenterName || 'System'}</span>
+                                                <span className="support-comment__date">{formatDateTime(comment.createdAt)}</span>
+                                            </div>
+                                            <div className="support-comment__body">{comment.comment}</div>
+                                            {comment.fileUrl && (
+                                                <a
+                                                    href={comment.fileUrl.startsWith('http') ? comment.fileUrl : `http://localhost:8080${comment.fileUrl}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="support-comment__attachment"
+                                                >
+                                                    <FaDownload /> View Attachment
+                                                </a>
+                                            )}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="support-empty-state">No updates yet.</div>
+                                )}
 
-                <Col lg={4}>
-                    <Card className="shadow-sm mb-3">
-                        <Card.Header>Ticket Actions</Card.Header>
-                        <Card.Body>
-                            {canManageTickets && ticket.status === 'OPEN' && (
-                                <Button variant="info" className="w-100 mb-2" onClick={handleAssignToSelf}>Assign to Me</Button>
-                            )}
-                            {canManageTickets && ticket.status === 'IN_PROGRESS' && (
-                                <>
-                                    <Form.Group className="mb-2">
-                                        <Form.Label>Resolution Notes</Form.Label>
-                                        <Form.Control
-                                            as="textarea"
-                                            rows={3}
-                                            value={resolutionNotes}
-                                            onChange={(event) => setResolutionNotes(event.target.value)}
-                                            placeholder="Describe how the issue was resolved"
-                                        />
-                                    </Form.Group>
-                                    <Button variant="success" className="w-100" onClick={handleResolve}>Mark as Resolved</Button>
-                                </>
-                            )}
-                            {isSubmitter && ticket.status === 'RESOLVED' && (
-                                <Button variant="secondary" className="w-100" onClick={handleClose}>Close Ticket</Button>
-                            )}
-                            {!canManageTickets && !isSubmitter && (
-                                <div className="text-muted small">No actions available.</div>
-                            )}
-                        </Card.Body>
-                    </Card>
+                                {ticket.status !== 'CLOSED' && (
+                                    <form onSubmit={handleAddComment} className="support-comment-form">
+                                        <div className="support-form-group">
+                                            <label htmlFor="newComment">Add Comment</label>
+                                            <textarea
+                                                id="newComment"
+                                                value={newComment}
+                                                onChange={(event) => setNewComment(event.target.value)}
+                                                placeholder="Share progress updates or request more info"
+                                                className="support-textarea"
+                                                rows={3}
+                                            />
+                                        </div>
+                                        <div className="support-form-group">
+                                            <label htmlFor="newCommentAttachment">Attach File (optional)</label>
+                                            <input
+                                                type="file"
+                                                id="newCommentAttachment"
+                                                ref={fileInputRef}
+                                                onChange={(event) => setAttachmentFile(event.target.files[0])}
+                                                className="support-input"
+                                            />
+                                        </div>
+                                        <button type="submit" className="support-btn support-btn--gold" disabled={isSubmittingComment}>
+                                            {isSubmittingComment ? 'Posting…' : <><FaPaperPlane /> Post Update</>}
+                                        </button>
+                                    </form>
+                                )}
+                            </div>
+                        </div>
+                    </div>
 
-                    <Card className="shadow-sm mb-3">
-                        <Card.Header>Attachments</Card.Header>
-                        <ListGroup variant="flush">
-                            {attachments.length > 0 ? attachments.map((file) => (
-                                <ListGroup.Item key={file.id}>
-                                    <div className="fw-semibold">{file.originalFilename}</div>
-                                    <div className="text-muted small">Uploaded {formatDateTime(file.uploadedAt)} by {file.uploadedByName || 'Unknown'}</div>
-                                    <Button
-                                        as="a"
-                                        href={file.fileUrl?.startsWith('http') ? file.fileUrl : `http://localhost:8080${file.fileUrl}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        variant="outline-secondary"
-                                        size="sm"
-                                        className="mt-2"
-                                    >
-                                        <FaDownload className="me-2" /> Download
-                                    </Button>
-                                </ListGroup.Item>
-                            )) : (
-                                <ListGroup.Item className="text-muted">No attachments</ListGroup.Item>
-                            )}
-                        </ListGroup>
-                    </Card>
+                    {/* Sidebar */}
+                    <div className="support-details__sidebar">
+                        {/* Ticket Actions */}
+                        <div className="support-card">
+                            <div className="support-card__header">
+                                <h3 className="support-card__title">Ticket Actions</h3>
+                            </div>
+                            <div className="support-card__content">
+                                {canManageTickets && ticket.status === 'OPEN' && (
+                                    <button className="support-btn support-btn--blue support-btn--block" onClick={handleAssignToSelf}>
+                                        <FaUserCheck /> Assign to Me
+                                    </button>
+                                )}
+                                {canManageTickets && ticket.status === 'IN_PROGRESS' && (
+                                    <div className="support-action-stack">
+                                        <div className="support-form-group">
+                                            <label htmlFor="resolutionNotes">Resolution Notes</label>
+                                            <textarea
+                                                id="resolutionNotes"
+                                                value={resolutionNotes}
+                                                onChange={(event) => setResolutionNotes(event.target.value)}
+                                                placeholder="Describe how the issue was resolved"
+                                                className="support-textarea"
+                                                rows={3}
+                                            />
+                                        </div>
+                                        <button className="support-btn support-btn--green support-btn--block" onClick={handleResolve}>
+                                            <FaCheckCircle /> Mark as Resolved
+                                        </button>
+                                    </div>
+                                )}
+                                {isSubmitter && ticket.status === 'RESOLVED' && (
+                                    <button className="support-btn support-btn--secondary support-btn--block" onClick={handleClose}>
+                                        <FaTimes /> Close Ticket
+                                    </button>
+                                )}
+                                {!canManageTickets && !isSubmitter && (
+                                    <div className="support-empty-state">No actions available.</div>
+                                )}
+                            </div>
+                        </div>
 
-                    <Card className="shadow-sm">
-                        <Card.Header>Activity Log</Card.Header>
-                        <ListGroup variant="flush">
-                            {activityLog.length > 0 ? activityLog.map((activity) => (
-                                <ListGroup.Item key={activity.id}>
-                                    <div className="fw-semibold">{activity.actionType ? activity.actionType.replace(/_/g, ' ') : 'Activity'}</div>
-                                    <div>{activity.details}</div>
-                                    <div className="text-muted small">{formatDateTime(activity.createdAt)} {activity.performedByName ? `by ${activity.performedByName}` : ''}</div>
-                                </ListGroup.Item>
-                            )) : (
-                                <ListGroup.Item className="text-muted">No activity recorded</ListGroup.Item>
-                            )}
-                        </ListGroup>
-                    </Card>
-                </Col>
-            </Row>
-        </Container>
+                        {/* Attachments */}
+                        <div className="support-card">
+                            <div className="support-card__header">
+                                <h3 className="support-card__title">Attachments</h3>
+                            </div>
+                            <div className="support-card__content">
+                                {attachments.length > 0 ? (
+                                    <div className="support-info-list">
+                                        {attachments.map((file) => (
+                                            <div key={file.id} className="support-info-item support-info-item--column">
+                                                <div className="support-attachment-title">{file.originalFilename}</div>
+                                                <div className="support-attachment-meta">
+                                                    Uploaded {formatDateTime(file.uploadedAt)} by {file.uploadedByName || 'Unknown'}
+                                                </div>
+                                                <a
+                                                    href={file.fileUrl?.startsWith('http') ? file.fileUrl : `http://localhost:8080${file.fileUrl}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="support-btn support-btn--blue support-btn--sm"
+                                                >
+                                                    <FaDownload /> Download
+                                                </a>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="support-empty-state">No attachments</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Activity Log */}
+                        <div className="support-card">
+                            <div className="support-card__header">
+                                <h3 className="support-card__title">Activity Log</h3>
+                            </div>
+                            <div className="support-card__content">
+                                {activityLog.length > 0 ? (
+                                    <div className="support-info-list">
+                                        {activityLog.map((activity) => (
+                                            <div key={activity.id} className="support-info-item support-info-item--column support-activity-item">
+                                                <div className="support-activity-title">
+                                                    {activity.actionType ? activity.actionType.replace(/_/g, ' ') : 'Activity'}
+                                                </div>
+                                                <div className="support-activity-detail">{activity.details}</div>
+                                                <div className="support-activity-meta">
+                                                    {(activity.performedByName || 'System')} • {formatDateTime(activity.createdAt)}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="support-empty-state">No activity recorded</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     );
 };
 
