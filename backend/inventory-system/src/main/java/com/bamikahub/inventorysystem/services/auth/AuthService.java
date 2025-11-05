@@ -17,14 +17,18 @@ import com.bamikahub.inventorysystem.security.services.UserDetailsImpl;
 import com.bamikahub.inventorysystem.services.audit.AuditService;
 import com.bamikahub.inventorysystem.services.notification.NotificationService;
 import lombok.extern.slf4j.Slf4j;
+import com.bamikahub.inventorysystem.util.ValidationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -45,8 +49,47 @@ public class AuthService {
 
     @Transactional
     public JwtResponse loginUser(AuthRequest authRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword()));
+        // Optional: pre-check for lock before attempting authentication
+        userRepository.findByEmail(authRequest.getEmail()).ifPresent(u -> {
+            if (u.getLockedUntil() != null && u.getLockedUntil().isAfter(java.time.LocalDateTime.now())) {
+                throw new ResponseStatusException(HttpStatus.LOCKED,
+                        "Account locked until " + u.getLockedUntil() + ". Try again later.");
+            }
+        });
+
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword()));
+        } catch (BadCredentialsException ex) {
+            // Handle failed attempt: increment counter, lock if necessary, and audit
+            userRepository.findByEmail(authRequest.getEmail()).ifPresent(user -> {
+                int attempts = user.getFailedLoginAttempts() + 1;
+                user.setFailedLoginAttempts(attempts);
+                java.time.LocalDateTime lockedUntil = null;
+                if (attempts >= 5) { // lock after 5 consecutive failures
+                    lockedUntil = java.time.LocalDateTime.now().plusMinutes(15);
+                    user.setLockedUntil(lockedUntil);
+                }
+                userRepository.save(user);
+
+                Map<String, Object> details = Map.of(
+                        "email", user.getEmail(),
+                        "attempts", attempts,
+                        "lockedUntil", lockedUntil
+                );
+                auditService.logActionWithSeverity(
+                        user,
+                        AuditLog.ActionType.USER_LOGIN_FAILED,
+                        "User",
+                        user.getId(),
+                        user.getFullName(),
+                        details,
+                        AuditLog.Severity.WARNING
+                );
+            });
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
+        }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtil.generateToken(authentication);
@@ -56,7 +99,10 @@ public class AuthService {
     User userEntity = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found after authentication"));
 
-        userEntity.setLastLoginAt(LocalDateTime.now());
+    // Reset failed attempts on success
+    userEntity.setFailedLoginAttempts(0);
+    userEntity.setLockedUntil(null);
+    userEntity.setLastLoginAt(LocalDateTime.now());
         userRepository.save(userEntity);
 
         List<String> permissions = userDetails.getAuthorities().stream()
@@ -100,10 +146,35 @@ public class AuthService {
     }
 
     @Transactional
-    public User registerUser(RegisterRequest registerRequest) {
-        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            throw new RuntimeException("Error: Email is already in use!");
+    public void logoutCurrentUser() {
+        String email = null;
+        try {
+            email = SecurityContextHolder.getContext().getAuthentication().getName();
+        } catch (Exception ignored) {}
+
+        if (email != null) {
+            userRepository.findByEmail(email).ifPresent(user -> {
+                try {
+                    auditService.logAction(
+                            user,
+                            AuditLog.ActionType.USER_LOGOUT,
+                            "User",
+                            user.getId(),
+                            user.getFullName(),
+                            Map.of("event", "User logged out")
+                    );
+                } catch (Exception e) {
+                    // don't block logout on audit failure
+                }
+            });
         }
+        SecurityContextHolder.clearContext();
+    }
+
+    @Transactional
+    public User registerUser(RegisterRequest registerRequest) {
+        // Perform comprehensive server-side validation with clear, user-friendly messages
+        ValidationUtil.validateRegistration(registerRequest, userRepository);
 
         User user = new User();
         user.setFirstName(registerRequest.getFirstName());

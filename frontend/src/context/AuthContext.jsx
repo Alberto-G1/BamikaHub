@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import api from '../api/api.js';
 
 const AuthContext = createContext(null);
 
@@ -27,9 +28,15 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
     };
 
-    const logout = () => {
-        localStorage.removeItem('user');
-        setUser(null);
+    const logout = async () => {
+        try {
+            await api.post('/auth/logout');
+        } catch (err) {
+            // Silent: logout should proceed even if server call fails
+        } finally {
+            localStorage.removeItem('user');
+            setUser(null);
+        }
     };
 
     const hasPermission = (permission) => {

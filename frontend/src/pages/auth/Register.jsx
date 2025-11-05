@@ -109,7 +109,8 @@ const Register = () => {
         setIsLoading(true);
         
         try {
-            const { confirmPassword, ...payload } = formData;
+            // Send confirmPassword to backend so server-side validation can compare
+            const payload = formData;
             const response = await api.post('/auth/register', payload);
             
             toast.success(
