@@ -125,10 +125,16 @@ public class UserService {
         String previousRoleName = user.getRole() != null ? user.getRole().getName() : null;
         String previousStatusName = user.getStatus() != null ? user.getStatus().getName() : null;
 
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
+    // Validate and sanitize incoming fields, ensuring uniqueness ignoring current user
+    String validFirst = ValidationUtil.validateFirstName(request.getFirstName());
+    String validLast = ValidationUtil.validateLastName(request.getLastName());
+    String validUsername = ValidationUtil.validateUsernameForUpdate(request.getUsername(), user.getId(), userRepository);
+    String validEmail = ValidationUtil.validateEmailForUpdate(request.getEmail(), user.getId(), userRepository);
+
+    user.setFirstName(validFirst);
+    user.setLastName(validLast);
+    user.setUsername(validUsername);
+    user.setEmail(validEmail);
 
         Role role = roleRepository.findById(request.getRoleId()).orElseThrow(() -> new RuntimeException("Role not found"));
         user.setRole(role);
@@ -277,16 +283,34 @@ public class UserService {
     String previousGender = user.getGender() != null ? user.getGender().name() : null;
     LocalDate previousDob = user.getDateOfBirth();
 
-        // Update all allowed fields
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setAddress(request.getAddress());
-        user.setCity(request.getCity());
-        user.setCountry(request.getCountry());
-        user.setDateOfBirth(request.getDateOfBirth());
-        if (request.getGender() != null) {
-            user.setGender(Gender.valueOf(request.getGender().toUpperCase()));
+        // Validate and update all allowed fields
+        if (request.getFirstName() != null) {
+            user.setFirstName(ValidationUtil.validateFirstName(request.getFirstName()));
+        }
+        if (request.getLastName() != null) {
+            user.setLastName(ValidationUtil.validateLastName(request.getLastName()));
+        }
+
+        // Optional fields: sanitize and basic format validation
+        if (request.getPhoneNumber() != null) {
+            user.setPhoneNumber(ValidationUtil.validateOptionalPhone(request.getPhoneNumber()));
+        }
+        user.setAddress(ValidationUtil.sanitize(request.getAddress()));
+        user.setCity(ValidationUtil.sanitize(request.getCity()));
+        user.setCountry(ValidationUtil.sanitize(request.getCountry()));
+
+        if (request.getDateOfBirth() != null) {
+            if (request.getDateOfBirth().isAfter(java.time.LocalDate.now())) {
+                throw new RuntimeException("Date of birth cannot be in the future.");
+            }
+            user.setDateOfBirth(request.getDateOfBirth());
+        }
+        if (request.getGender() != null && !request.getGender().isBlank()) {
+            try {
+                user.setGender(Gender.valueOf(request.getGender().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                throw new RuntimeException("Invalid gender value.");
+            }
         }
 
         User updatedUser = userRepository.save(user);
@@ -342,7 +366,8 @@ public class UserService {
             throw new RuntimeException("New password cannot be the same as the old password.");
         }
 
-        // 3. (Optional but recommended) Add password policy validation here (regex)
+    // 3. Enforce password policy (complexity, not containing personal info)
+    ValidationUtil.validatePassword(request.getNewPassword(), user.getFirstName(), user.getLastName(), user.getUsername());
 
         // 4. Update password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));

@@ -18,6 +18,7 @@ public final class ValidationUtil {
     private static final Pattern NAME_PATTERN = Pattern.compile("^[A-Za-z][A-Za-z' -]{1,49}$");
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^(?=.{4,30}$)(?![0-9]+$)[A-Za-z0-9_]+$");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^(?:\\+256|256|0)(7[0-8][0-9]{7})$\n");
     private static final Pattern PASSWORD_COMPLEX_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,30}$");
 
     private static final Set<String> COMMON_PASSWORDS = new HashSet<>(Arrays.asList(
@@ -155,6 +156,45 @@ public final class ValidationUtil {
         if (isBlank(value)) throw badRequest("Email is required.");
         if (!EMAIL_PATTERN.matcher(value).matches()) throw badRequest("Please provide a valid email address.");
         userRepository.findByEmail(value).ifPresent(u -> { throw badRequest("Email is already in use."); });
+        return value;
+    }
+
+    public static String validateUsernameForUpdate(String username, Long currentUserId, UserRepository userRepository) {
+        String value = sanitize(username);
+        if (isBlank(value)) throw badRequest("Username is required.");
+        if (!USERNAME_PATTERN.matcher(value).matches())
+            throw badRequest("Username must be 4–30 characters, contain letters/numbers/underscores only, and cannot be only digits.");
+        userRepository.findByUsername(value).ifPresent(u -> {
+            if (!u.getId().equals(currentUserId)) {
+                throw badRequest("Username is already taken.");
+            }
+        });
+        return value;
+    }
+
+    public static String validateEmailForUpdate(String email, Long currentUserId, UserRepository userRepository) {
+        String value = sanitize(email);
+        if (isBlank(value)) throw badRequest("Email is required.");
+        if (!EMAIL_PATTERN.matcher(value).matches()) throw badRequest("Please provide a valid email address.");
+        userRepository.findByEmail(value).ifPresent(u -> {
+            if (!u.getId().equals(currentUserId)) {
+                throw badRequest("Email is already in use.");
+            }
+        });
+        return value;
+    }
+
+    public static String validateOptionalEmail(String email) {
+        String value = sanitize(email);
+        if (isBlank(value)) return null;
+        if (!EMAIL_PATTERN.matcher(value).matches()) throw badRequest("Please provide a valid email address.");
+        return value;
+    }
+
+    public static String validateOptionalPhone(String phone) {
+        String value = sanitize(phone);
+        if (isBlank(value)) return null;
+        if (!PHONE_PATTERN.matcher(value).matches()) throw badRequest("Please provide a valid phone number.");
         return value;
     }
 

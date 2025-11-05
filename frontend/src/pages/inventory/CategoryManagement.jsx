@@ -203,7 +203,7 @@ const CategoryManagementPage = () => {
                 </div>
             </div>
 
-            <div className="inventory-grid" data-animate="fade-up" data-delay="0.08">
+            <div className="inventory-grid inventory-grid--three-cols" data-animate="fade-up" data-delay="0.08">
                 {categories.length === 0 ? (
                     <div className="inventory-empty-state">
                         No categories yet. Create your first category to start grouping items.

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -24,7 +25,7 @@ public class RequisitionController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('REQUISITION_CREATE')")
-    public Requisition submitRequisition(@RequestBody RequisitionRequest request) {
+    public Requisition submitRequisition(@Valid @RequestBody RequisitionRequest request) {
         return financeService.createRequisition(request);
     }
 
@@ -43,20 +44,20 @@ public class RequisitionController {
 
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasAuthority('REQUISITION_APPROVE')")
-    public Requisition approveRequisition(@PathVariable Long id, @RequestBody ApprovalRequest request) {
+    public Requisition approveRequisition(@PathVariable Long id, @Valid @RequestBody ApprovalRequest request) {
         return financeService.approveRequisition(id, request.getNotes());
     }
 
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasAuthority('REQUISITION_APPROVE')") // Same permission to approve/reject
-    public Requisition rejectRequisition(@PathVariable Long id, @RequestBody ApprovalRequest request) {
+    public Requisition rejectRequisition(@PathVariable Long id, @Valid @RequestBody ApprovalRequest request) {
         return financeService.rejectRequisition(id, request.getNotes());
     }
 
     // Permission can be ITEM_UPDATE as Inventory Manager handles this
     @PostMapping("/{id}/fulfill")
     @PreAuthorize("hasAuthority('ITEM_UPDATE')")
-    public Requisition fulfillRequisition(@PathVariable Long id, @RequestBody FulfillmentRequest request) {
+    public Requisition fulfillRequisition(@PathVariable Long id, @Valid @RequestBody FulfillmentRequest request) {
         return financeService.fulfillRequisition(id, request);
     }
 
@@ -68,7 +69,7 @@ public class RequisitionController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('REQUISITION_CREATE')") // Users who can create can also edit
-    public Requisition updateRequisition(@PathVariable Long id, @RequestBody RequisitionRequest request) {
+    public Requisition updateRequisition(@PathVariable Long id, @Valid @RequestBody RequisitionRequest request) {
         return financeService.updateRequisition(id, request);
     }
 

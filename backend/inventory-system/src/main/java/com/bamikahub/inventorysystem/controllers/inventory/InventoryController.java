@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -43,13 +44,13 @@ public class InventoryController {
 
     @PostMapping("/items")
     @PreAuthorize("hasAuthority('ITEM_CREATE')")
-    public InventoryItem createItem(@RequestBody InventoryItemRequest request) {
+    public InventoryItem createItem(@Valid @RequestBody InventoryItemRequest request) {
         return inventoryService.createItem(request);
     }
 
     @PutMapping("/items/{id}")
     @PreAuthorize("hasAuthority('ITEM_UPDATE')")
-    public InventoryItem updateItem(@PathVariable Long id, @RequestBody InventoryItemRequest request) {
+    public InventoryItem updateItem(@PathVariable Long id, @Valid @RequestBody InventoryItemRequest request) {
         return inventoryService.updateItem(id, request);
     }
 
@@ -70,7 +71,7 @@ public class InventoryController {
 
     @PostMapping("/transactions")
     @PreAuthorize("hasAuthority('ITEM_UPDATE')")
-    public StockTransaction createTransaction(@RequestBody StockTransactionRequest request) {
+    public StockTransaction createTransaction(@Valid @RequestBody StockTransactionRequest request) {
         return inventoryService.recordStockTransaction(request);
     }
 

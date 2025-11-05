@@ -32,6 +32,16 @@ public class SupplierService {
 
     @Transactional
     public Supplier createSupplier(Supplier supplierRequest) {
+        // Validate and sanitize
+        if (supplierRequest.getName() == null || supplierRequest.getName().isBlank()) {
+            throw new IllegalArgumentException("Supplier name is required.");
+        }
+        supplierRequest.setName(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(supplierRequest.getName()));
+        supplierRequest.setContactPerson(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(supplierRequest.getContactPerson()));
+        supplierRequest.setAddress(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(supplierRequest.getAddress()));
+        supplierRequest.setEmail(com.bamikahub.inventorysystem.util.ValidationUtil.validateOptionalEmail(supplierRequest.getEmail()));
+        supplierRequest.setPhone(com.bamikahub.inventorysystem.util.ValidationUtil.validateOptionalPhone(supplierRequest.getPhone()));
+
         Supplier savedSupplier = supplierRepository.save(supplierRequest);
 
         try {
@@ -66,12 +76,15 @@ public class SupplierService {
                 .orElseThrow(() -> new RuntimeException("Supplier not found with id: " + id));
 
         Map<String, Object> beforeDetails = buildSupplierSnapshot(supplier);
-
-        supplier.setName(supplierDetails.getName());
-        supplier.setContactPerson(supplierDetails.getContactPerson());
-        supplier.setEmail(supplierDetails.getEmail());
-        supplier.setPhone(supplierDetails.getPhone());
-        supplier.setAddress(supplierDetails.getAddress());
+        // Validate and sanitize incoming fields
+        if (supplierDetails.getName() == null || supplierDetails.getName().isBlank()) {
+            throw new IllegalArgumentException("Supplier name is required.");
+        }
+        supplier.setName(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(supplierDetails.getName()));
+        supplier.setContactPerson(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(supplierDetails.getContactPerson()));
+        supplier.setEmail(com.bamikahub.inventorysystem.util.ValidationUtil.validateOptionalEmail(supplierDetails.getEmail()));
+        supplier.setPhone(com.bamikahub.inventorysystem.util.ValidationUtil.validateOptionalPhone(supplierDetails.getPhone()));
+        supplier.setAddress(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(supplierDetails.getAddress()));
 
         Supplier updatedSupplier = supplierRepository.save(supplier);
 
