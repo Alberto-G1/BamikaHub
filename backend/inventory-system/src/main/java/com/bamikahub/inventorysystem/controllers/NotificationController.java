@@ -17,7 +17,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import jakarta.validation.Valid;
 
 import java.util.Collections;
 import java.util.List;
@@ -152,7 +151,7 @@ public class NotificationController {
      */
     @PostMapping
     @PreAuthorize("hasAuthority('NOTIFICATION_SEND')")
-    public ResponseEntity<Void> createNotification(@Valid @RequestBody CreateNotificationRequest request) {
+    public ResponseEntity<Void> createNotification(@RequestBody CreateNotificationRequest request) {
         notificationService.notifyUser(
             request.getRecipientId(),
             request.getType(),

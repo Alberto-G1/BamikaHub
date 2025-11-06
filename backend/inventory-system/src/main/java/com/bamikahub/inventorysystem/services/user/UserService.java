@@ -300,10 +300,7 @@ public class UserService {
         user.setCountry(ValidationUtil.sanitize(request.getCountry()));
 
         if (request.getDateOfBirth() != null) {
-            if (request.getDateOfBirth().isAfter(java.time.LocalDate.now())) {
-                throw new RuntimeException("Date of birth cannot be in the future.");
-            }
-            user.setDateOfBirth(request.getDateOfBirth());
+            user.setDateOfBirth(ValidationUtil.validateOptionalDob(request.getDateOfBirth()));
         }
         if (request.getGender() != null && !request.getGender().isBlank()) {
             try {

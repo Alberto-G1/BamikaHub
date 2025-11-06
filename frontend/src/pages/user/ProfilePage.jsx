@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Spinner } from 'react-bootstrap';
 import api from '../../api/api.js';
+import { validateProfile } from '../../utils/validation.js';
 import { toast } from 'react-toastify';
 import { FaCalendarAlt, FaEnvelope, FaGlobe, FaMapMarkerAlt, FaPhoneAlt, FaUserCircle, FaUserShield } from 'react-icons/fa';
 import './ProfilePage.css';
@@ -94,8 +95,15 @@ const ProfilePage = () => {
 
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
+        // Client-side validation aligned with server rules
+        const { valid, errors, transformed } = validateProfile(formData);
+        if (!valid) {
+            const firstError = Object.values(errors)[0];
+            toast.error(firstError || 'Please fix the highlighted fields.');
+            return;
+        }
         try {
-            const res = await api.put('/profile/me', formData);
+            const res = await api.put('/profile/me', transformed);
             setProfileData(res.data); // Update the main data display
             toast.success('Profile updated successfully!');
         } catch (error) {

@@ -47,14 +47,14 @@ public class InventoryService {
             throw new RuntimeException("An item with the same SKU already exists.");
         });
 
-        InventoryItem newItem = new InventoryItem();
-        newItem.setName(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getName()));
+    InventoryItem newItem = new InventoryItem();
+    newItem.setName(com.bamikahub.inventorysystem.util.ValidationUtil.validateItemName(request.getName()));
         newItem.setSku(request.getSku().trim());
-        newItem.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getDescription()));
+    newItem.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.validateDescriptionOptional(request.getDescription()));
         newItem.setQuantity(request.getQuantity());
         newItem.setReorderLevel(request.getReorderLevel());
         newItem.setUnitPrice(request.getUnitPrice());
-        newItem.setLocation(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getLocation()));
+    newItem.setLocation(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getLocation()));
         newItem.setActive(request.isActive());
 
         Category category = categoryRepository.findById(request.getCategoryId())
@@ -123,9 +123,9 @@ public class InventoryService {
         before.put("supplierId", existingItem.getSupplier() != null ? existingItem.getSupplier().getId() : null);
         before.put("supplierName", existingItem.getSupplier() != null ? existingItem.getSupplier().getName() : null);
 
-    existingItem.setName(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getName()));
+    existingItem.setName(com.bamikahub.inventorysystem.util.ValidationUtil.validateItemName(request.getName()));
     existingItem.setSku(request.getSku().trim());
-    existingItem.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getDescription()));
+    existingItem.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.validateDescriptionOptional(request.getDescription()));
         existingItem.setReorderLevel(request.getReorderLevel());
         existingItem.setUnitPrice(request.getUnitPrice());
     existingItem.setLocation(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getLocation()));

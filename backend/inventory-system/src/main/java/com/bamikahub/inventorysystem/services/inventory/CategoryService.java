@@ -34,6 +34,9 @@ public class CategoryService {
 
     @Transactional
     public Category createCategory(Category categoryRequest) {
+        // Validate name and optional description
+        categoryRequest.setName(com.bamikahub.inventorysystem.util.ValidationUtil.validateCategoryName(categoryRequest.getName()));
+        categoryRequest.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.validateDescriptionOptional(categoryRequest.getDescription()));
         Category savedCategory = categoryRepository.save(categoryRequest);
 
         try {
@@ -69,8 +72,8 @@ public class CategoryService {
 
         Map<String, Object> beforeSnapshot = buildCategorySnapshot(category);
 
-        category.setName(categoryRequest.getName());
-        category.setDescription(categoryRequest.getDescription());
+    category.setName(com.bamikahub.inventorysystem.util.ValidationUtil.validateCategoryName(categoryRequest.getName()));
+    category.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.validateDescriptionOptional(categoryRequest.getDescription()));
 
         Category updatedCategory = categoryRepository.save(category);
 

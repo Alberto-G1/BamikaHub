@@ -42,20 +42,20 @@ public class FinanceService {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found."));
 
-        Requisition requisition = new Requisition();
+    Requisition requisition = new Requisition();
         requisition.setRequestedBy(currentUser);
         requisition.setProject(project);
-        requisition.setDateNeeded(request.getDateNeeded());
-        requisition.setJustification(request.getJustification());
+    requisition.setDateNeeded(com.bamikahub.inventorysystem.util.ValidationUtil.validateRequisitionDate(request.getDateNeeded()));
+    requisition.setJustification(com.bamikahub.inventorysystem.util.ValidationUtil.validateJustification(request.getJustification()));
         requisition.setStatus(Requisition.RequisitionStatus.PENDING);
 
         // v-- THIS IS THE ROBUST FIX --v
         List<RequisitionItem> items = request.getItems().stream().map(itemDto -> {
             RequisitionItem item = new RequisitionItem();
-            item.setItemName(itemDto.getItemName());
-            item.setDescription(itemDto.getDescription());
+            item.setItemName(com.bamikahub.inventorysystem.util.ValidationUtil.validateItemName(itemDto.getItemName()));
+            item.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.validateDescriptionOptional(itemDto.getDescription()));
             item.setQuantity(itemDto.getQuantity());
-            item.setUnitOfMeasure(itemDto.getUnitOfMeasure());
+            item.setUnitOfMeasure(com.bamikahub.inventorysystem.util.ValidationUtil.validateUnit(itemDto.getUnitOfMeasure()));
 
             // Ensure BigDecimal is not null before setting
             if (itemDto.getEstimatedUnitCost() != null) {
@@ -309,19 +309,19 @@ public class FinanceService {
 
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found."));
-        requisition.setProject(project);
-        requisition.setDateNeeded(request.getDateNeeded());
-        requisition.setJustification(request.getJustification());
+    requisition.setProject(project);
+    requisition.setDateNeeded(com.bamikahub.inventorysystem.util.ValidationUtil.validateRequisitionDate(request.getDateNeeded()));
+    requisition.setJustification(com.bamikahub.inventorysystem.util.ValidationUtil.validateJustification(request.getJustification()));
 
         requisitionItemRepository.deleteAll(requisition.getItems());
         requisition.getItems().clear();
 
         List<RequisitionItem> newItems = request.getItems().stream().map(itemDto -> {
             RequisitionItem item = new RequisitionItem();
-            item.setItemName(itemDto.getItemName());
-            item.setDescription(itemDto.getDescription());
+            item.setItemName(com.bamikahub.inventorysystem.util.ValidationUtil.validateItemName(itemDto.getItemName()));
+            item.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.validateDescriptionOptional(itemDto.getDescription()));
             item.setQuantity(itemDto.getQuantity());
-            item.setUnitOfMeasure(itemDto.getUnitOfMeasure());
+            item.setUnitOfMeasure(com.bamikahub.inventorysystem.util.ValidationUtil.validateUnit(itemDto.getUnitOfMeasure()));
             item.setEstimatedUnitCost(itemDto.getEstimatedUnitCost());
             item.setRequisition(requisition);
             return item;
