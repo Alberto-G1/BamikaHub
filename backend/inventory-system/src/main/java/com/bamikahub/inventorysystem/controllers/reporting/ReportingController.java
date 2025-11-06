@@ -5,7 +5,6 @@ import com.bamikahub.inventorysystem.models.reporting.ReportHistory;
 import com.bamikahub.inventorysystem.services.reporting.ReportingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -97,6 +96,17 @@ public class ReportingController {
         return reportingService.getMonthlyExpenditureTrend(request);
     }
 
+    @GetMapping("/finance/performance-trend")
+    @PreAuthorize("hasAuthority('FINANCE_READ')")
+    public FinancePerformanceTrendDto getFinancePerformanceTrend(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false, defaultValue = "MONTHLY") String aggregationLevel) {
+
+        ReportRequestDto request = buildRequest(startDate, endDate, null, null, null, null, null, aggregationLevel, null);
+        return reportingService.getFinancePerformanceTrend(request);
+    }
+
     @GetMapping("/finance/budget-vs-actual")
     @PreAuthorize("hasAuthority('FINANCE_READ')")
     public List<BudgetVsActualDto> getBudgetVsActual(
@@ -132,6 +142,17 @@ public class ReportingController {
 
         ReportRequestDto request = buildRequest(startDate, endDate, null, categoryId, null, null, null, null, null);
         return reportingService.getStockMovementReport(request);
+    }
+
+    @GetMapping("/inventory/stock-out-revenue")
+    @PreAuthorize("hasAuthority('ITEM_READ') or hasAuthority('FINANCE_READ')")
+    public StockOutRevenueSummaryDto getStockOutRevenue(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Long categoryId) {
+
+        ReportRequestDto request = buildRequest(startDate, endDate, null, categoryId, null, null, null, null, null);
+        return reportingService.getStockOutRevenueSummary(request);
     }
 
     // ============= SUPPORT REPORTS =============

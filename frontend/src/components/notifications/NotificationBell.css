@@ -11,7 +11,7 @@
     transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* allow badge to render outside button bounds */
     text-decoration: none;
     z-index: 10;
     cursor: pointer;
@@ -52,6 +52,17 @@
     background: #1A1A1A;
     border-color: rgba(16, 185, 129, 0.3);
     color: #9CA3AF;
+}
+
+/* Ensure the unread badge sits above and remains visible */
+.notification-bell-toggle .badge {
+    z-index: 20;
+}
+
+/* Improve badge contrast in dark mode */
+[data-theme="dark"] .notification-bell-toggle .badge.bg-danger {
+    background-color: #ef4444 !important;
+    color: #fff;
 }
 
 .notification-dropdown .notification-menu {

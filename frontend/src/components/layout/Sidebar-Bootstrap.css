@@ -64,6 +64,32 @@
     padding: 0 1rem 1rem 1rem; /* Add some padding */
 }
 
+/* Branding footer */
+.sidebar-footer-branding {
+    padding: 0.75rem 1rem 1rem 1rem;
+    border-top: 1px dashed rgba(16, 185, 129, 0.25);
+    color: #9CA3AF;
+    font-size: 0.75rem;
+    line-height: 1.1rem;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.sidebar-footer-branding .branding-line {
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.sidebar-footer-branding .branding-subline {
+    opacity: 0.85;
+}
+
+[data-theme="light"] .sidebar-footer-branding {
+    background: rgba(16, 185, 129, 0.06);
+    color: #4B5563;
+    border-top-color: rgba(16, 185, 129, 0.25);
+}
+
 /* Custom Scrollbar for the scroll area */
 .sidebar-scroll-area::-webkit-scrollbar {
     width: 6px;

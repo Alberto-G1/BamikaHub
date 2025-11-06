@@ -22,7 +22,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import logo from '../../assets/logo/logo2.png';
 import './Sidebar-Bootstrap.css';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen = false, onNavigate }) => {
     const { hasPermission } = useAuth();
     const [expandedSections, setExpandedSections] = useState({
         support: true,
@@ -37,8 +37,12 @@ const Sidebar = () => {
         }));
     };
 
+    const handleNav = () => {
+        if (onNavigate) onNavigate();
+    };
+
     return (
-        <aside className="sidebar-modern">
+        <aside className={`sidebar-modern ${isOpen ? 'show' : ''}`}>
             <div className="sidebar-logo-container">
                 <div className="sidebar-logo d-flex align-items-center">
                     <img src={logo} alt="BamikaHub Logo" width="40" height="40" />
@@ -49,14 +53,14 @@ const Sidebar = () => {
             <div className="sidebar-scroll-area">
                 <ul className="nav nav-pills flex-column">
                     <li className="nav-item">
-                        <NavLink to="/dashboard" className="nav-link">
+                        <NavLink to="/dashboard" className="nav-link" onClick={handleNav}>
                             <FaTachometerAlt className="me-2" /> Dashboard
                         </NavLink>
                     </li>
 
                     {hasPermission('USER_READ') && (
                         <li className="nav-item">
-                            <NavLink to="/users" className="nav-link">
+                            <NavLink to="/users" className="nav-link" onClick={handleNav}>
                                 <FaUsers className="me-2" /> Users
                             </NavLink>
                         </li>
@@ -64,7 +68,7 @@ const Sidebar = () => {
 
                     {hasPermission('ROLE_READ') && (
                         <li className="nav-item">
-                            <NavLink to="/roles" className="nav-link">
+                            <NavLink to="/roles" className="nav-link" onClick={handleNav}>
                                 <FaUserTag className="me-2" /> Roles & Permissions
                             </NavLink>
                         </li>
@@ -72,7 +76,7 @@ const Sidebar = () => {
 
                     {hasPermission('ITEM_READ') && (
                         <li className="nav-item">
-                            <NavLink to="/inventory" className="nav-link">
+                            <NavLink to="/inventory" className="nav-link" onClick={handleNav}>
                                 <FaBoxes className="me-2" /> Inventory
                             </NavLink>
                         </li>
@@ -80,7 +84,7 @@ const Sidebar = () => {
 
                     {hasPermission('ITEM_READ') && (
                         <li className="nav-item">
-                            <NavLink to="/inventory/transactions" className="nav-link">
+                            <NavLink to="/inventory/transactions" className="nav-link" onClick={handleNav}>
                                 <FaHistory className="me-2" /> Transaction Log
                             </NavLink>
                         </li>
@@ -88,7 +92,7 @@ const Sidebar = () => {
 
                     {hasPermission('SUPPLIER_READ') && (
                         <li className="nav-item">
-                            <NavLink to="/suppliers" className="nav-link">
+                            <NavLink to="/suppliers" className="nav-link" onClick={handleNav}>
                                 <FaTruck className="me-2" /> Suppliers
                             </NavLink>
                         </li>
@@ -96,7 +100,7 @@ const Sidebar = () => {
 
                     {hasPermission('ITEM_READ') && (
                         <li className="nav-item">
-                            <NavLink to="/categories" className="nav-link">
+                            <NavLink to="/categories" className="nav-link" onClick={handleNav}>
                                 <FaTags className="me-2" /> Categories
                             </NavLink>
                         </li>
@@ -104,7 +108,7 @@ const Sidebar = () => {
 
                     {hasPermission('PROJECT_READ') && (
                         <li className="nav-item">
-                            <NavLink to="/projects" className="nav-link">
+                            <NavLink to="/projects" className="nav-link" onClick={handleNav}>
                                 <FaProjectDiagram className="me-2" /> Projects
                             </NavLink>
                         </li>
@@ -112,7 +116,7 @@ const Sidebar = () => {
 
                     {(hasPermission('REQUISITION_CREATE') || hasPermission('REQUISITION_APPROVE')) && (
                         <li className="nav-item">
-                            <NavLink to="/requisitions" className="nav-link">
+                            <NavLink to="/requisitions" className="nav-link" onClick={handleNav}>
                                 <FaMoneyCheckAlt className="me-2" /> Requisitions
                             </NavLink>
                         </li>
@@ -130,7 +134,7 @@ const Sidebar = () => {
                     </li>
                     <div className={`sidebar-section-content ${expandedSections.support ? '' : 'collapsed'}`}>
                         <li className="nav-item">
-                            <NavLink to="/support/tickets" className="nav-link">
+                            <NavLink to="/support/tickets" className="nav-link" onClick={handleNav}>
                                 <FaTicketAlt className="me-2" /> Support Tickets
                             </NavLink>
                         </li>
@@ -148,7 +152,7 @@ const Sidebar = () => {
                     </li>
                     <div className={`sidebar-section-content ${expandedSections.analysis ? '' : 'collapsed'}`}>
                         <li className="nav-item">
-                            <NavLink to="/reports" className="nav-link">
+                            <NavLink to="/reports" className="nav-link" onClick={handleNav}>
                                 <FaChartLine className="me-2" /> Reports & Analytics
                             </NavLink>
                         </li>
@@ -168,7 +172,7 @@ const Sidebar = () => {
                             </li>
                             <div className={`sidebar-section-content ${expandedSections.administration ? '' : 'collapsed'}`}>
                                 <li className="nav-item">
-                                    <NavLink to="/audit-trail" className="nav-link">
+                                    <NavLink to="/audit-trail" className="nav-link" onClick={handleNav}>
                                         <FaClipboardList className="me-2" /> Audit Trail
                                     </NavLink>
                                 </li>
@@ -176,6 +180,10 @@ const Sidebar = () => {
                         </>
                     )}
                 </ul>
+            </div>
+            <div className="sidebar-footer-branding">
+                <div className="branding-line">© 2025 • Alberto ❤️‍🔥 Grande</div>
+                <div className="branding-subline">UI/UX & Software Developer</div>
             </div>
         </aside>
     );

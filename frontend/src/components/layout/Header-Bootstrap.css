@@ -17,6 +17,30 @@
     transition: all 0.3s ease;
 }
 
+/* mobile menu button visibility and spacing */
+.header-mobile-menu {
+    color: #6B7280;
+}
+
+[data-theme="dark"] .header-mobile-menu {
+    color: #cbd5e1;
+}
+
+.header-breadcrumb h4 {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+/* Sidebar overlay (from MainLayout) */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1025; /* slightly below sidebar 1030 */
+}
+
 /* Animated bottom border */
 .header-modern::before {
     content: '';
@@ -375,5 +399,21 @@
     .header-modern {
         left: 0;
         width: 100%;
+    }
+}
+
+/* Phone optimizations: hide title & breadcrumbs, keep only hamburger on left */
+@media (max-width: 768px) {
+    .header-breadcrumb {
+        flex: 0 0 auto;
+        flex-direction: row;
+        align-items: center;
+    }
+    .header-breadcrumb h4,
+    .header-breadcrumb nav {
+        display: none !important;
+    }
+    .header-mobile-menu {
+        margin-right: 0;
     }
 }
