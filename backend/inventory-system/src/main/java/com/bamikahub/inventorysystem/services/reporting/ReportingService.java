@@ -30,7 +30,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -108,6 +107,142 @@ public class ReportingService {
         chartsData.setFieldReportsBySite(fieldReportsBySite);
 
         return chartsData;
+    }
+
+    /**
+     * Computes revenue generated from stock-out transactions and COGS using transaction unitCost.
+     * Revenue uses current item unitPrice for simplicity; could be extended to capture sale price per transaction.
+     */
+    public StockOutRevenueSummaryDto getStockOutRevenueSummary(ReportRequestDto request) {
+        LocalDate start = request.getStartDate() != null ? request.getStartDate() : LocalDate.now().minusMonths(1);
+        LocalDate end = request.getEndDate() != null ? request.getEndDate() : LocalDate.now();
+
+        // Filter OUT transactions by date range (inclusive) and optional category
+        List<StockTransaction> outs = transactionRepository.findAll().stream()
+                .filter(t -> t.getType() == StockTransaction.TransactionType.OUT)
+                .filter(t -> t.getCreatedAt() != null)
+                .filter(t -> {
+                    LocalDate d = t.getCreatedAt().toLocalDate();
+                    return !d.isBefore(start) && !d.isAfter(end);
+                })
+                .filter(t -> request.getCategoryId() == null ||
+                        (t.getItem() != null && t.getItem().getCategory() != null &&
+                                t.getItem().getCategory().getId().equals(request.getCategoryId())))
+                .toList();
+
+        Map<Long, List<StockTransaction>> byItem = outs.stream()
+                .collect(Collectors.groupingBy(t -> t.getItem().getId()));
+
+        List<StockOutItemDto> items = byItem.entrySet().stream()
+                .map(entry -> {
+                    InventoryItem item = entry.getValue().get(0).getItem();
+                    long qty = entry.getValue().stream().mapToLong(StockTransaction::getQuantity).sum();
+                    BigDecimal revenue = item.getUnitPrice().multiply(BigDecimal.valueOf(qty));
+                    BigDecimal cogs = entry.getValue().stream()
+                            .map(t -> (t.getUnitCost() != null ? t.getUnitCost() : BigDecimal.ZERO)
+                                    .multiply(BigDecimal.valueOf(t.getQuantity())))
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal margin = revenue.subtract(cogs);
+                    double marginPct = revenue.compareTo(BigDecimal.ZERO) == 0 ? 0.0
+                            : margin.divide(revenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue();
+
+                    return StockOutItemDto.builder()
+                            .itemId(item.getId())
+                            .itemName(item.getName())
+                            .sku(item.getSku())
+                            .quantityOut(qty)
+                            .revenue(revenue)
+                            .cogs(cogs)
+                            .margin(margin)
+                            .marginPercentage(marginPct)
+                            .build();
+                })
+                .sorted(Comparator.comparing(StockOutItemDto::getRevenue).reversed())
+                .toList();
+
+        long totalQty = items.stream().mapToLong(StockOutItemDto::getQuantityOut).sum();
+        BigDecimal totalRevenue = items.stream().map(StockOutItemDto::getRevenue).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalCogs = items.stream().map(StockOutItemDto::getCogs).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalMargin = totalRevenue.subtract(totalCogs);
+
+        trackReportGeneration("STOCK_OUT_REVENUE", "Stock-Out Revenue Summary", request, items.size());
+
+        return StockOutRevenueSummaryDto.builder()
+                .totalItemsCount((long) items.size())
+                .totalQuantityOut(totalQty)
+                .totalRevenue(totalRevenue)
+                .totalCogs(totalCogs)
+                .totalMargin(totalMargin)
+                .items(items)
+                .build();
+    }
+
+    /**
+     * Multi-series finance trend: revenue (stock-outs), expenditure (fulfilled/closed requisitions), and net.
+     */
+    public FinancePerformanceTrendDto getFinancePerformanceTrend(ReportRequestDto request) {
+        LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : LocalDate.now().minusMonths(12);
+        LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : LocalDate.now();
+
+        // Revenue per period from stock-out transactions
+        Map<String, BigDecimal> revenueByPeriod = transactionRepository.findAll().stream()
+                .filter(t -> t.getType() == StockTransaction.TransactionType.OUT)
+                .filter(t -> t.getCreatedAt() != null)
+                .filter(t -> {
+                    LocalDate d = t.getCreatedAt().toLocalDate();
+                    return !d.isBefore(startDate) && !d.isAfter(endDate);
+                })
+                .collect(Collectors.groupingBy(
+                        t -> formatPeriod(t.getCreatedAt().toLocalDate(), request.getAggregationLevel()),
+                        Collectors.reducing(BigDecimal.ZERO,
+                                t -> t.getItem().getUnitPrice().multiply(BigDecimal.valueOf(t.getQuantity())),
+                                BigDecimal::add)
+                ));
+
+        // Expenditure per period from fulfilled/closed requisitions
+        Map<String, BigDecimal> expendByPeriod = requisitionRepository.findAll().stream()
+                .filter(r -> r.getCreatedAt() != null)
+                .filter(r -> r.getStatus() == Requisition.RequisitionStatus.FULFILLED || r.getStatus() == Requisition.RequisitionStatus.CLOSED)
+                .filter(r -> {
+                    LocalDate d = r.getCreatedAt().toLocalDate();
+                    return !d.isBefore(startDate) && !d.isAfter(endDate);
+                })
+                .collect(Collectors.groupingBy(
+                        r -> formatPeriod(r.getCreatedAt().toLocalDate(), request.getAggregationLevel()),
+                        Collectors.reducing(BigDecimal.ZERO,
+                                r -> r.getItems().stream()
+                                        .map(i -> i.getEstimatedUnitCost().multiply(BigDecimal.valueOf(i.getQuantity())))
+                                        .reduce(BigDecimal.ZERO, BigDecimal::add),
+                                BigDecimal::add)
+                ));
+
+        // Merge periods
+        Set<String> periods = new TreeSet<>();
+        periods.addAll(revenueByPeriod.keySet());
+        periods.addAll(expendByPeriod.keySet());
+
+        List<FinancePerformancePointDto> points = periods.stream()
+                .sorted()
+                .map(p -> {
+                    BigDecimal rev = revenueByPeriod.getOrDefault(p, BigDecimal.ZERO);
+                    BigDecimal exp = expendByPeriod.getOrDefault(p, BigDecimal.ZERO);
+                    return FinancePerformancePointDto.builder()
+                            .period(p)
+                            .revenue(rev)
+                            .expenditure(exp)
+                            .net(rev.subtract(exp))
+                            .build();
+                })
+                .toList();
+
+        trackReportGeneration("FINANCE_PERFORMANCE_TREND", "Finance Performance Trend", request, points.size());
+
+        return FinancePerformanceTrendDto.builder()
+                .reportType("FINANCE_PERFORMANCE_TREND")
+                .aggregationLevel(request.getAggregationLevel() != null ? request.getAggregationLevel() : "MONTHLY")
+                .dataPoints(points)
+                .summary("Finance performance from " + startDate + " to " + endDate)
+                .build();
     }
 
     /**

@@ -12,14 +12,15 @@ import {
     FaSun,
     FaMoon,
     FaHome,
-    FaChevronRight
+    FaChevronRight,
+    FaBars
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { toast } from 'react-toastify';
 import NotificationBell from '../notifications/NotificationBell.jsx';
 import './Header-Bootstrap.css';
 
-const Header = () => {
+const Header = ({ onToggleSidebar }) => {
     const location = useLocation();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -72,6 +73,15 @@ const Header = () => {
         <header className="header-modern">
             {/* Left Section - Breadcrumb */}
             <div className="header-breadcrumb">
+                {/* Mobile menu button */}
+                <button
+                    type="button"
+                    className="btn btn-link d-lg-none me-2 p-0 header-mobile-menu"
+                    aria-label="Toggle sidebar"
+                    onClick={() => onToggleSidebar && onToggleSidebar()}
+                >
+                    <FaBars size={22} />
+                </button>
                 <h4>{getPageTitle()}</h4>
                 <nav aria-label="breadcrumb">
                     <ol className="breadcrumb">

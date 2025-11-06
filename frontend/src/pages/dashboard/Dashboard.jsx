@@ -4,12 +4,12 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { FaBoxes, FaExclamationTriangle, FaProjectDiagram, FaUsers, FaUserClock, FaTruck } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import { Doughnut, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement, Filler } from 'chart.js';
+import { Doughnut, Bar, Line } from 'react-chartjs-2';
 import './Dashboard.css';
 
 // Register the components you will use from Chart.js
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement, Filler);
 
 /**
  * Dashboard Component
@@ -54,22 +54,28 @@ const formatCurrency = (amount) => {
 };
 
 const Dashboard = () => {
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
     const [summaryData, setSummaryData] = useState(null);
     const [chartData, setChartData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [financeTrend, setFinanceTrend] = useState(null);
+    const [stockOutSummary, setStockOutSummary] = useState(null);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             setLoading(true);
             try {
                 // Fetch both summary cards and chart data in parallel for performance
-                const [summaryRes, chartsRes] = await Promise.all([
+                const [summaryRes, chartsRes, trendRes, stockOutRes] = await Promise.all([
                     api.get('/dashboard/summary'),
-                    api.get('/reports/dashboard-charts')
+                    api.get('/reports/dashboard-charts'),
+                    api.get('/reports/finance/performance-trend?aggregationLevel=MONTHLY'),
+                    api.get('/reports/inventory/stock-out-revenue')
                 ]);
                 setSummaryData(summaryRes.data);
                 setChartData(chartsRes.data);
+                setFinanceTrend(trendRes.data);
+                setStockOutSummary(stockOutRes.data);
             } catch (error) {
                 toast.error("Failed to load dashboard data.");
             } finally {
@@ -107,6 +113,43 @@ const Dashboard = () => {
             }],
         };
     }, [chartData]);
+
+    const financeLineData = useMemo(() => {
+        if (!financeTrend || !financeTrend.dataPoints) return { labels: [], datasets: [] };
+        const labels = financeTrend.dataPoints.map(p => p.period);
+        const revenue = financeTrend.dataPoints.map(p => p.revenue || 0);
+        const expenditure = financeTrend.dataPoints.map(p => p.expenditure || 0);
+        const net = financeTrend.dataPoints.map(p => p.net || 0);
+        return {
+            labels,
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: revenue,
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    fill: true,
+                    tension: 0.35,
+                },
+                {
+                    label: 'Expenditure',
+                    data: expenditure,
+                    borderColor: '#EF4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    fill: true,
+                    tension: 0.35,
+                },
+                {
+                    label: 'Net',
+                    data: net,
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                    fill: false,
+                    tension: 0.35,
+                }
+            ]
+        };
+    }, [financeTrend]);
 
     const fieldReportLeaders = useMemo(() => {
         if (!chartData || !chartData.fieldReportsBySite) return [];
@@ -173,6 +216,49 @@ const Dashboard = () => {
                         </Card.Body>
                     </Card>
                 </Col>
+                {stockOutSummary && (hasPermission ? (typeof hasPermission === 'function' ? hasPermission('FINANCE_READ') || hasPermission('ITEM_READ') : true) : true) && (
+                    <>
+                        <Col md={6} lg={4} className="mb-4">
+                            <Card className="h-100 kpi-card-primary">
+                                <Card.Body>
+                                    <div className="kpi-icon-wrapper">
+                                        <FaTruck size={24} />
+                                    </div>
+                                    <div className="kpi-content">
+                                        <div className="kpi-label">Stock-Out Revenue</div>
+                                        <div className="kpi-value">{formatCurrency(stockOutSummary.totalRevenue)}</div>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                        <Col md={6} lg={4} className="mb-4">
+                            <Card className="h-100 kpi-card-info">
+                                <Card.Body>
+                                    <div className="kpi-icon-wrapper">
+                                        <FaBoxes size={24} />
+                                    </div>
+                                    <div className="kpi-content">
+                                        <div className="kpi-label">Items Taken Out</div>
+                                        <div className="kpi-value">{stockOutSummary.totalQuantityOut}</div>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                        <Col md={6} lg={4} className="mb-4">
+                            <Card className="h-100 kpi-card-primary">
+                                <Card.Body>
+                                    <div className="kpi-icon-wrapper">
+                                        <FaProjectDiagram size={24} />
+                                    </div>
+                                    <div className="kpi-content">
+                                        <div className="kpi-label">Gross Margin</div>
+                                        <div className="kpi-value">{formatCurrency(stockOutSummary.totalMargin)}</div>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    </>
+                )}
             </Row>
 
             {/* Chart Section */}
@@ -198,6 +284,21 @@ const Dashboard = () => {
                     </Card>
                 </Col>
             </Row>
+
+            {financeTrend && (
+                <Row>
+                    <Col lg={12} className="mb-4">
+                        <Card className="h-100 chart-card">
+                            <Card.Body>
+                                <Card.Title>Finance Performance (Revenue vs Expenditure)</Card.Title>
+                                <div style={{ height: '360px' }}>
+                                    <Line data={financeLineData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }} />
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+            )}
 
             {fieldReportLeaders.length > 0 && (
                 <Row>
@@ -229,6 +330,46 @@ const Dashboard = () => {
                                                         )}
                                                     </td>
                                                     <td className="text-end fw-semibold">{entry.reportCount}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+            )}
+
+            {stockOutSummary && stockOutSummary.items && stockOutSummary.items.length > 0 && (
+                <Row>
+                    <Col md={12} className="mb-4">
+                        <Card className="shadow-sm h-100">
+                            <Card.Body>
+                                <Card.Title as="h5">Top Items by Stock-Out Revenue</Card.Title>
+                                <div className="table-responsive">
+                                    <table className="table table-striped table-hover table-sm align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>SKU</th>
+                                                <th className="text-end">Qty Out</th>
+                                                <th className="text-end">Revenue</th>
+                                                <th className="text-end">COGS</th>
+                                                <th className="text-end">Margin</th>
+                                                <th className="text-end">Margin %</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {stockOutSummary.items.slice(0, 10).map((it) => (
+                                                <tr key={it.itemId}>
+                                                    <td>{it.itemName}</td>
+                                                    <td>{it.sku}</td>
+                                                    <td className="text-end">{it.quantityOut}</td>
+                                                    <td className="text-end">{formatCurrency(it.revenue)}</td>
+                                                    <td className="text-end">{formatCurrency(it.cogs)}</td>
+                                                    <td className="text-end">{formatCurrency(it.margin)}</td>
+                                                    <td className="text-end">{(it.marginPercentage || 0).toFixed(1)}%</td>
                                                 </tr>
                                             ))}
                                         </tbody>
