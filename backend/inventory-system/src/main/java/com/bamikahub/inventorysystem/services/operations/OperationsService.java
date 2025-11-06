@@ -578,13 +578,11 @@ public class OperationsService {
     }
 
     private void applyProjectRequest(Project project, ProjectRequest request) {
-        project.setName(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getName()));
-        project.setClientName(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getClientName()));
-        project.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.sanitize(request.getDescription()));
+        project.setName(com.bamikahub.inventorysystem.util.ValidationUtil.validateProjectName(request.getName()));
+        project.setClientName(com.bamikahub.inventorysystem.util.ValidationUtil.validateClientName(request.getClientName()));
+        project.setDescription(com.bamikahub.inventorysystem.util.ValidationUtil.validateProjectDescriptionOptional(request.getDescription()));
         project.setStatus(request.getStatus());
-        if (request.getStartDate() != null && request.getEndDate() != null && request.getEndDate().isBefore(request.getStartDate())) {
-            throw new RuntimeException("End date cannot be before start date.");
-        }
+        com.bamikahub.inventorysystem.util.ValidationUtil.validateProjectDates(request.getStartDate(), request.getEndDate());
         project.setStartDate(request.getStartDate());
         project.setEndDate(request.getEndDate());
         updateAssignedEngineers(project, request.getAssignedEngineerIds());

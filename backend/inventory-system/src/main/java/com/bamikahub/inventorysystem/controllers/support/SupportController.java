@@ -19,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.validation.Valid;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -36,7 +35,7 @@ public class SupportController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('TICKET_CREATE') or isAuthenticated()") // Allow any logged-in user to create
-    public SupportTicket createTicket(@Valid @RequestBody TicketRequest request) {
+    public SupportTicket createTicket(@RequestBody TicketRequest request) {
         return supportService.createTicket(request);
     }
 
@@ -83,7 +82,7 @@ public class SupportController {
 
     @PostMapping("/{id}/resolve")
     @PreAuthorize("hasAuthority('TICKET_MANAGE')")
-    public SupportTicket resolveTicket(@PathVariable Long id, @Valid @RequestBody CommentRequest request) {
+    public SupportTicket resolveTicket(@PathVariable Long id, @RequestBody CommentRequest request) {
         return supportService.resolveTicket(id, request.getComment());
     }
 
