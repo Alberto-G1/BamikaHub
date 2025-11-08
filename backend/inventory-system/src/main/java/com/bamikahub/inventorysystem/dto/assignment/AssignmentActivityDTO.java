@@ -17,6 +17,10 @@ public class AssignmentActivityDTO {
     private String evidenceType; // FILE, REPORT
     private String evidenceFilePath;
     private String evidenceReport;
+    private Boolean evidenceSubmitted;
+    private LocalDateTime evidenceSubmittedAt;
+    private Long evidenceSubmittedById;
+    private String evidenceSubmittedByName;
     private LocalDateTime completedAt;
     private Long completedById;
     private String completedByName;

@@ -22,4 +22,5 @@ public class AuditLogDto {
     private String ipAddress;
     private String severity;
     private String timestamp;
+    private String metadata;
 }
