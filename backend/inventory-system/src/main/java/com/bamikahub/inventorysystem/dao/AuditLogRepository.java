@@ -53,8 +53,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     List<AuditLog> findRecentActivityByUser(@Param("userId") Long userId);
 
     // Count actions by user
-    @Query("SELECT COUNT(a) FROM AuditLog a WHERE a.actor.id = :userId")
-    Long countByUser(@Param("userId") Long userId);
+    long countByActorId(Long actorId);
 
     // Get critical actions
     @Query("SELECT a FROM AuditLog a WHERE a.severity = 'CRITICAL' AND a.timestamp >= :since ORDER BY a.timestamp DESC")

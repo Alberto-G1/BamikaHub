@@ -47,6 +47,15 @@ public class AssignmentActivity {
     @Column(columnDefinition = "TEXT")
     private String evidenceReport;
 
+    @Column(nullable = false)
+    private Boolean evidenceSubmitted = false;
+
+    private LocalDateTime evidenceSubmittedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "evidence_submitted_by_id")
+    private User evidenceSubmittedBy;
+
     private LocalDateTime completedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)

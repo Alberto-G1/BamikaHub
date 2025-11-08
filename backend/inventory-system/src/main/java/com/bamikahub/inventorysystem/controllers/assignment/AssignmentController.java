@@ -49,8 +49,10 @@ public class AssignmentController {
     @PreAuthorize("hasAuthority('ASSIGNMENT_UPDATE')")
     public ResponseEntity<AssignmentDTO> updateAssignment(
             @PathVariable Long id,
-            @Valid @RequestBody AssignmentDTO dto) {
-        AssignmentDTO updated = assignmentService.updateAssignment(id, dto);
+            @Valid @RequestBody AssignmentDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Long actorId = userDetails.getId();
+        AssignmentDTO updated = assignmentService.updateAssignment(id, dto, actorId);
         return ResponseEntity.ok(updated);
     }
 
@@ -61,8 +63,10 @@ public class AssignmentController {
     @PreAuthorize("hasAuthority('ASSIGNMENT_READ')")
     public ResponseEntity<AssignmentDTO> updateProgress(
             @PathVariable Long id,
-            @RequestParam Integer progress) {
-        AssignmentDTO updated = assignmentService.updateProgress(id, progress);
+            @RequestParam Integer progress,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Long actorId = userDetails.getId();
+        AssignmentDTO updated = assignmentService.updateProgress(id, progress, actorId);
         return ResponseEntity.ok(updated);
     }
 

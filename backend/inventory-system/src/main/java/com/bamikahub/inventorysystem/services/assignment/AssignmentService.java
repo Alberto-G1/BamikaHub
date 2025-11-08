@@ -67,28 +67,36 @@ public class AssignmentService {
 		assignment.setProgressPercentage(0);
 
 		Assignment saved = assignmentRepository.save(assignment);
+		auditService.logAssignmentCreated(saved, assigner);
+		notificationService.notifyAssignmentCreated(saved);
 		return toDTO(saved);
 	}
 
 	@Transactional
-	public AssignmentDTO updateAssignment(Long id, AssignmentDTO dto) {
+	public AssignmentDTO updateAssignment(Long id, AssignmentDTO dto, Long actorId) {
 		Assignment assignment = assignmentRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Assignment not found"));
+		User actor = userRepository.findById(actorId)
+				.orElseThrow(() -> new RuntimeException("Actor not found"));
+
+		AssignmentStatus previousStatus = assignment.getStatus();
+		int previousProgress = assignment.getProgressPercentage() == null ? 0 : assignment.getProgressPercentage();
 
 		assignment.setTitle(dto.getTitle());
 		assignment.setDescription(dto.getDescription());
 		assignment.setPriority(dto.getPriority());
 		assignment.setDueDate(dto.getDueDate());
 
-		if (dto.getStatus() != null) {
+		if (dto.getStatus() != null && dto.getStatus() != assignment.getStatus()) {
 			assignment.setStatus(dto.getStatus());
 			if (dto.getStatus() == AssignmentStatus.COMPLETED && assignment.getCompletedDate() == null) {
 				assignment.setCompletedDate(LocalDateTime.now());
 			}
 		}
 
-		if (dto.getProgressPercentage() != null) {
+		if (dto.getProgressPercentage() != null && !dto.getProgressPercentage().equals(assignment.getProgressPercentage())) {
 			assignment.setProgressPercentage(dto.getProgressPercentage());
+			auditService.logProgressUpdated(assignment, actor, previousProgress, assignment.getProgressPercentage(), true);
 		}
 
 		if (dto.getAssigneeId() != null && !dto.getAssigneeId().equals(assignment.getAssignee().getId())) {
@@ -98,13 +106,18 @@ public class AssignmentService {
 		}
 
 		Assignment updated = assignmentRepository.save(assignment);
+		if (updated.getStatus() != previousStatus) {
+			auditService.logStatusChanged(updated, previousStatus, updated.getStatus(), actor);
+		}
 		return toDTO(updated);
 	}
 
 	@Transactional
-	public AssignmentDTO updateProgress(Long id, Integer progressPercentage) {
+	public AssignmentDTO updateProgress(Long id, Integer progressPercentage, Long actorId) {
 		Assignment assignment = assignmentRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Assignment not found"));
+		User actor = userRepository.findById(actorId)
+				.orElseThrow(() -> new RuntimeException("Actor not found"));
 
 		// Guard: if workflow-managed, block manual updates
 		if (!Boolean.TRUE.equals(assignment.getManualProgressAllowed())) {
@@ -114,6 +127,8 @@ public class AssignmentService {
 			}
 		}
 
+		int previousProgress = assignment.getProgressPercentage() == null ? 0 : assignment.getProgressPercentage();
+		AssignmentStatus previousStatus = assignment.getStatus();
 		assignment.setProgressPercentage(progressPercentage);
 
 		if (progressPercentage >= 100 && assignment.getStatus() != AssignmentStatus.COMPLETED) {
@@ -124,6 +139,12 @@ public class AssignmentService {
 		}
 
 		Assignment updated = assignmentRepository.save(assignment);
+		if (previousProgress != progressPercentage) {
+			auditService.logProgressUpdated(updated, actor, previousProgress, progressPercentage, true);
+		}
+		if (updated.getStatus() != previousStatus) {
+			auditService.logStatusChanged(updated, previousStatus, updated.getStatus(), actor);
+		}
 		return toDTO(updated);
 	}
 
@@ -297,14 +318,16 @@ public class AssignmentService {
 		activity.setEvidenceType(evidenceType);
 		activityRepository.save(activity);
 		assignment.getActivities().add(activity);
-		recalcActivityProgress(assignment);
+		recalcActivityProgress(assignment, actor, false);
 
+		AssignmentStatus previousStatus = assignment.getStatus();
 		boolean wasPending = assignment.getStatus() == AssignmentStatus.PENDING;
 		if (wasPending) {
 			assignment.setStatus(AssignmentStatus.IN_PROGRESS);
 		}
 		assignmentRepository.save(assignment);
 		if (wasPending) {
+			auditService.logStatusChanged(assignment, previousStatus, assignment.getStatus(), actor);
 			notificationService.notifyAssignmentStarted(assignment, actor);
 		}
 
@@ -340,13 +363,24 @@ public class AssignmentService {
 		if (activity.getStatus() == AssignmentActivity.ActivityStatus.COMPLETED) {
 			return toActivityDTO(activity);
 		}
+		boolean evidenceJustCaptured = false;
 		if (activity.getEvidenceType() == AssignmentActivity.EvidenceType.REPORT) {
-			if (evidenceReport == null || evidenceReport.isBlank()) {
-				throw new IllegalArgumentException("Report evidence required");
+			if (Boolean.TRUE.equals(activity.getEvidenceSubmitted())) {
+				if (evidenceReport != null && !evidenceReport.isBlank()) {
+					activity.setEvidenceReport(evidenceReport);
+				}
+			} else {
+				if (evidenceReport == null || evidenceReport.isBlank()) {
+					throw new IllegalArgumentException("Report evidence required");
+				}
+				activity.setEvidenceReport(evidenceReport);
+				activity.setEvidenceSubmitted(true);
+				activity.setEvidenceSubmittedAt(LocalDateTime.now());
+				activity.setEvidenceSubmittedBy(actor);
+				evidenceJustCaptured = true;
 			}
-			activity.setEvidenceReport(evidenceReport);
 		} else if (activity.getEvidenceType() == AssignmentActivity.EvidenceType.FILE) {
-			if (activity.getEvidenceFilePath() == null) {
+			if (!Boolean.TRUE.equals(activity.getEvidenceSubmitted())) {
 				throw new IllegalStateException("File evidence not uploaded yet");
 			}
 		}
@@ -356,11 +390,11 @@ public class AssignmentService {
 		activity.setLocked(true);
 		activityRepository.save(activity);
 		auditService.logActivityCompleted(assignment, activity, actor);
-		if (activity.getEvidenceType() != null) {
+		if (evidenceJustCaptured) {
 			auditService.logEvidenceSubmitted(assignment, activity, actor);
 			notificationService.notifyEvidenceSubmitted(assignment, activity, actor);
 		}
-		recalcActivityProgress(assignment);
+		recalcActivityProgress(assignment, actor, false);
 		assignmentRepository.save(assignment);
 		notificationService.notifyActivityCompleted(assignment, activity, actor);
 		return toActivityDTO(activity);
@@ -370,6 +404,8 @@ public class AssignmentService {
 	public AssignmentActivityDTO uploadActivityEvidenceFile(Long activityId, MultipartFile file, Long userId) throws IOException {
 		AssignmentActivity activity = activityRepository.findById(activityId)
 				.orElseThrow(() -> new RuntimeException("Activity not found"));
+		User actor = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("Actor not found"));
 		if (Boolean.TRUE.equals(activity.getLocked())) {
 			throw new IllegalStateException("Activity locked; cannot upload evidence");
 		}
@@ -388,7 +424,39 @@ public class AssignmentService {
 		Path filePath = uploadPath.resolve(uniqueFilename);
 		Files.copy(file.getInputStream(), filePath);
 		activity.setEvidenceFilePath(filePath.toString());
+		activity.setEvidenceSubmitted(true);
+		activity.setEvidenceSubmittedAt(LocalDateTime.now());
+		activity.setEvidenceSubmittedBy(actor);
 		activityRepository.save(activity);
+		Assignment assignment = activity.getAssignment();
+		auditService.logEvidenceSubmitted(assignment, activity, actor);
+		notificationService.notifyEvidenceSubmitted(assignment, activity, actor);
+		return toActivityDTO(activity);
+	}
+
+	@Transactional
+	public AssignmentActivityDTO submitActivityReport(Long activityId, Long actorId, String reportContent) {
+		AssignmentActivity activity = activityRepository.findById(activityId)
+				.orElseThrow(() -> new RuntimeException("Activity not found"));
+		User actor = userRepository.findById(actorId)
+				.orElseThrow(() -> new RuntimeException("Actor not found"));
+		if (Boolean.TRUE.equals(activity.getLocked())) {
+			throw new IllegalStateException("Activity locked; cannot submit report");
+		}
+		if (activity.getEvidenceType() != AssignmentActivity.EvidenceType.REPORT) {
+			throw new IllegalArgumentException("This activity does not accept report evidence");
+		}
+		if (reportContent == null || reportContent.isBlank()) {
+			throw new IllegalArgumentException("Report content is required");
+		}
+		activity.setEvidenceReport(reportContent);
+		activity.setEvidenceSubmitted(true);
+		activity.setEvidenceSubmittedAt(LocalDateTime.now());
+		activity.setEvidenceSubmittedBy(actor);
+		activityRepository.save(activity);
+		Assignment assignment = activity.getAssignment();
+		auditService.logEvidenceSubmitted(assignment, activity, actor);
+		notificationService.notifyEvidenceSubmitted(assignment, activity, actor);
 		return toActivityDTO(activity);
 	}
 
@@ -489,7 +557,8 @@ public class AssignmentService {
 		assignmentRepository.save(assignment);
 		auditService.logAssignmentRejected(assignment, reviewer, comments);
 		if (returnForRework) {
-			auditService.logAssignmentReturnedForRework(assignment, reviewer);
+			String reason = (comments == null || comments.isBlank()) ? "Returned for rework" : comments;
+			auditService.logAssignmentReturnedForRework(assignment, reviewer, reason);
 			notificationService.notifyAssignmentReturnedForRework(assignment, reviewer);
 		} else {
 			notificationService.notifyAssignmentRejected(assignment, reviewer, comments);
@@ -518,24 +587,33 @@ public class AssignmentService {
 	   Helpers / Mapping
 	   ========================= */
 
-	private void recalcActivityProgress(Assignment assignment) {
+	private void recalcActivityProgress(Assignment assignment, User actor, boolean manualTrigger) {
 		List<AssignmentActivity> activities = assignment.getActivities();
 		if (activities == null || activities.isEmpty()) {
+			int previous = assignment.getProgressPercentage() == null ? 0 : assignment.getProgressPercentage();
 			assignment.setProgressPercentage(0);
+			if (previous != 0) {
+				auditService.logProgressUpdated(assignment, actor, previous, 0, manualTrigger);
+			}
 			return;
 		}
+		int previousProgress = assignment.getProgressPercentage() == null ? 0 : assignment.getProgressPercentage();
+		AssignmentStatus previousStatus = assignment.getStatus();
 		long totalActivities = activities.size();
 		long completedActivities = activities.stream()
 				.filter(a -> a.getStatus() == AssignmentActivity.ActivityStatus.COMPLETED)
 				.count();
 		double ratio = totalActivities == 0 ? 0.0 : (double) completedActivities / totalActivities;
 		int portion = (int) Math.round(ratio * 70.0);
-		if (assignment.getProgressPercentage() >= 90) {
-			return;
+		if (assignment.getProgressPercentage() < 90 && portion != previousProgress) {
+			assignment.setProgressPercentage(portion);
+			auditService.logProgressUpdated(assignment, actor, previousProgress, portion, manualTrigger);
 		}
-		assignment.setProgressPercentage(portion);
 		if (portion > 0 && assignment.getStatus() == AssignmentStatus.PENDING) {
 			assignment.setStatus(AssignmentStatus.IN_PROGRESS);
+		}
+		if (assignment.getStatus() != previousStatus) {
+			auditService.logStatusChanged(assignment, previousStatus, assignment.getStatus(), actor);
 		}
 	}
 
