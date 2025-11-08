@@ -1,16 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaEdit, FaTrash, FaUpload, FaComment, FaPaperPlane, FaCheck, FaTimes, FaPlus } from 'react-icons/fa';
+import { 
+    FaArrowLeft, 
+    FaEdit, 
+    FaTrash, 
+    FaUpload, 
+    FaComment, 
+    FaPaperPlane, 
+    FaCheck, 
+    FaTimes, 
+    FaPlus,
+    FaProjectDiagram,
+    FaChartLine,
+    FaClock,
+    FaCheckCircle,
+    FaExclamationCircle,
+    FaFileUpload,
+    FaPencilAlt
+} from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../../api/api';
 import { useAuth } from '../../context/AuthContext';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
-import Badge from '../../components/common/Badge';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
-import Modal from '../../components/common/Modal';
-import Input from '../../components/common/Input';
-import './AssignmentDetailsPage.css';
+import './AssignmentsStyles.css';
+import '../reporting/ReportingStyles.css';
 
 const AssignmentDetailsPage = () => {
     const { id } = useParams();
@@ -21,15 +34,11 @@ const AssignmentDetailsPage = () => {
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newComment, setNewComment] = useState('');
-    // Workflow v2 local state
-    const [activityReports, setActivityReports] = useState({}); // { [activityId]: string }
-    const [activityFiles, setActivityFiles] = useState({});     // { [activityId]: File }
+    const [activityReports, setActivityReports] = useState({});
+    const [activityFiles, setActivityFiles] = useState({});
     const [finalReportText, setFinalReportText] = useState('');
     const [finalReportFile, setFinalReportFile] = useState(null);
-    const [progress, setProgress] = useState(0);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-    const [updatingProgress, setUpdatingProgress] = useState(false);
-    // Add activity UI
     const [showAddActivity, setShowAddActivity] = useState(false);
     const [creatingActivity, setCreatingActivity] = useState(false);
     const [activityForm, setActivityForm] = useState({
@@ -39,7 +48,6 @@ const AssignmentDetailsPage = () => {
         orderIndex: 1,
     });
     
-    // Check if current user is assignee or assigner
     const isAssignee = assignment && user && assignment.assigneeId === user.id;
     const isAssigner = assignment && user && assignment.assignerId === user.id;
 
@@ -48,19 +56,11 @@ const AssignmentDetailsPage = () => {
         fetchComments();
     }, [id]);
 
-    // Sync local progress state when assignment data changes
-    useEffect(() => {
-        if (assignment) {
-            setProgress(assignment.progressPercentage || 0);
-        }
-    }, [assignment?.progressPercentage]);
-
     const fetchAssignmentDetails = async () => {
         try {
             setLoading(true);
             const response = await api.get(`/assignments/${id}`);
             setAssignment(response.data);
-            setProgress(response.data.progressPercentage || 0);
         } catch (error) {
             console.error('Error fetching assignment:', error);
             toast.error('Failed to load assignment details');
@@ -78,26 +78,6 @@ const AssignmentDetailsPage = () => {
         }
     };
 
-    const handleProgressUpdate = async () => {
-        if (!isAssignee) {
-            toast.error('Only the assignee can update progress');
-            return;
-        }
-        
-        try {
-            setUpdatingProgress(true);
-            await api.patch(`/assignments/${id}/progress?progress=${progress}`);
-            toast.success(`Progress updated to ${progress}%`);
-            await fetchAssignmentDetails(); // Refresh to get updated status
-        } catch (error) {
-            console.error('Error updating progress:', error);
-            toast.error(error.response?.data?.message || 'Failed to update progress');
-        } finally {
-            setUpdatingProgress(false);
-        }
-    };
-
-    // ===== Workflow v2 actions =====
     const handleActivityFileChange = (activityId, file) => {
         setActivityFiles(prev => ({ ...prev, [activityId]: file }));
     };
@@ -114,7 +94,8 @@ const AssignmentDetailsPage = () => {
             await api.post(`/assignments/activities/${activityId}/evidence/file`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            toast.success('Evidence uploaded');
+            toast.success('File evidence uploaded successfully');
+            setActivityFiles(prev => ({ ...prev, [activityId]: null }));
             await fetchAssignmentDetails();
         } catch (e) {
             console.error(e);
@@ -122,20 +103,39 @@ const AssignmentDetailsPage = () => {
         }
     };
 
-    const completeActivity = async (activity) => {
+    const submitActivityReport = async (activityId) => {
+        const report = activityReports[activityId] || '';
+        if (!report.trim()) {
+            toast.error('Please write your report before submitting');
+            return;
+        }
         try {
-            let payload = undefined;
-            if (activity.evidenceType === 'REPORT') {
-                const report = activityReports[activity.id] || '';
-                if (!report.trim()) {
-                    toast.error('Please provide the report text');
-                    return;
-                }
-                payload = { report };
+            await api.post(`/assignments/activities/${activityId}/evidence/report`, { report });
+            toast.success('Report submitted successfully');
+            setActivityReports(prev => ({ ...prev, [activityId]: '' }));
+            await fetchAssignmentDetails();
+        } catch (e) {
+            console.error(e);
+            toast.error(e.response?.data?.message || 'Failed to submit report');
+        }
+    };
+
+    const completeActivity = async (activity) => {
+        // Check if evidence has been submitted
+        if (!activity.evidenceSubmitted) {
+            if (activity.evidenceType === 'FILE') {
+                toast.warning('Please upload a file before marking as complete');
+                return;
             }
-            await api.post(`/assignments/activities/${activity.id}/complete`, payload || {});
-            toast.success('Activity completed');
-            setActivityReports(prev => ({ ...prev, [activity.id]: '' }));
+            if (activity.evidenceType === 'REPORT') {
+                toast.warning('Please submit your report before marking as complete');
+                return;
+            }
+        }
+
+        try {
+            await api.post(`/assignments/activities/${activity.id}/complete`, {});
+            toast.success('Activity marked as completed!');
             await fetchAssignmentDetails();
         } catch (e) {
             console.error(e);
@@ -199,9 +199,7 @@ const AssignmentDetailsPage = () => {
         }
     };
 
-    // Add activity handlers
     const openAddActivity = () => {
-        // Defensive: ensure assignment loaded
         if (!assignment) {
             toast.error('Assignment not loaded yet');
             return;
@@ -252,26 +250,26 @@ const AssignmentDetailsPage = () => {
     const getPriorityBadge = (priority) => {
         const badgeMap = {
             LOW: { variant: 'info', text: 'Low' },
-            MEDIUM: { variant: 'secondary', text: 'Medium' },
+            MEDIUM: { variant: 'neutral', text: 'Medium' },
             HIGH: { variant: 'warning', text: 'High' },
             URGENT: { variant: 'danger', text: 'Urgent' }
         };
         const badge = badgeMap[priority] || badgeMap.MEDIUM;
-        return <Badge variant={badge.variant}>{badge.text}</Badge>;
+        return <span className={`reporting-badge reporting-badge--${badge.variant}`}>{badge.text}</span>;
     };
 
     const getStatusBadge = (status, overdue) => {
-        if (overdue) return <Badge variant="danger">Overdue</Badge>;
+        if (overdue) return <span className="reporting-badge reporting-badge--danger">Overdue</span>;
         
         const badgeMap = {
-            PENDING: { variant: 'secondary', text: 'Pending' },
-            IN_PROGRESS: { variant: 'primary', text: 'In Progress' },
+            PENDING: { variant: 'neutral', text: 'Pending' },
+            IN_PROGRESS: { variant: 'info', text: 'In Progress' },
             UNDER_REVIEW: { variant: 'info', text: 'Under Review' },
             COMPLETED: { variant: 'success', text: 'Completed' },
-            CANCELLED: { variant: 'dark', text: 'Cancelled' }
+            CANCELLED: { variant: 'neutral', text: 'Cancelled' }
         };
         const badge = badgeMap[status] || badgeMap.PENDING;
-        return <Badge variant={badge.variant}>{badge.text}</Badge>;
+        return <span className={`reporting-badge reporting-badge--${badge.variant}`}>{badge.text}</span>;
     };
 
     const formatDate = (dateString) => {
@@ -287,325 +285,501 @@ const AssignmentDetailsPage = () => {
         });
     };
 
-    // No generic attachments support in workflow v2
-
     if (loading) {
         return (
-            <div className="assignment-details-page">
-                <div className="text-center py-5">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
+            <section className="reporting-page">
+                <div className="reporting-loading">
+                    <div className="reporting-spinner" />
+                    <p className="reporting-card__subtitle">Loading assignment details…</p>
                 </div>
-            </div>
+            </section>
         );
     }
 
     if (!assignment) {
         return (
-            <div className="assignment-details-page">
-                <Card>
-                    <div className="text-center py-5">
-                        <p>Assignment not found</p>
+            <section className="reporting-page">
+                <div className="reporting-card">
+                    <div className="reporting-empty-state">
+                        Assignment not found
                     </div>
-                </Card>
-            </div>
+                </div>
+            </section>
         );
     }
 
     return (
-        <div className="assignment-details-page">
+        <section className="reporting-page">
             {/* Header */}
-            <div className="page-header">
-                <Button variant="outline-secondary" onClick={() => navigate(-1)} icon={<FaArrowLeft />}>
-                    Back
-                </Button>
-                <div className="header-actions">
-                    {hasPermission('ASSIGNMENT_UPDATE') && (
-                        <Button 
-                            variant="outline-primary" 
-                            onClick={() => navigate(`/assignments/edit/${id}`)}
-                            icon={<FaEdit />}
-                        >
-                            Edit
-                        </Button>
+            <div className="reporting-back" data-animate="fade-up">
+                <button
+                    type="button"
+                    className="reporting-btn reporting-btn--secondary reporting-btn--sm"
+                    onClick={() => navigate(-1)}
+                >
+                    <FaArrowLeft /> Back
+                </button>
+                <p className="reporting-back__title">Assignments • Details</p>
+            </div>
+
+            {/* Assignment Banner */}
+            <div className="reporting-banner reporting-banner--compact" data-animate="fade-up" data-delay="0.04">
+                <div className="reporting-banner__content">
+                    <div className="reporting-banner__info">
+                        <span className="reporting-banner__eyebrow">
+                            <FaProjectDiagram /> Assignment
+                        </span>
+                        <h1 className="reporting-banner__title">{assignment.title}</h1>
+                        <p className="reporting-banner__subtitle">
+                            {assignment.description || 'Track progress and completion of assigned tasks.'}
+                        </p>
+                    </div>
+                    <div className="reporting-banner__actions">
+                        {hasPermission('ASSIGNMENT_UPDATE') && (
+                            <button
+                                className="reporting-btn reporting-btn--secondary"
+                                onClick={() => navigate(`/assignments/edit/${id}`)}
+                            >
+                                <FaEdit /> Edit
+                            </button>
+                        )}
+                        {hasPermission('ASSIGNMENT_DELETE') && (
+                            <button
+                                className="reporting-btn reporting-btn--secondary"
+                                onClick={() => setShowDeleteDialog(true)}
+                            >
+                                <FaTrash /> Delete
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                <div className="reporting-banner__meta">
+                    <div className="reporting-banner__meta-item">
+                        <div className="reporting-banner__meta-icon reporting-banner__meta-icon--blue">
+                            <FaProjectDiagram />
+                        </div>
+                        <div className="reporting-banner__meta-content">
+                            <span className="reporting-banner__meta-label">Assignee</span>
+                            <span className="reporting-banner__meta-value">{assignment.assigneeName}</span>
+                        </div>
+                    </div>
+                    <div className="reporting-banner__meta-item">
+                        <div className="reporting-banner__meta-icon reporting-banner__meta-icon--green">
+                            <FaCheckCircle />
+                        </div>
+                        <div className="reporting-banner__meta-content">
+                            <span className="reporting-banner__meta-label">Status</span>
+                            <span className="reporting-banner__meta-value">
+                                {assignment.status === 'COMPLETED' ? 'Completed' : 'Active'}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="reporting-banner__meta-item">
+                        <div className="reporting-banner__meta-icon reporting-banner__meta-icon--purple">
+                            <FaChartLine />
+                        </div>
+                        <div className="reporting-banner__meta-content">
+                            <span className="reporting-banner__meta-label">Progress</span>
+                            <span className="reporting-banner__meta-value">{assignment.progressPercentage || 0}%</span>
+                        </div>
+                    </div>
+                    <div className="reporting-banner__meta-item">
+                        <div className="reporting-banner__meta-icon reporting-banner__meta-icon--gold">
+                            <FaClock />
+                        </div>
+                        <div className="reporting-banner__meta-content">
+                            <span className="reporting-banner__meta-label">Due Date</span>
+                            <span className="reporting-banner__meta-value">{formatDate(assignment.dueDate)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Assignment Details */}
+            <div className="reporting-card" data-animate="fade-up" data-delay="0.08">
+                <div className="reporting-card__header">
+                    <div>
+                        <h2 className="reporting-card__title">Assignment Details</h2>
+                        <p className="reporting-card__subtitle">Priority, timeline, and progress information</p>
+                    </div>
+                    <div className="reporting-card__actions">
+                        {getPriorityBadge(assignment.priority)}
+                        {getStatusBadge(assignment.status, assignment.overdue)}
+                    </div>
+                </div>
+
+                <div className="reporting-card__content">
+                    <div className="reporting-metrics">
+                        <div className="reporting-metric reporting-metric--blue">
+                            <span className="reporting-metric__label">Assigner</span>
+                            <span className="reporting-metric__value">{assignment.assignerName}</span>
+                        </div>
+                        <div className="reporting-metric reporting-metric--purple">
+                            <span className="reporting-metric__label">Created</span>
+                            <span className="reporting-metric__value">{formatDate(assignment.createdAt)}</span>
+                        </div>
+                        <div className="reporting-metric reporting-metric--gold">
+                            <span className="reporting-metric__label">Days Remaining</span>
+                            <span className="reporting-metric__value">
+                                {assignment.daysRemaining > 0 ? assignment.daysRemaining : 'Overdue'}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Progress Section */}
+                    <div className="progress-section">
+                        <h4 className="reporting-card__subtitle">Progress Overview</h4>
+                        <div className="reporting-progress-wrapper">
+                            <div className="reporting-progress" aria-label={`Completion ${assignment.progressPercentage || 0}%`}>
+                                <div 
+                                    className="reporting-progress__bar" 
+                                    style={{ width: `${assignment.progressPercentage || 0}%` }}
+                                />
+                            </div>
+                            <span className="reporting-progress__label">{assignment.progressPercentage || 0}%</span>
+                        </div>
+                        {assignment.manualProgressAllowed ? (
+                            <p className="reporting-text--muted">Manual progress updates allowed</p>
+                        ) : (
+                            <p className="reporting-text--muted">Progress updates are automatic based on activities</p>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Activities Section */}
+            <div className="reporting-card" data-animate="fade-up" data-delay="0.12">
+                <div className="reporting-card__header">
+                    <div>
+                        <h2 className="reporting-card__title">Activities</h2>
+                        <p className="reporting-card__subtitle">Track completion of individual tasks and evidence submission</p>
+                    </div>
+                    {(isAssigner || isAssignee) && (
+                        <button className="reporting-btn reporting-btn--blue reporting-btn--sm" onClick={openAddActivity}>
+                            <FaPlus /> Add Activity
+                        </button>
                     )}
-                    {hasPermission('ASSIGNMENT_DELETE') && (
-                        <Button 
-                            variant="outline-danger" 
-                            onClick={() => setShowDeleteDialog(true)}
-                            icon={<FaTrash />}
-                        >
-                            Delete
-                        </Button>
+                </div>
+
+                <div className="reporting-card__content">
+                    {!assignment.activities || assignment.activities.length === 0 ? (
+                        <div className="reporting-empty-state">
+                            <FaProjectDiagram style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '1rem' }} />
+                            <p>No activities defined yet.</p>
+                            <small className="reporting-text--muted">Add activities to track progress</small>
+                        </div>
+                    ) : (
+                        <div className="activities-grid">
+                            {assignment.activities.map((activity) => (
+                                <div 
+                                    key={activity.id} 
+                                    className={`activity-card ${activity.status === 'COMPLETED' ? 'activity-card--completed' : ''}`}
+                                >
+                                    <div className="activity-card__header">
+                                        <div className={`activity-card__icon ${activity.status === 'COMPLETED' ? 'activity-card__icon--green' : 'activity-card__icon--blue'}`}>
+                                            {activity.status === 'COMPLETED' ? <FaCheckCircle /> : <FaClock />}
+                                        </div>
+                                        <div className="activity-card__info">
+                                            <h3 className="activity-card__title">{activity.title}</h3>
+                                            <p className="activity-card__description">
+                                                {activity.description || 'No description provided'}
+                                            </p>
+                                        </div>
+                                        <span className={`reporting-badge activity-card__badge ${activity.status === 'COMPLETED' ? 'reporting-badge--success' : 'reporting-badge--info'}`}>
+                                            {activity.status === 'COMPLETED' ? 'Completed' : 'Pending'}
+                                        </span>
+                                    </div>
+
+                                    {/* Evidence submission section - only for assignee and pending activities */}
+                                    {activity.status !== 'COMPLETED' && isAssignee && (
+                                        <div className="activity-card__body">
+                                            <div className="activity-actions">
+                                                {activity.evidenceType === 'FILE' && (
+                                                    <div className="activity-evidence">
+                                                        <label className="activity-evidence__label">
+                                                            <FaFileUpload /> Upload Evidence File
+                                                        </label>
+                                                        <div className="activity-evidence__file-input">
+                                                            <input 
+                                                                type="file" 
+                                                                className="reporting-input"
+                                                                onChange={(e) => handleActivityFileChange(activity.id, e.target.files[0])}
+                                                                accept="*/*"
+                                                            />
+                                                            {activityFiles[activity.id] && (
+                                                                <div className="reporting-text--muted" style={{ fontSize: '0.85rem' }}>
+                                                                    Selected: {activityFiles[activity.id].name}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="activity-actions__group">
+                                                            <button 
+                                                                className="reporting-btn reporting-btn--blue reporting-btn--sm"
+                                                                onClick={() => uploadActivityEvidenceFile(activity.id)}
+                                                                disabled={!activityFiles[activity.id]}
+                                                            >
+                                                                <FaUpload /> Upload File
+                                                            </button>
+                                                            {activity.evidenceSubmitted && (
+                                                                <span className="reporting-badge reporting-badge--success">
+                                                                    <FaCheckCircle /> Evidence Uploaded
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {activity.evidenceType === 'REPORT' && (
+                                                    <div className="activity-report">
+                                                        <label className="activity-evidence__label">
+                                                            <FaPencilAlt /> Write Your Report
+                                                        </label>
+                                                        <textarea
+                                                            className="reporting-textarea"
+                                                            rows="4"
+                                                            value={activityReports[activity.id] || ''}
+                                                            onChange={(e) => setActivityReports(prev => ({ ...prev, [activity.id]: e.target.value }))}
+                                                            placeholder="Describe what you did, findings, results, or any relevant details..."
+                                                            disabled={activity.evidenceSubmitted}
+                                                        />
+                                                        <div className="activity-actions__group">
+                                                            <button 
+                                                                className="reporting-btn reporting-btn--blue reporting-btn--sm"
+                                                                onClick={() => submitActivityReport(activity.id)}
+                                                                disabled={!activityReports[activity.id]?.trim() || activity.evidenceSubmitted}
+                                                            >
+                                                                <FaPaperPlane /> Submit Report
+                                                            </button>
+                                                            {activity.evidenceSubmitted && (
+                                                                <span className="reporting-badge reporting-badge--success">
+                                                                    <FaCheckCircle /> Report Submitted
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Complete Activity Button */}
+                                                <button 
+                                                    className="reporting-btn reporting-btn--gold reporting-btn--sm"
+                                                    onClick={() => completeActivity(activity)}
+                                                    disabled={!activity.evidenceSubmitted}
+                                                    title={!activity.evidenceSubmitted ? 'Submit evidence first' : 'Mark activity as complete'}
+                                                >
+                                                    <FaCheck /> Mark as Complete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Completion meta info */}
+                                    {activity.completedAt && (
+                                        <div className="activity-meta">
+                                            <span className="activity-meta__item">
+                                                <FaCheckCircle className="activity-meta__icon" />
+                                                Completed on {formatDate(activity.completedAt)}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </div>
             </div>
 
-            {/* Assignment Details Card */}
-            <Card className="assignment-details-card">
-                <div className="assignment-header">
-                    <div>
-                        <h1 className="assignment-title">{assignment.title}</h1>
-                        <div className="assignment-badges">
-                            {getPriorityBadge(assignment.priority)}
-                            {getStatusBadge(assignment.status, assignment.overdue)}
-                        </div>
+            {/* Final Report Section */}
+            {assignment.activities && assignment.activities.length > 0 && 
+             assignment.activities.every(a => a.status === 'COMPLETED') && 
+             assignment.status !== 'UNDER_REVIEW' && 
+             assignment.status !== 'COMPLETED' && 
+             isAssignee && (
+                <div className="reporting-card" data-animate="fade-up" data-delay="0.16">
+                    <div className="reporting-card__header">
+                        <h2 className="reporting-card__title">Final Report Submission</h2>
+                        <p className="reporting-card__subtitle">Submit your final report for review</p>
                     </div>
-                </div>
-
-                <div className="assignment-meta-grid">
-                    <div className="meta-item">
-                        <strong>Assigned To:</strong>
-                        <span>{assignment.assigneeName}</span>
-                    </div>
-                    <div className="meta-item">
-                        <strong>Assigned By:</strong>
-                        <span>{assignment.assignerName}</span>
-                    </div>
-                    <div className="meta-item">
-                        <strong>Due Date:</strong>
-                        <span>{formatDate(assignment.dueDate)}</span>
-                    </div>
-                    <div className="meta-item">
-                        <strong>Created:</strong>
-                        <span>{formatDate(assignment.createdAt)}</span>
-                    </div>
-                </div>
-
-                {assignment.description && (
-                    <div className="assignment-description">
-                        <h3>Description</h3>
-                        <p>{assignment.description}</p>
-                    </div>
-                )}
-
-                {/* Progress Bar */}
-                <div className="progress-section">
-                    <h3>Progress</h3>
-                    <div className="progress-view-only">
-                        <div className="progress-bar-container">
-                            <div 
-                                className="progress-bar-fill"
-                                style={{ width: `${assignment.progressPercentage || 0}%` }}
+                    <div className="reporting-card__content">
+                        <div className="reporting-form-group">
+                            <label className="reporting-form-label">Attach Final Report (Optional)</label>
+                            <input 
+                                type="file" 
+                                className="reporting-input"
+                                onChange={(e) => setFinalReportFile(e.target.files[0])} 
                             />
                         </div>
-                        <span className="progress-value-large">{assignment.progressPercentage || 0}%</span>
-                        {assignment.manualProgressAllowed ? (
-                            <p className="text-muted">Manual progress allowed for legacy tasks</p>
-                        ) : (
-                            <p className="text-muted">Progress updates are automatic based on activities and final review</p>
-                        )}
+                        <div className="reporting-form-group">
+                            <label className="reporting-form-label">Final Report Summary</label>
+                            <textarea
+                                className="reporting-textarea"
+                                rows="4"
+                                placeholder="Summarize your work, findings, or outcome..."
+                                value={finalReportText}
+                                onChange={(e) => setFinalReportText(e.target.value)}
+                            />
+                        </div>
+                        <button 
+                            className="reporting-btn reporting-btn--gold"
+                            onClick={submitFinalReport}
+                        >
+                            <FaPaperPlane /> Submit Final Report
+                        </button>
                     </div>
                 </div>
-            </Card>
-
-            {/* Activities Section */}
-            <Card className="activities-card">
-                <div className="section-header">
-                    <h3>Activities {assignment.activities ? `(${assignment.activities.length})` : ''}</h3>
-                    {(isAssigner || isAssignee) && (
-                        <Button variant="outline-primary" size="sm" onClick={openAddActivity}>
-                            <FaPlus className="me-1" /> Add Activity
-                        </Button>
-                    )}
-                </div>
-                {!assignment.activities || assignment.activities.length === 0 ? (
-                    <p className="empty-message">No activities defined.</p>
-                ) : (
-                    <div className="activity-list">
-                        {assignment.activities.map((act) => (
-                            <div key={act.id} className={`activity-item ${act.status === 'COMPLETED' ? 'completed' : ''}`}>
-                                <div className="activity-main">
-                                    <div className="activity-title-row">
-                                        <strong>{act.title}</strong>
-                                        <Badge variant={act.status === 'COMPLETED' ? 'success' : 'secondary'}>
-                                            {act.status === 'COMPLETED' ? 'Completed' : 'Pending'}
-                                        </Badge>
-                                    </div>
-                                    {act.description && <p className="activity-desc">{act.description}</p>}
-                                    <div className="activity-meta">
-                                        <small>Evidence: {act.evidenceType || 'NONE'}</small>
-                                        {act.completedAt && <small> • Completed at: {new Date(act.completedAt).toLocaleString()}</small>}
-                                    </div>
-                                </div>
-                                {act.status !== 'COMPLETED' && isAssignee && (
-                                    <div className="activity-actions">
-                                        {act.evidenceType === 'FILE' && (
-                                            <div className="activity-evidence">
-                                                <input type="file" onChange={(e) => handleActivityFileChange(act.id, e.target.files[0])} />
-                                                <Button variant="outline-primary" size="sm" onClick={() => uploadActivityEvidenceFile(act.id)}>
-                                                    <FaUpload className="me-1" /> Upload Evidence
-                                                </Button>
-                                            </div>
-                                        )}
-                                        {act.evidenceType === 'REPORT' && (
-                                            <div className="activity-report">
-                                                <textarea
-                                                    rows="3"
-                                                    value={activityReports[act.id] || ''}
-                                                    onChange={(e) => setActivityReports(prev => ({ ...prev, [act.id]: e.target.value }))}
-                                                    placeholder="Write your short report here..."
-                                                />
-                                            </div>
-                                        )}
-                                        <Button variant="primary" size="sm" onClick={() => completeActivity(act)} disabled={act.locked}>
-                                            <FaCheck className="me-1" /> Complete Activity
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </Card>
-
-            {/* Final Report Section */}
-            {assignment.activities && assignment.activities.length > 0 && assignment.activities.every(a => a.status === 'COMPLETED') && assignment.status !== 'UNDER_REVIEW' && assignment.status !== 'COMPLETED' && isAssignee && (
-                <Card className="final-report-card">
-                    <div className="section-header">
-                        <h3>Final Report</h3>
-                    </div>
-                    <div className="final-report-form">
-                        <label className="file-upload-btn">
-                            <FaUpload /> Attach File (optional)
-                            <input type="file" hidden onChange={(e) => setFinalReportFile(e.target.files[0])} />
-                        </label>
-                        <textarea
-                            rows="4"
-                            placeholder="Summarize your work, findings, or outcome... (optional if file attached)"
-                            value={finalReportText}
-                            onChange={(e) => setFinalReportText(e.target.value)}
-                        />
-                        <Button variant="primary" onClick={submitFinalReport}>
-                            <FaPaperPlane className="me-1" /> Submit Final Report
-                        </Button>
-                    </div>
-                </Card>
             )}
 
             {/* Review Section */}
             {assignment.status === 'UNDER_REVIEW' && isAssigner && (
-                <Card className="review-card">
-                    <div className="section-header">
-                        <h3>Review Decision</h3>
+                <div className="reporting-card" data-animate="fade-up" data-delay="0.2">
+                    <div className="reporting-card__header">
+                        <h2 className="reporting-card__title">Review Assignment</h2>
+                        <p className="reporting-card__subtitle">Approve or return for rework</p>
                     </div>
-                    <div className="review-actions">
-                        <Button variant="success" onClick={approveAssignment}><FaCheck className="me-1" /> Approve</Button>
-                        <Button variant="danger" onClick={rejectAssignment}><FaTimes className="me-1" /> Return for Rework</Button>
-                    </div>
-                </Card>
-            )}
-
-            {/* Attachments removed in workflow v2 */}
-
-            {/* Comments Section */}
-            <Card className="comments-card">
-                <h3><FaComment /> Comments ({comments.length})</h3>
-                
-                {(isAssignee || isAssigner || hasPermission('ASSIGNMENT_READ')) && (
-                    <form onSubmit={handleAddComment} className="comment-form">
-                        <textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="Add a comment..."
-                            rows="3"
-                            className="comment-textarea"
-                            required
-                        />
-                        <Button type="submit" variant="primary" disabled={!newComment.trim()}>
-                            Post Comment
-                        </Button>
-                    </form>
-                )}
-
-                <div className="comments-list">
-                    {comments.length === 0 ? (
-                        <p className="empty-message">No comments yet</p>
-                    ) : (
-                        comments.map(comment => (
-                            <div key={comment.id} className="comment-item">
-                                <div className="comment-header">
-                                    <strong>{comment.userName}</strong>
-                                    <span className="comment-date">{comment.createdAt}</span>
-                                </div>
-                                <p className="comment-text">{comment.comment}</p>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </Card>
-
-            {/* Add Activity Modal */}
-            <Modal
-                isOpen={showAddActivity}
-                title="Add Activity"
-                onClose={() => {
-                    if (!creatingActivity) {
-                        setShowAddActivity(false);
-                    }
-                }}
-            >
-                <div className="modal-body">
-                    <Input
-                        label="Title"
-                        value={activityForm.title}
-                        onChange={(e) => setActivityForm(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="Activity title"
-                        required
-                    />
-                    <div className="mt-3">
-                        <label className="form-label">Description</label>
-                        <textarea
-                            className="form-control"
-                            rows="3"
-                            value={activityForm.description}
-                            onChange={(e) => setActivityForm(prev => ({ ...prev, description: e.target.value }))}
-                            placeholder="Optional details or instructions"
-                        />
-                    </div>
-                    <div className="d-flex gap-3 mt-3 flex-wrap">
-                        <Input
-                            label="Order"
-                            type="number"
-                            min="1"
-                            value={activityForm.orderIndex}
-                            onChange={(e) => setActivityForm(prev => ({ ...prev, orderIndex: e.target.value }))}
-                            helperText="Controls display sequence"
-                        />
-                        <div className="flex-grow-1">
-                            <label className="form-label">Evidence Type</label>
-                            <select
-                                className="form-select"
-                                value={activityForm.evidenceType}
-                                onChange={(e) => setActivityForm(prev => ({ ...prev, evidenceType: e.target.value }))}
-                            >
-                                <option value="FILE">File Upload</option>
-                                <option value="REPORT">Written Report</option>
-                            </select>
-                            <small className="text-muted d-block mt-1">Each activity automatically shares the 70% activity portion equally.</small>
+                    <div className="reporting-card__content">
+                        <div className="review-actions">
+                            <button className="reporting-btn reporting-btn--green" onClick={approveAssignment}>
+                                <FaCheck /> Approve Assignment
+                            </button>
+                            <button className="reporting-btn reporting-btn--red" onClick={rejectAssignment}>
+                                <FaTimes /> Return for Rework
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div className="modal-footer">
-                    <Button
-                        variant="outline-secondary"
-                        onClick={() => setShowAddActivity(false)}
-                        disabled={creatingActivity}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="primary"
-                        onClick={createActivity}
-                        disabled={creatingActivity}
-                    >
-                        {creatingActivity ? 'Adding…' : 'Add Activity'}
-                    </Button>
-                </div>
-            </Modal>
+            )}
 
-            {/* Delete Confirmation Dialog */}
+            {/* Comments Section */}
+            <div className="reporting-card" data-animate="fade-up" data-delay="0.24">
+                <div className="reporting-card__header">
+                    <h2 className="reporting-card__title">
+                        <FaComment /> Comments ({comments.length})
+                    </h2>
+                </div>
+
+                <div className="reporting-card__content">
+                    {(isAssignee || isAssigner || hasPermission('ASSIGNMENT_READ')) && (
+                        <form onSubmit={handleAddComment} className="comment-form">
+                            <textarea
+                                className="reporting-textarea"
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Add a comment..."
+                                rows="3"
+                                required
+                            />
+                            <button 
+                                type="submit" 
+                                className="reporting-btn reporting-btn--blue"
+                                disabled={!newComment.trim()}
+                            >
+                                Post Comment
+                            </button>
+                        </form>
+                    )}
+
+                    <div className="comments-list">
+                        {comments.length === 0 ? (
+                            <div className="reporting-empty-state">
+                                No comments yet
+                            </div>
+                        ) : (
+                            comments.map(comment => (
+                                <div key={comment.id} className="comment-item">
+                                    <div className="comment-header">
+                                        <strong>{comment.userName}</strong>
+                                        <span className="reporting-text--muted">{comment.createdAt}</span>
+                                    </div>
+                                    <p className="comment-text">{comment.comment}</p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Add Activity Modal */}
+            {showAddActivity && (
+                <div className="reporting-overlay">
+                    <div className="reporting-card reporting-modal">
+                        <div className="reporting-card__header">
+                            <h2 className="reporting-card__title">Add Activity</h2>
+                            <button 
+                                className="reporting-btn reporting-btn--secondary reporting-btn--sm"
+                                onClick={() => !creatingActivity && setShowAddActivity(false)}
+                                disabled={creatingActivity}
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+                        <div className="reporting-card__content">
+                            <div className="reporting-form-group">
+                                <label className="reporting-form-label">Title</label>
+                                <input
+                                    type="text"
+                                    className="reporting-input"
+                                    value={activityForm.title}
+                                    onChange={(e) => setActivityForm(prev => ({ ...prev, title: e.target.value }))}
+                                    placeholder="Activity title"
+                                    required
+                                />
+                            </div>
+                            <div className="reporting-form-group">
+                                <label className="reporting-form-label">Description</label>
+                                <textarea
+                                    className="reporting-textarea"
+                                    rows="3"
+                                    value={activityForm.description}
+                                    onChange={(e) => setActivityForm(prev => ({ ...prev, description: e.target.value }))}
+                                    placeholder="Optional details or instructions"
+                                />
+                            </div>
+                            <div className="reporting-filters__grid">
+                                <div className="reporting-form-group">
+                                    <label className="reporting-form-label">Order</label>
+                                    <input
+                                        type="number"
+                                        className="reporting-input"
+                                        min="1"
+                                        value={activityForm.orderIndex}
+                                        onChange={(e) => setActivityForm(prev => ({ ...prev, orderIndex: e.target.value }))}
+                                    />
+                                    <small className="reporting-text--muted">Controls display sequence</small>
+                                </div>
+                                <div className="reporting-form-group">
+                                    <label className="reporting-form-label">Evidence Type</label>
+                                    <select
+                                        className="reporting-select"
+                                        value={activityForm.evidenceType}
+                                        onChange={(e) => setActivityForm(prev => ({ ...prev, evidenceType: e.target.value }))}
+                                    >
+                                        <option value="FILE">File Upload</option>
+                                        <option value="REPORT">Written Report</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="reporting-card__actions">
+                            <button
+                                className="reporting-btn reporting-btn--secondary"
+                                onClick={() => setShowAddActivity(false)}
+                                disabled={creatingActivity}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="reporting-btn reporting-btn--gold"
+                                onClick={createActivity}
+                                disabled={creatingActivity}
+                            >
+                                {creatingActivity ? 'Adding…' : 'Add Activity'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation */}
             <ConfirmDialog
                 isOpen={showDeleteDialog}
                 title="Delete Assignment"
@@ -616,7 +790,7 @@ const AssignmentDetailsPage = () => {
                 cancelText="Cancel"
                 variant="danger"
             />
-        </div>
+        </section>
     );
 };
 

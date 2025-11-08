@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { 
+    FaArrowLeft, 
+    FaPaperPlane, 
+    FaUser, 
+    FaCalendarAlt, 
+    FaExclamationCircle,
+    FaAlignLeft,
+    FaFlag,
+    FaInfoCircle
+} from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../../api/api';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
-import Input from '../../components/common/Input';
-import './CreateAssignmentPage.css';
+import './AssignmentsStyles.css';
+import '../reporting/ReportingStyles.css';
 
 const CreateAssignmentPage = () => {
     const navigate = useNavigate();
@@ -49,7 +57,7 @@ const CreateAssignmentPage = () => {
                 title: assignment.title,
                 description: assignment.description || '',
                 priority: assignment.priority,
-                dueDate: assignment.dueDate.substring(0, 16), // Format for datetime-local input
+                dueDate: assignment.dueDate.substring(0, 16),
                 assigneeId: assignment.assigneeId,
             });
         } catch (error) {
@@ -64,7 +72,6 @@ const CreateAssignmentPage = () => {
             ...prev,
             [name]: value
         }));
-        // Clear error for this field
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
@@ -132,126 +139,202 @@ const CreateAssignmentPage = () => {
     };
 
     return (
-        <div className="create-assignment-page">
-            <div className="page-header">
-                <div>
-                    <h1 className="page-title">{isEditMode ? 'Edit Assignment' : 'Create New Assignment'}</h1>
-                    <p className="page-subtitle">Assign tasks to team members with clear instructions and deadlines</p>
+        <section className="reporting-page">
+            {/* Header */}
+            <div className="reporting-back" data-animate="fade-up">
+                <button
+                    type="button"
+                    className="reporting-btn reporting-btn--secondary reporting-btn--sm"
+                    onClick={() => navigate(-1)}
+                >
+                    <FaArrowLeft /> Back
+                </button>
+                <p className="reporting-back__title">Assignments • {isEditMode ? 'Edit' : 'Create'}</p>
+            </div>
+
+            {/* Form Banner */}
+            <div className="reporting-banner reporting-banner--compact" data-animate="fade-up" data-delay="0.04">
+                <div className="reporting-banner__content">
+                    <div className="reporting-banner__info">
+                        <span className="reporting-banner__eyebrow">
+                            Assignment Form
+                        </span>
+                        <h1 className="reporting-banner__title">
+                            {isEditMode ? 'Edit Assignment' : 'Create New Assignment'}
+                        </h1>
+                        <p className="reporting-banner__subtitle">
+                            Assign tasks to team members with clear instructions and deadlines
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <Card className="assignment-form-card">
-                <form onSubmit={handleSubmit}>
-                    <div className="form-grid">
-                        {/* Title */}
-                        <div className="form-group">
-                            <label htmlFor="title">
-                                Title <span className="required">*</span>
-                            </label>
-                            <Input
-                                id="title"
-                                name="title"
-                                type="text"
-                                value={formData.title}
-                                onChange={handleChange}
-                                placeholder="Enter assignment title"
-                                error={errors.title}
-                            />
-                            {errors.title && <span className="error-text">{errors.title}</span>}
+            {/* Form Card */}
+            <div className="reporting-card" data-animate="fade-up" data-delay="0.08">
+                <form onSubmit={handleSubmit} className="assignments-form-section">
+                    <div className="reporting-card__header">
+                        <div>
+                            <h2 className="reporting-card__title">Assignment Details</h2>
+                            <p className="reporting-card__subtitle">Provide all necessary information for the assignment</p>
+                        </div>
+                    </div>
+
+                    <div className="reporting-card__content">
+                        <div className="assignments-form-grid">
+                            {/* Title */}
+                            <div className="assignments-form-group assignments-form-group--full">
+                                <label className="assignments-form-label" htmlFor="title">
+                                    <FaAlignLeft className="assignments-form-label__icon" />
+                                    Assignment Title
+                                    <span className="assignments-form-label__required">*</span>
+                                </label>
+                                <input
+                                    id="title"
+                                    name="title"
+                                    type="text"
+                                    className={`assignments-input ${errors.title ? 'error' : ''}`}
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    placeholder="e.g., Complete monthly inventory audit"
+                                />
+                                {errors.title && (
+                                    <span className="assignments-error-message">
+                                        <FaExclamationCircle />
+                                        {errors.title}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Assignee */}
+                            <div className="assignments-form-group">
+                                <label className="assignments-form-label" htmlFor="assigneeId">
+                                    <FaUser className="assignments-form-label__icon" />
+                                    Assign To
+                                    <span className="assignments-form-label__required">*</span>
+                                </label>
+                                <select
+                                    id="assigneeId"
+                                    name="assigneeId"
+                                    className={`assignments-select ${errors.assigneeId ? 'error' : ''}`}
+                                    value={formData.assigneeId}
+                                    onChange={handleChange}
+                                >
+                                    <option value="">Select a team member</option>
+                                    {users.map(user => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.firstName} {user.lastName} ({user.email})
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.assigneeId && (
+                                    <span className="assignments-error-message">
+                                        <FaExclamationCircle />
+                                        {errors.assigneeId}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Priority */}
+                            <div className="assignments-form-group">
+                                <label className="assignments-form-label" htmlFor="priority">
+                                    <FaFlag className="assignments-form-label__icon" />
+                                    Priority Level
+                                    <span className="assignments-form-label__required">*</span>
+                                </label>
+                                <select
+                                    id="priority"
+                                    name="priority"
+                                    className="assignments-select"
+                                    value={formData.priority}
+                                    onChange={handleChange}
+                                >
+                                    <option value="LOW">🟢 Low - Can be done later</option>
+                                    <option value="MEDIUM">🟡 Medium - Normal priority</option>
+                                    <option value="HIGH">🟠 High - Important task</option>
+                                    <option value="URGENT">🔴 Urgent - Needs immediate attention</option>
+                                </select>
+                            </div>
+
+                            {/* Due Date */}
+                            <div className="assignments-form-group assignments-form-group--full">
+                                <label className="assignments-form-label" htmlFor="dueDate">
+                                    <FaCalendarAlt className="assignments-form-label__icon" />
+                                    Due Date & Time
+                                    <span className="assignments-form-label__required">*</span>
+                                </label>
+                                <input
+                                    id="dueDate"
+                                    name="dueDate"
+                                    type="datetime-local"
+                                    className={`assignments-input ${errors.dueDate ? 'error' : ''}`}
+                                    value={formData.dueDate}
+                                    onChange={handleChange}
+                                />
+                                {errors.dueDate && (
+                                    <span className="assignments-error-message">
+                                        <FaExclamationCircle />
+                                        {errors.dueDate}
+                                    </span>
+                                )}
+                                <span className="assignments-form-label__hint">
+                                    Set a deadline for this assignment to be completed
+                                </span>
+                            </div>
                         </div>
 
-                        {/* Assignee */}
-                        <div className="form-group">
-                            <label htmlFor="assigneeId">
-                                Assign To <span className="required">*</span>
-                            </label>
-                            <select
-                                id="assigneeId"
-                                name="assigneeId"
-                                value={formData.assigneeId}
-                                onChange={handleChange}
-                                className={`form-select ${errors.assigneeId ? 'error' : ''}`}
-                            >
-                                <option value="">Select a user</option>
-                                {users.map(user => (
-                                    <option key={user.id} value={user.id}>
-                                        {user.firstName} {user.lastName} - {user.email}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.assigneeId && <span className="error-text">{errors.assigneeId}</span>}
-                        </div>
-
-                        {/* Priority */}
-                        <div className="form-group">
-                            <label htmlFor="priority">
-                                Priority <span className="required">*</span>
-                            </label>
-                            <select
-                                id="priority"
-                                name="priority"
-                                value={formData.priority}
-                                onChange={handleChange}
-                                className="form-select"
-                            >
-                                <option value="LOW">Low</option>
-                                <option value="MEDIUM">Medium</option>
-                                <option value="HIGH">High</option>
-                                <option value="URGENT">Urgent</option>
-                            </select>
-                        </div>
-
-                        {/* Due Date */}
-                        <div className="form-group">
-                            <label htmlFor="dueDate">
-                                Due Date <span className="required">*</span>
-                            </label>
-                            <Input
-                                id="dueDate"
-                                name="dueDate"
-                                type="datetime-local"
-                                value={formData.dueDate}
-                                onChange={handleChange}
-                                error={errors.dueDate}
-                            />
-                            {errors.dueDate && <span className="error-text">{errors.dueDate}</span>}
-                        </div>
+                        <div className="assignments-form-divider"></div>
 
                         {/* Description */}
-                        <div className="form-group full-width">
-                            <label htmlFor="description">Description</label>
+                        <div className="assignments-form-group">
+                            <label className="assignments-form-label" htmlFor="description">
+                                <FaAlignLeft className="assignments-form-label__icon" />
+                                Detailed Instructions
+                            </label>
                             <textarea
                                 id="description"
                                 name="description"
+                                className="assignments-textarea"
                                 value={formData.description}
                                 onChange={handleChange}
-                                placeholder="Provide detailed instructions for this assignment..."
-                                rows="6"
-                                className="form-textarea"
+                                placeholder="Provide detailed instructions, context, and any specific requirements for this assignment..."
+                                rows="7"
                             />
+                            <span className="assignments-form-label__hint">
+                                Add comprehensive details to help the assignee understand what needs to be done
+                            </span>
+                        </div>
+
+                        {/* Info Box */}
+                        <div className="assignments-form-info">
+                            <FaInfoCircle className="assignments-form-info__icon" />
+                            <p className="assignments-form-info__text">
+                                After creating the assignment, you can add specific activities with individual evidence requirements (file uploads or reports). 
+                                Progress will be automatically calculated based on activity completion.
+                            </p>
                         </div>
                     </div>
 
                     {/* Form Actions */}
-                    <div className="form-actions">
-                        <Button
+                    <div className="assignments-form-actions">
+                        <button
                             type="button"
-                            variant="outline-secondary"
+                            className="reporting-btn reporting-btn--secondary"
                             onClick={() => navigate(-1)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            variant="primary"
                             disabled={loading}
                         >
-                            {loading ? 'Saving...' : isEditMode ? 'Update Assignment' : 'Create Assignment'}
-                        </Button>
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="reporting-btn reporting-btn--gold"
+                            disabled={loading}
+                        >
+                            <FaPaperPlane /> {loading ? 'Saving...' : isEditMode ? 'Update Assignment' : 'Create Assignment'}
+                        </button>
                     </div>
                 </form>
-            </Card>
-        </div>
+            </div>
+        </section>
     );
 };
 
