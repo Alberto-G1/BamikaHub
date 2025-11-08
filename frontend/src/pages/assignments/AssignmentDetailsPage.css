@@ -1,0 +1,405 @@
+.assignment-details-page {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Assignment Details Card */
+.assignment-details-card {
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.assignment-header {
+    margin-bottom: 2rem;
+}
+
+.assignment-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.assignment-badges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.assignment-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: var(--secondary-bg);
+    border-radius: 8px;
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.meta-item strong {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.meta-item span {
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.assignment-description {
+    margin-bottom: 2rem;
+}
+
+.assignment-description h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+}
+
+.assignment-description p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* Progress Section */
+.progress-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.progress-section h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.progress-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.progress-slider {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--border-color);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.progress-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+}
+
+.progress-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    border: none;
+}
+
+.progress-value {
+    min-width: 50px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 12px;
+    background-color: var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.progress-view-only {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.progress-value-large {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.text-muted {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-align: center;
+    font-style: italic;
+}
+
+.progress-status-info {
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background-color: var(--secondary-bg);
+    border-radius: 6px;
+    text-align: center;
+}
+
+.progress-status-info small {
+    color: var(--text-secondary);
+}
+
+.progress-status-info strong {
+    color: var(--text-primary);
+    text-transform: capitalize;
+}
+
+.text-info {
+    color: #17a2b8;
+    font-weight: 500;
+}
+
+/* Attachments Section */
+.attachments-card {
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.file-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.file-upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.file-upload-btn:active {
+    transform: translateY(0);
+}
+
+.uploading-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background-color: var(--secondary-bg);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.attachments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.attachment-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: var(--secondary-bg);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.attachment-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.attachment-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.attachment-info strong {
+    color: var(--text-primary);
+}
+
+.attachment-meta {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Comments Section */
+.comments-card {
+    padding: 2rem;
+}
+
+.comments-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.comment-form {
+    margin-bottom: 2rem;
+}
+
+.comment-textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    resize: vertical;
+    margin-bottom: 1rem;
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+}
+
+.comment-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.comment-item {
+    padding: 1rem;
+    background-color: var(--secondary-bg);
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.comment-header strong {
+    color: var(--text-primary);
+}
+
+.comment-date {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.comment-text {
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.empty-message {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .assignment-details-page {
+        padding: 1rem;
+    }
+
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .header-actions {
+        justify-content: flex-end;
+    }
+
+    .assignment-details-card,
+    .attachments-card,
+    .comments-card {
+        padding: 1.5rem;
+    }
+
+    .assignment-meta-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .progress-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .attachment-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+}

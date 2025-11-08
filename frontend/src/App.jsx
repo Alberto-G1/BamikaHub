@@ -66,6 +66,12 @@ import SlaComplianceReport from './pages/reporting/SlaComplianceReport.jsx';
 // --- AUDIT TRAIL PAGES ---
 import AuditLogPage from './pages/audit/AuditLogPage.jsx';
 
+// --- ASSIGNMENTS PAGES ---
+import MyAssignmentsPage from './pages/assignments/MyAssignmentsPage.jsx';
+import CreateAssignmentPage from './pages/assignments/CreateAssignmentPage.jsx';
+import AssignmentDetailsPage from './pages/assignments/AssignmentDetailsPage.jsx';
+import CreatedAssignmentsPage from './pages/assignments/CreatedAssignmentsPage.jsx';
+
 
 function App() {
     return (
@@ -153,6 +159,13 @@ function App() {
                         
                         {/* Notifications */}
                         <Route path="notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+                        
+                        {/* Assignments */}
+                        <Route path="assignments/my-assignments" element={<ProtectedRoute requiredPermission="ASSIGNMENT_READ"><MyAssignmentsPage /></ProtectedRoute>} />
+                        <Route path="assignments/create" element={<ProtectedRoute requiredPermission="ASSIGNMENT_CREATE"><CreateAssignmentPage /></ProtectedRoute>} />
+                        <Route path="assignments/edit/:id" element={<ProtectedRoute requiredPermission="ASSIGNMENT_UPDATE"><CreateAssignmentPage /></ProtectedRoute>} />
+                        <Route path="assignments/created-by-me" element={<ProtectedRoute requiredPermission="ASSIGNMENT_CREATE"><CreatedAssignmentsPage /></ProtectedRoute>} />
+                        <Route path="assignments/:id" element={<ProtectedRoute requiredPermission="ASSIGNMENT_READ"><AssignmentDetailsPage /></ProtectedRoute>} />
                         
                         {/* Audit Trail */}
                         <Route path="audit-trail" element={<ProtectedRoute requiredPermission="AUDIT_READ"><AuditLogPage /></ProtectedRoute>} />

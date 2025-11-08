@@ -52,6 +52,8 @@ public class DataInitializer implements CommandLineRunner {
         "REQUISITION_CREATE", "REQUISITION_APPROVE", "FINANCE_READ",
         // Technical Support (Future)
         "TICKET_CREATE", "TICKET_MANAGE", "TICKET_COMMENT", "TICKET_ASSIGN", "TICKET_RESOLVE", "TICKET_CLOSE", "TICKET_ARCHIVE",
+        // Assignment Management
+        "ASSIGNMENT_CREATE", "ASSIGNMENT_READ", "ASSIGNMENT_UPDATE", "ASSIGNMENT_DELETE",
         // Audit Trail
         "AUDIT_READ", "AUDIT_EXPORT",
         // Notifications
@@ -72,11 +74,11 @@ public class DataInitializer implements CommandLineRunner {
 
             createRole("Finance Manager", filterPermissions(allPermissionsSet, "FINANCE_READ", "REQUISITION_APPROVE"));
 
-            createRole("Inventory & Operations Manager", filterPermissions(allPermissionsSet, "ITEM_", "SUPPLIER_", "PROJECT_", "FIELD_REPORT_READ"));
+            createRole("Inventory & Operations Manager", filterPermissions(allPermissionsSet, "ITEM_", "SUPPLIER_", "PROJECT_", "FIELD_REPORT_READ", "ASSIGNMENT_"));
 
-            createRole("Field Engineer (Civil)", filterPermissions(allPermissionsSet, "ITEM_READ", "FIELD_REPORT_SUBMIT", "REQUISITION_CREATE"));
+            createRole("Field Engineer (Civil)", filterPermissions(allPermissionsSet, "ITEM_READ", "FIELD_REPORT_SUBMIT", "REQUISITION_CREATE", "ASSIGNMENT_READ"));
 
-            createRole("Technical Support IT", filterPermissions(allPermissionsSet, "TICKET_MANAGE", "USER_READ"));
+            createRole("Technical Support IT", filterPermissions(allPermissionsSet, "TICKET_MANAGE", "USER_READ", "ASSIGNMENT_READ"));
 
 
             // Create the primary Admin User
