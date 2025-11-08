@@ -1,0 +1,83 @@
+.created-assignments-page {
+    padding: 0;
+    background: var(--background-color);
+    min-height: 100vh;
+}
+
+/* Page Header Section */
+.page-header-section {
+    background: var(--card-background);
+    border-bottom: 1px solid var(--border-color);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.page-header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.page-description {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.page-header-actions {
+    margin-top: 1rem;
+}
+
+/* Main Content */
+.page-content {
+    padding: 0 2rem 2rem;
+}
+
+.progress-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progress-bar-mini {
+    flex: 1;
+    height: 6px;
+    background-color: var(--border-color);
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 80px;
+}
+
+.progress-bar-mini-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.progress-cell span {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 40px;
+}
+
+@media (max-width: 768px) {
+    .page-header-section {
+        padding: 1.5rem 1rem;
+    }
+
+    .page-content {
+        padding: 0 1rem 1rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+}

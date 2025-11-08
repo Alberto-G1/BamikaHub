@@ -16,6 +16,7 @@ import {
     FaTicketAlt,
     FaChartLine,
     FaClipboardList,
+    FaTasks,
     FaChevronDown
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -25,6 +26,7 @@ import './Sidebar-Bootstrap.css';
 const Sidebar = ({ isOpen = false, onNavigate }) => {
     const { hasPermission } = useAuth();
     const [expandedSections, setExpandedSections] = useState({
+        assignments: true,
         support: true,
         analysis: true,
         administration: true
@@ -120,6 +122,44 @@ const Sidebar = ({ isOpen = false, onNavigate }) => {
                                 <FaMoneyCheckAlt className="me-2" /> Requisitions
                             </NavLink>
                         </li>
+                    )}
+
+                    {/* Assignments Section */}
+                    {(hasPermission('ASSIGNMENT_CREATE') || hasPermission('ASSIGNMENT_READ')) && (
+                        <>
+                            <li className="nav-item">
+                                <div 
+                                    className={`sidebar-section-header ${expandedSections.assignments ? 'expanded' : 'collapsed'}`}
+                                    onClick={() => toggleSection('assignments')}
+                                >
+                                    <span><FaTasks className="me-2" /> Assignments</span>
+                                    <FaChevronDown />
+                                </div>
+                            </li>
+                            <div className={`sidebar-section-content ${expandedSections.assignments ? '' : 'collapsed'}`}>
+                                {hasPermission('ASSIGNMENT_CREATE') && (
+                                    <li className="nav-item">
+                                        <NavLink to="/assignments/create" className="nav-link" onClick={handleNav}>
+                                            <FaTasks className="me-2" /> Create Assignment
+                                        </NavLink>
+                                    </li>
+                                )}
+                                {hasPermission('ASSIGNMENT_READ') && (
+                                    <li className="nav-item">
+                                        <NavLink to="/assignments/my-assignments" className="nav-link" onClick={handleNav}>
+                                            <FaTasks className="me-2" /> My Assignments
+                                        </NavLink>
+                                    </li>
+                                )}
+                                {hasPermission('ASSIGNMENT_CREATE') && (
+                                    <li className="nav-item">
+                                        <NavLink to="/assignments/created-by-me" className="nav-link" onClick={handleNav}>
+                                            <FaTasks className="me-2" /> Created by Me
+                                        </NavLink>
+                                    </li>
+                                )}
+                            </div>
+                        </>
                     )}
 
                     {/* Support Section */}
