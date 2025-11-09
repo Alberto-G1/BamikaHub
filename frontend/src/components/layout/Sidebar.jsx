@@ -17,7 +17,8 @@ import {
     FaChartLine,
     FaClipboardList,
     FaTasks,
-    FaChevronDown
+    FaChevronDown,
+    FaComments
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
 import logo from '../../assets/logo/logo2.png';
@@ -123,6 +124,12 @@ const Sidebar = ({ isOpen = false, onNavigate }) => {
                             </NavLink>
                         </li>
                     )}
+
+                    <li className="nav-item">
+                        <NavLink to="/chat" className="nav-link" onClick={handleNav}>
+                            <FaComments className="me-2" /> Chat
+                        </NavLink>
+                    </li>
 
                     {/* Assignments Section */}
                     {(hasPermission('ASSIGNMENT_CREATE') || hasPermission('ASSIGNMENT_READ')) && (

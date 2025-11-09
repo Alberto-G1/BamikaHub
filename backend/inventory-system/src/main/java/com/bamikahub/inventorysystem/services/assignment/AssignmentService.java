@@ -658,6 +658,12 @@ public class AssignmentService {
 		ad.setEvidenceType(a.getEvidenceType() == null ? null : a.getEvidenceType().name());
 		ad.setEvidenceFilePath(a.getEvidenceFilePath());
 		ad.setEvidenceReport(a.getEvidenceReport());
+		ad.setEvidenceSubmitted(Boolean.TRUE.equals(a.getEvidenceSubmitted()));
+		ad.setEvidenceSubmittedAt(a.getEvidenceSubmittedAt());
+		if (a.getEvidenceSubmittedBy() != null) {
+			ad.setEvidenceSubmittedById(a.getEvidenceSubmittedBy().getId());
+			ad.setEvidenceSubmittedByName(a.getEvidenceSubmittedBy().getFirstName() + " " + a.getEvidenceSubmittedBy().getLastName());
+		}
 		ad.setCompletedAt(a.getCompletedAt());
 		if (a.getCompletedBy() != null) {
 			ad.setCompletedById(a.getCompletedBy().getId());
