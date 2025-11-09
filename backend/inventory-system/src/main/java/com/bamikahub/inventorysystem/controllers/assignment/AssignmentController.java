@@ -244,6 +244,14 @@ public class AssignmentController {
         return ResponseEntity.ok(dto);
     }
 
+    @GetMapping("/activities/{activityId}/evidence/download")
+    @PreAuthorize("hasAuthority('ASSIGNMENT_READ')")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadActivityEvidence(
+            @PathVariable Long activityId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) throws IOException {
+        return assignmentService.downloadActivityEvidence(activityId, userDetails.getId());
+    }
+
     @PostMapping("/activities/{activityId}/complete")
     @PreAuthorize("hasAuthority('ASSIGNMENT_READ')")
     public ResponseEntity<AssignmentActivityDTO> completeActivity(

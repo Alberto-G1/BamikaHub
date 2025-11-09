@@ -311,6 +311,92 @@
 }
 
 /* ============================================
+   ACTIVITY EVIDENCE REVIEW SECTION
+   ============================================ */
+
+.activity-card__review {
+    margin-top: 1.25rem;
+    padding: 1.5rem;
+    background: var(--assignments-surface-primary);
+    border: 1.5px solid var(--assignments-border);
+    border-radius: 14px;
+    border-left: 4px solid var(--assignments-blue);
+}
+
+.activity-review__title {
+    margin: 0 0 1.25rem 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--assignments-text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.activity-review__section {
+    margin-bottom: 1.25rem;
+}
+
+.activity-review__section:last-child {
+    margin-bottom: 0;
+}
+
+.activity-review__label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--assignments-text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.activity-review__content {
+    padding: 1.25rem;
+    background: var(--assignments-surface-secondary);
+    border: 1px solid var(--assignments-border);
+    border-radius: 12px;
+    color: var(--assignments-text-primary);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    transition: all var(--assignments-transition);
+}
+
+.activity-review__content:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+}
+
+.activity-review__file {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.activity-review__meta {
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--assignments-text-muted);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.activity-review__meta::before {
+    content: "";
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--assignments-text-muted);
+}
+
+/* ============================================
    COMMENTS SECTION
    ============================================ */
 

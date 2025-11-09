@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useChat } from '../../context/ChatContext.jsx';
-import { FaPaperPlane, FaPaperclip, FaTimes, FaCheck, FaCheckDouble, FaSearch } from 'react-icons/fa';
+import { FaPaperPlane, FaPaperclip, FaTimes, FaCheck, FaCheckDouble, FaSearch, FaPlus, FaUser, FaUsers } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../../api/api';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -115,9 +115,7 @@ const ChatPage = () => {
     setLoadingUsers(true);
     try {
       const { data } = await api.get('/chat/users', { params: { excludeUserId: user?.id } });
-      setUserList(
-        data
-      );
+      setUserList(data);
       setUserQuery('');
       setSelectedUser(null);
       setShowNewChat(true);
@@ -148,6 +146,7 @@ const ChatPage = () => {
       setStartingChat(false);
     }
   };
+
   const filteredMessages = useMemo(() => {
     if (!messageQuery.trim()) {
       return activeMessages;
@@ -177,205 +176,338 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="chat-layout">
-      <aside className="chat-sidebar">
-        <div className="chat-sidebar-header">Chats</div>
-        <div className="chat-sidebar-actions">
-          <button type="button" onClick={openNewChatModal} disabled={loadingUsers}>New Chat</button>
-        </div>
-        <ul className="chat-thread-list">
-          {threads.map((thread) => {
-            const isActive = thread.id === activeThreadId;
-            const participantList = Array.isArray(thread.participants)
-              ? thread.participants
-              : Object.values(thread.participants || {});
-            const onlineCount = participantList.filter((p) => presence[p.id]?.online).length;
-            const others = participantList.filter((p) => p.id !== user?.id);
-            const primaryParticipant = others[0] ?? participantList[0];
-            const label = resolveThreadLabel(thread);
-            return (
-              <li
-                key={thread.id}
-                className={`chat-thread-item ${isActive ? 'active' : ''}`}
-                onClick={() => setActiveThreadId(isActive ? null : thread.id)}
-              >
-                <div className="thread-item-inner">
-                  <div className="thread-avatar">
-                    {renderAvatar(
-                      thread.type === 'GENERAL' ? null : primaryParticipant?.avatar,
-                      thread.type === 'GENERAL' ? (thread.subject || 'General Chat') : primaryParticipant?.fullName,
-                      'sm'
-                    )}
-                  </div>
-                  <div className="thread-text">
-                    <div className="thread-title">{label}</div>
-                    {thread.type === 'PRIVATE' && (
-                      <div className="thread-participants">{onlineCount} online</div>
-                    )}
-                  </div>
-                  {thread.unreadCount > 0 && (
-                    <span className="thread-unread">{thread.unreadCount}</span>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </aside>
-      <section className="chat-content">
-        {activeThread ? (
-          <>
-            <header className="chat-header">
-              {(() => {
-                const headerParticipants = Array.isArray(activeThread.participants)
-                  ? activeThread.participants
-                  : Object.values(activeThread.participants || {});
-                const headerPrimary = activeThread.type === 'GENERAL'
-                  ? null
-                  : headerParticipants.find((p) => p.id !== user?.id) ?? headerParticipants[0];
-                return (
-                  <div className="chat-header-info">
-                    <div className="chat-header-avatar">
+    <section className="reporting-page chat-page">
+      <div className="chat-layout" data-animate="fade-up">
+        
+        {/* Sidebar */}
+        <aside className="chat-sidebar">
+          <div className="chat-sidebar-header">
+            <div className="chat-sidebar-title">
+              <FaUsers className="sidebar-icon" />
+              <span>Messages</span>
+            </div>
+            <div className="chat-connection-status">
+              <span className={`status-indicator ${connected ? 'connected' : 'disconnected'}`}>
+                {connected ? 'Connected' : 'Reconnecting...'}
+              </span>
+            </div>
+          </div>
+          
+          <div className="chat-sidebar-actions">
+            <button 
+              type="button" 
+              className="reporting-btn reporting-btn--gold reporting-btn--sm"
+              onClick={openNewChatModal} 
+              disabled={loadingUsers}
+            >
+              <FaPlus /> New Chat
+            </button>
+          </div>
+          
+          <div className="chat-thread-list">
+            {threads.map((thread) => {
+              const isActive = thread.id === activeThreadId;
+              const participantList = Array.isArray(thread.participants)
+                ? thread.participants
+                : Object.values(thread.participants || {});
+              const onlineCount = participantList.filter((p) => presence[p.id]?.online).length;
+              const others = participantList.filter((p) => p.id !== user?.id);
+              const primaryParticipant = others[0] ?? participantList[0];
+              const label = resolveThreadLabel(thread);
+              
+              return (
+                <div
+                  key={thread.id}
+                  className={`chat-thread-item ${isActive ? 'active' : ''}`}
+                  onClick={() => setActiveThreadId(isActive ? null : thread.id)}
+                >
+                  <div className="thread-item-inner">
+                    <div className="thread-avatar">
                       {renderAvatar(
+                        thread.type === 'GENERAL' ? null : primaryParticipant?.avatar,
+                        thread.type === 'GENERAL' ? (thread.subject || 'General Chat') : primaryParticipant?.fullName,
+                        'sm'
+                      )}
+                      {thread.type === 'PRIVATE' && onlineCount > 0 && (
+                        <span className="online-indicator"></span>
+                      )}
+                    </div>
+                    <div className="thread-text">
+                      <div className="thread-title">{label}</div>
+                      <div className="thread-meta">
+                        {thread.type === 'PRIVATE' ? (
+                          <span className="online-status">{onlineCount} online</span>
+                        ) : (
+                          <span className="thread-type">Group</span>
+                        )}
+                        {thread.lastMessage && (
+                          <span className="last-message-time">
+                            {new Date(thread.lastMessage.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {thread.unreadCount > 0 && (
+                      <span className="thread-unread">{thread.unreadCount}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+
+        {/* Main Chat Area */}
+        <section className="chat-content">
+          {activeThread ? (
+            <>
+              <header className="chat-header">
+                <div className="chat-header-info">
+                  <div className="chat-header-avatar">
+                    {(() => {
+                      const headerParticipants = Array.isArray(activeThread.participants)
+                        ? activeThread.participants
+                        : Object.values(activeThread.participants || {});
+                      const headerPrimary = activeThread.type === 'GENERAL'
+                        ? null
+                        : headerParticipants.find((p) => p.id !== user?.id) ?? headerParticipants[0];
+                      return renderAvatar(
                         activeThread.type === 'GENERAL' ? null : headerPrimary?.avatar,
                         resolveThreadLabel(activeThread),
                         'md'
-                      )}
-                    </div>
-                    <div>
-                      <div className="chat-header-title">{resolveThreadLabel(activeThread)}</div>
-                      {activeThread.type === 'PRIVATE' && (
-                        <div className="chat-header-subtitle">
-                          {activeThread.unreadCount > 0 ? `${activeThread.unreadCount} unread` : 'All caught up'}
-                        </div>
-                      )}
-                    </div>
+                      );
+                    })()}
                   </div>
-                );
-              })()}
-              <div className="chat-header-actions">
-                <div className="message-search">
-                  <FaSearch />
+                  <div className="chat-header-details">
+                    <h2 className="chat-header-title">{resolveThreadLabel(activeThread)}</h2>
+                    {activeThread.type === 'PRIVATE' && (
+                      <div className="chat-header-subtitle">
+                        {activeThread.unreadCount > 0 ? `${activeThread.unreadCount} unread messages` : 'All caught up'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="chat-header-actions">
+                  <div className="message-search">
+                    <FaSearch className="search-icon" />
+                    <input
+                      type="search"
+                      className="reporting-input"
+                      placeholder="Search in conversation..."
+                      value={messageQuery}
+                      onChange={(e) => setMessageQuery(e.target.value)}
+                    />
+                  </div>
+                  <button 
+                    type="button" 
+                    className="reporting-btn reporting-btn--secondary reporting-btn--sm"
+                    onClick={() => setActiveThreadId(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </header>
+
+              {/* Scrollable Messages Area */}
+              <div className="chat-messages-container">
+                <div className="chat-messages">
+                  {filteredMessages.map((message) => {
+                    const isOwn = message.senderId === user?.id;
+                    return (
+                      <div key={message.id} className={`chat-message-row ${isOwn ? 'outgoing' : 'incoming'}`}>
+                        {!isOwn && (
+                          <div className="chat-avatar">
+                            {renderAvatar(message.senderAvatar, message.senderName, 'sm')}
+                          </div>
+                        )}
+                        <article className={`chat-message ${isOwn ? 'outgoing' : 'incoming'}`}>
+                          {!isOwn && (
+                            <header className="chat-message-header">
+                              <span className="chat-sender">{message.senderName}</span>
+                              <span className="chat-time">
+                                {new Date(message.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </header>
+                          )}
+                          <div className="chat-message-content">
+                            {message.content && <p>{message.content}</p>}
+                            {message.attachment && (
+                              <a className="chat-attachment" href={message.attachment.downloadUrl} target="_blank" rel="noreferrer">
+                                <FaPaperclip /> {message.attachment.fileName}
+                              </a>
+                            )}
+                          </div>
+                          <footer className="chat-message-footer">
+                            {isOwn && (
+                              <>
+                                <span className="chat-time">
+                                  {new Date(message.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                {renderMessageStatus(message)}
+                              </>
+                            )}
+                          </footer>
+                        </article>
+                        {isOwn && (
+                          <div className="chat-avatar">
+                            {renderAvatar(user?.profilePictureUrl, user?.fullName || user?.username, 'sm')}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {!filteredMessages.length && (
+                    <div className="chat-empty-results">
+                      <div className="reporting-empty-state">
+                        No messages found matching your search.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Message Composer */}
+              <footer className="chat-composer">
+                <div className="composer-actions">
+                  <label className={`attachment-button ${!activeThreadId ? 'disabled' : ''}`}>
+                    <FaPaperclip />
+                    <input type="file" hidden disabled={!activeThreadId} onChange={(e) => setUpload(e.target.files?.[0] ?? null)} />
+                  </label>
+                  {upload && (
+                    <div className="attachment-preview">
+                      <span>{upload.name}</span>
+                      <button type="button" onClick={() => setUpload(null)}>
+                        <FaTimes />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <textarea
+                  className="reporting-textarea"
+                  placeholder="Write your message..."
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  rows={2}
+                  disabled={!activeThreadId}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className={`reporting-btn ${canSend ? 'reporting-btn--gold' : 'reporting-btn--secondary'}`}
+                  onClick={handleSend}
+                  disabled={!canSend}
+                  title={!connected ? 'Queued via backup channel' : undefined}
+                >
+                  <FaPaperPlane />
+                </button>
+              </footer>
+            </>
+          ) : (
+            <div className="chat-empty-state">
+              <div className="reporting-card">
+                <div className="reporting-empty-state">
+                  <FaUsers className="empty-icon" />
+                  <h3>Welcome to Messages</h3>
+                  <p>Select a conversation from the sidebar or start a new chat to begin messaging.</p>
+                  <button 
+                    className="reporting-btn reporting-btn--gold"
+                    onClick={openNewChatModal}
+                  >
+                    <FaPlus /> Start New Chat
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* New Chat Modal */}
+      {showNewChat && (
+        <div className="reporting-overlay">
+          <div className="reporting-card reporting-modal chat-modal">
+            <div className="reporting-card__header">
+              <h2 className="reporting-card__title">Start New Chat</h2>
+              <button 
+                className="reporting-btn reporting-btn--secondary reporting-btn--sm"
+                onClick={() => setShowNewChat(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            
+            <div className="reporting-card__content">
+              <div className="reporting-form-group">
+                <label className="reporting-form-label">Search Users</label>
+                <div className="user-search">
+                  <FaSearch className="search-icon" />
                   <input
                     type="search"
-                    placeholder="Search in conversation"
-                    value={messageQuery}
-                    onChange={(e) => setMessageQuery(e.target.value)}
+                    className="reporting-input"
+                    placeholder="Search by name or email..."
+                    value={userQuery}
+                    onChange={(e) => setUserQuery(e.target.value)}
                   />
                 </div>
-                <button type="button" className="chat-close" onClick={() => setActiveThreadId(null)}>Close</button>
               </div>
-            </header>
-            <div className="chat-messages">
-              {filteredMessages.map((message) => {
-                const isOwn = message.senderId === user?.id;
-                return (
-                  <div key={message.id} className={`chat-message-row ${isOwn ? 'outgoing' : 'incoming'}`}>
-                    {!isOwn && (
-                      <div className="chat-avatar">
-                        {renderAvatar(message.senderAvatar, message.senderName, 'sm')}
-                      </div>
-                    )}
-                    <article className={`chat-message ${isOwn ? 'outgoing' : 'incoming'}`}>
-                      <header>
-                        <span className="chat-sender">{message.senderName}</span>
-                      </header>
-                      {message.content && <p>{message.content}</p>}
-                      {message.attachment && (
-                        <a className="chat-attachment" href={message.attachment.downloadUrl} target="_blank" rel="noreferrer">
-                          <FaPaperclip /> {message.attachment.fileName}
-                        </a>
-                      )}
-                      <footer className="chat-meta">
-                        <span className="chat-time">{new Date(message.sentAt).toLocaleTimeString()}</span>
-                        {renderMessageStatus(message)}
-                      </footer>
-                    </article>
-                    {isOwn && (
-                      <div className="chat-avatar">
-                        {renderAvatar(user?.profilePictureUrl, user?.fullName || user?.username, 'sm')}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              {!filteredMessages.length && (
-                <div className="chat-empty-results">No messages matching your search.</div>
-              )}
-            </div>
-            <footer className="chat-composer">
-              <div className="composer-actions">
-                <label className={`attachment-button ${!activeThreadId ? 'disabled' : ''}`}>
-                  <FaPaperclip />
-                  <input type="file" hidden disabled={!activeThreadId} onChange={(e) => setUpload(e.target.files?.[0] ?? null)} />
-                </label>
-                {upload && (
-                  <div className="attachment-preview">
-                    {upload.name}
-                    <button type="button" onClick={() => setUpload(null)}><FaTimes /></button>
+              
+              <div className="user-list">
+                {loadingUsers && (
+                  <div className="reporting-loading">
+                    <div className="reporting-spinner" />
+                    <p>Loading users...</p>
                   </div>
                 )}
-              </div>
-              <textarea
-                placeholder="Write a message..."
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                rows={2}
-                disabled={!activeThreadId}
-              />
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={!canSend}
-                title={!connected ? 'Queued via backup channel' : undefined}
-              >
-                <FaPaperPlane />
-              </button>
-            </footer>
-          </>
-        ) : (
-          <div className="chat-empty-state">
-            <h3>Select a conversation</h3>
-            <p>Choose a chat from the left sidebar or start a new one.</p>
-          </div>
-        )}
-      </section>
-      {showNewChat && (
-        <div className="chat-modal-backdrop">
-          <div className="chat-modal">
-            <h4>Start Private Chat</h4>
-            <label className="user-search">
-              <FaSearch />
-              <input
-                type="search"
-                placeholder="Search users"
-                value={userQuery}
-                onChange={(e) => setUserQuery(e.target.value)}
-              />
-            </label>
-            <div className="user-list">
-              {loadingUsers && <div className="loading">Loading...</div>}
-              {!loadingUsers && filteredUsers.length === 0 && <div className="empty">No matching users</div>}
-              {!loadingUsers && filteredUsers.map(u => (
-                <div key={u.id} className={`user-item ${selectedUser?.id === u.id ? 'selected' : ''}`} onClick={() => setSelectedUser(u)}>
-                  <div className="user-info">
-                    {renderAvatar(u.avatar, u.fullName || u.email, 'sm')}
-                    <span>{u.fullName || u.email}</span>
+                {!loadingUsers && filteredUsers.length === 0 && (
+                  <div className="reporting-empty-state">
+                    No users found matching your search.
                   </div>
-                  <span className={`status-dot ${u.online ? 'online' : 'offline'}`}></span>
-                </div>
-              ))}
+                )}
+                {!loadingUsers && filteredUsers.map(u => (
+                  <div 
+                    key={u.id} 
+                    className={`user-item ${selectedUser?.id === u.id ? 'selected' : ''}`} 
+                    onClick={() => setSelectedUser(u)}
+                  >
+                    <div className="user-info">
+                      {renderAvatar(u.avatar, u.fullName || u.email, 'sm')}
+                      <div className="user-details">
+                        <span className="user-name">{u.fullName || u.email}</span>
+                        <span className="user-email">{u.email}</span>
+                      </div>
+                    </div>
+                    <span className={`status-dot ${u.online ? 'online' : 'offline'}`}></span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="modal-actions">
-              <button type="button" disabled={!selectedUser || startingChat} onClick={startPrivateChat}>
-                {startingChat ? 'Starting…' : 'Start'}
+            
+            <div className="reporting-card__actions">
+              <button 
+                type="button" 
+                className="reporting-btn reporting-btn--secondary"
+                onClick={() => setShowNewChat(false)}
+              >
+                Cancel
               </button>
-              <button type="button" onClick={() => setShowNewChat(false)}>Cancel</button>
+              <button 
+                type="button" 
+                className="reporting-btn reporting-btn--gold"
+                disabled={!selectedUser || startingChat} 
+                onClick={startPrivateChat}
+              >
+                {startingChat ? 'Starting Chat...' : 'Start Chat'}
+              </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 

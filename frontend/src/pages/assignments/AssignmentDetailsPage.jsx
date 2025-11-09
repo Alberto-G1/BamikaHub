@@ -573,14 +573,68 @@ const AssignmentDetailsPage = () => {
                                         </div>
                                     )}
 
-                                    {/* Completion meta info */}
+                                    {/* Completion meta info and evidence review for completed activities */}
                                     {activity.completedAt && (
-                                        <div className="activity-meta">
-                                            <span className="activity-meta__item">
-                                                <FaCheckCircle className="activity-meta__icon" />
-                                                Completed on {formatDate(activity.completedAt)}
-                                            </span>
-                                        </div>
+                                        <>
+                                            <div className="activity-meta">
+                                                <span className="activity-meta__item">
+                                                    <FaCheckCircle className="activity-meta__icon" />
+                                                    Completed on {formatDate(activity.completedAt)}
+                                                </span>
+                                                {activity.completedByName && (
+                                                    <span className="activity-meta__item">
+                                                        by {activity.completedByName}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            
+                                            {/* Evidence Review Section - visible to assigners and admins */}
+                                            {(isAssigner || hasPermission('ASSIGNMENT_UPDATE')) && activity.evidenceSubmitted && (
+                                                <div className="activity-card__review">
+                                                    <h4 className="activity-review__title">Submitted Evidence</h4>
+                                                    
+                                                    {activity.evidenceType === 'REPORT' && activity.evidenceReport && (
+                                                        <div className="activity-review__section">
+                                                            <label className="activity-review__label">
+                                                                <FaPencilAlt /> Written Report
+                                                            </label>
+                                                            <div className="activity-review__content">
+                                                                {activity.evidenceReport}
+                                                            </div>
+                                                            {activity.evidenceSubmittedByName && activity.evidenceSubmittedAt && (
+                                                                <div className="activity-review__meta">
+                                                                    Submitted by {activity.evidenceSubmittedByName} on {formatDate(activity.evidenceSubmittedAt)}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {activity.evidenceType === 'FILE' && activity.evidenceFilePath && (
+                                                        <div className="activity-review__section">
+                                                            <label className="activity-review__label">
+                                                                <FaFileUpload /> Uploaded File
+                                                            </label>
+                                                            <div className="activity-review__file">
+                                                                <a 
+                                                                    href={`${import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:8080'}/api/assignments/activities/${activity.id}/evidence/download`}
+                                                                    className="reporting-btn reporting-btn--blue reporting-btn--sm"
+                                                                    download
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                >
+                                                                    <FaFileUpload /> Download Evidence File
+                                                                </a>
+                                                            </div>
+                                                            {activity.evidenceSubmittedByName && activity.evidenceSubmittedAt && (
+                                                                <div className="activity-review__meta">
+                                                                    Submitted by {activity.evidenceSubmittedByName} on {formatDate(activity.evidenceSubmittedAt)}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             ))}
