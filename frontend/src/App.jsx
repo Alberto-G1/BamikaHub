@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import MainLayout from './components/layout/MainLayout.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
+import { ChatProvider } from './context/ChatContext.jsx';
 
 // --- AUTH PAGES ---
 import Login from './pages/auth/Login.jsx';
@@ -71,13 +72,15 @@ import MyAssignmentsPage from './pages/assignments/MyAssignmentsPage.jsx';
 import CreateAssignmentPage from './pages/assignments/CreateAssignmentPage.jsx';
 import AssignmentDetailsPage from './pages/assignments/AssignmentDetailsPage.jsx';
 import CreatedAssignmentsPage from './pages/assignments/CreatedAssignmentsPage.jsx';
+import ChatPage from './pages/chat/ChatPage.jsx';
 
 
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <ToastContainer
+            <ChatProvider>
+                <Router>
+                    <ToastContainer
                     position="top-right"
                     autoClose={5000}
                     hideProgressBar={false}
@@ -89,7 +92,7 @@ function App() {
                     pauseOnHover
                     theme="colored"
                 />
-                <Routes>
+                    <Routes>
                     {/* Public Routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
@@ -167,6 +170,9 @@ function App() {
                         <Route path="assignments/created-by-me" element={<ProtectedRoute requiredPermission="ASSIGNMENT_CREATE"><CreatedAssignmentsPage /></ProtectedRoute>} />
                         <Route path="assignments/:id" element={<ProtectedRoute requiredPermission="ASSIGNMENT_READ"><AssignmentDetailsPage /></ProtectedRoute>} />
                         
+                        {/* Chat */}
+                        <Route path="chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+
                         {/* Audit Trail */}
                         <Route path="audit-trail" element={<ProtectedRoute requiredPermission="AUDIT_READ"><AuditLogPage /></ProtectedRoute>} />
                     </Route>
@@ -175,6 +181,7 @@ function App() {
                     <Route path="*" element={<NotFoundPage />} />
                 </Routes>
             </Router>
+            </ChatProvider>
         </AuthProvider>
     );
 }

@@ -197,6 +197,62 @@
     z-index: 1;
 }
 
+.header-action-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: white;
+    color: #6B7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    text-decoration: none;
+}
+
+.header-action-btn:hover {
+    border-color: #10B981;
+    color: #10B981;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.2);
+}
+
+.header-action-btn--chat {
+    position: relative;
+}
+
+.header-action-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);
+}
+
+[data-theme="dark"] .header-action-btn {
+    background: #1A1A1A;
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #E5E7EB;
+}
+
+[data-theme="dark"] .header-action-badge {
+    background: #f97316;
+    color: #0f172a;
+    box-shadow: 0 2px 6px rgba(249, 115, 22, 0.45);
+}
+
 /* Action Buttons */
 .theme-toggle-btn {
     width: 44px;

@@ -13,9 +13,11 @@ import {
     FaMoon,
     FaHome,
     FaChevronRight,
-    FaBars
+    FaBars,
+    FaComments
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useChat } from '../../context/ChatContext.jsx';
 import { toast } from 'react-toastify';
 import NotificationBell from '../notifications/NotificationBell.jsx';
 import './Header-Bootstrap.css';
@@ -24,6 +26,7 @@ const Header = ({ onToggleSidebar }) => {
     const location = useLocation();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const { totalUnreadCount } = useChat();
     const [theme, setTheme] = React.useState(
         localStorage.getItem('theme') || 'light'
     );
@@ -111,6 +114,19 @@ const Header = ({ onToggleSidebar }) => {
 
             {/* Right Section - Actions */}
             <div className="d-flex align-items-center">
+                <NavLink
+                    to="/chat"
+                    className="header-action-btn header-action-btn--chat"
+                    aria-label={totalUnreadCount > 0 ? `Open chat (${totalUnreadCount} unread messages)` : 'Open chat'}
+                    title={totalUnreadCount > 0 ? `${totalUnreadCount} unread messages` : 'Open chat'}
+                >
+                    <FaComments size={18} />
+                    {totalUnreadCount > 0 && (
+                        <span className="header-action-badge">
+                            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                        </span>
+                    )}
+                </NavLink>
                 {/* Theme Toggle Button */}
                 <button 
                     className="theme-toggle-btn"

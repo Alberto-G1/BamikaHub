@@ -233,6 +233,17 @@ public class AssignmentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
+    @PostMapping("/activities/{activityId}/evidence/report")
+    @PreAuthorize("hasAuthority('ASSIGNMENT_READ')")
+    public ResponseEntity<AssignmentActivityDTO> submitActivityEvidenceReport(
+            @PathVariable Long activityId,
+            @RequestBody(required = false) Map<String, String> body,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        String report = body == null ? "" : body.getOrDefault("report", "");
+        AssignmentActivityDTO dto = assignmentService.submitActivityReport(activityId, userDetails.getId(), report);
+        return ResponseEntity.ok(dto);
+    }
+
     @PostMapping("/activities/{activityId}/complete")
     @PreAuthorize("hasAuthority('ASSIGNMENT_READ')")
     public ResponseEntity<AssignmentActivityDTO> completeActivity(
