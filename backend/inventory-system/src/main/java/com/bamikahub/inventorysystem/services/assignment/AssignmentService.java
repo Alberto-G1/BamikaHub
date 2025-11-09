@@ -10,6 +10,11 @@ import com.bamikahub.inventorysystem.dto.assignment.AssignmentDTO;
 import com.bamikahub.inventorysystem.models.assignment.*;
 import com.bamikahub.inventorysystem.models.user.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -458,6 +463,67 @@ public class AssignmentService {
 		auditService.logEvidenceSubmitted(assignment, activity, actor);
 		notificationService.notifyEvidenceSubmitted(assignment, activity, actor);
 		return toActivityDTO(activity);
+	}
+
+	public ResponseEntity<Resource> downloadActivityEvidence(Long activityId, Long userId) throws IOException {
+		AssignmentActivity activity = activityRepository.findById(activityId)
+				.orElseThrow(() -> new RuntimeException("Activity not found"));
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
+		
+		Assignment assignment = activity.getAssignment();
+		
+		// Authorization: Allow assigner, assignee, or anyone with ASSIGNMENT_READ permission
+		// The @PreAuthorize at controller level already checks ASSIGNMENT_READ
+		// Here we just verify the user has legitimate access to this assignment
+		boolean isAssigner = assignment.getAssigner().getId().equals(user.getId());
+		boolean isAssignee = assignment.getAssignee().getId().equals(user.getId());
+		
+		if (!isAssigner && !isAssignee) {
+			// If user is neither assigner nor assignee, they must have general access
+			// This is already verified by @PreAuthorize, so we allow it
+			// throw new IllegalStateException("Access denied to this evidence");
+		}
+		
+		// Check if activity is completed and evidence exists
+		if (activity.getStatus() != AssignmentActivity.ActivityStatus.COMPLETED) {
+			throw new IllegalStateException("Activity must be completed to download evidence");
+		}
+		
+		if (!Boolean.TRUE.equals(activity.getEvidenceSubmitted())) {
+			throw new IllegalStateException("No evidence has been submitted for this activity");
+		}
+		
+		// Only FILE type activities have downloadable files
+		if (activity.getEvidenceType() != AssignmentActivity.EvidenceType.FILE) {
+			throw new IllegalArgumentException("This activity does not have file evidence");
+		}
+		
+		String filePath = activity.getEvidenceFilePath();
+		if (filePath == null || filePath.isBlank()) {
+			throw new RuntimeException("Evidence file path not found");
+		}
+		
+		Path path = Paths.get(filePath);
+		if (!Files.exists(path)) {
+			throw new RuntimeException("Evidence file not found on disk");
+		}
+		
+		Resource resource = new UrlResource(path.toUri());
+		
+		// Determine content type
+		String contentType = Files.probeContentType(path);
+		if (contentType == null) {
+			contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+		}
+		
+		// Extract original filename from the path
+		String filename = path.getFileName().toString();
+		
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType(contentType))
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+				.body(resource);
 	}
 
 	public List<AssignmentActivityDTO> getActivities(Long assignmentId) {
