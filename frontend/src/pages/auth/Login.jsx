@@ -7,6 +7,7 @@ import api from '../../api/api.js';
 import logoImg from '../../assets/logo/logo.png';
 import loginBgImg from '../../assets/images/login-img.jpg';
 import './Auth.css';
+import WallOfFamePanel from '../../components/auth/WallOfFamePanel.jsx';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -73,15 +74,9 @@ const Login = () => {
 
             {/* Main wrapper with split layout */}
             <div className="main-wrapper">
-                {/* Left side - Image section */}
+                {/* Left side - Wall of Fame section */}
                 <div className="image-section" style={{ backgroundImage: `url(${loginBgImg})` }}>
-                    <div className="image-content">
-                        <div className="image-icon">🏗️</div>
-                        <h1 className="image-title">Welcome Back!</h1>
-                        <p className="image-description">
-                            Access your dashboard to manage inventory, projects, and operations seamlessly.
-                        </p>
-                    </div>
+                    <WallOfFamePanel />
                 </div>
 
                 {/* Right side - Form section */}
