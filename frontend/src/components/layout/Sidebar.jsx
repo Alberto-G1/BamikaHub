@@ -18,7 +18,9 @@ import {
     FaClipboardList,
     FaTasks,
     FaChevronDown,
-    FaComments
+    FaComments,
+    FaTrophy,
+    FaAward
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
 import logo from '../../assets/logo/logo2.png';
@@ -130,6 +132,20 @@ const Sidebar = ({ isOpen = false, onNavigate }) => {
                             <FaComments className="me-2" /> Chat
                         </NavLink>
                     </li>
+
+                    <li className="nav-item">
+                        <NavLink to="/motivation/wall-of-fame" className="nav-link" onClick={handleNav}>
+                            <FaTrophy className="me-2" /> Wall of Fame
+                        </NavLink>
+                    </li>
+
+                    {hasPermission('ASSIGNMENT_CREATE') && (
+                        <li className="nav-item">
+                            <NavLink to="/motivation/awards" className="nav-link" onClick={handleNav}>
+                                <FaAward className="me-2" /> Manage Awards
+                            </NavLink>
+                        </li>
+                    )}
 
                     {/* Assignments Section */}
                     {(hasPermission('ASSIGNMENT_CREATE') || hasPermission('ASSIGNMENT_READ')) && (

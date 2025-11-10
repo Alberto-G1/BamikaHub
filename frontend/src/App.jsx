@@ -73,6 +73,9 @@ import CreateAssignmentPage from './pages/assignments/CreateAssignmentPage.jsx';
 import AssignmentDetailsPage from './pages/assignments/AssignmentDetailsPage.jsx';
 import CreatedAssignmentsPage from './pages/assignments/CreatedAssignmentsPage.jsx';
 import ChatPage from './pages/chat/ChatPage.jsx';
+// Motivation / Wall of Fame Gallery
+import HallOfFame from './pages/motivation/HallOfFame.jsx';
+import AwardManagement from './pages/motivation/AwardManagement.jsx';
 
 
 function App() {
@@ -175,6 +178,10 @@ function App() {
 
                         {/* Audit Trail */}
                         <Route path="audit-trail" element={<ProtectedRoute requiredPermission="AUDIT_READ"><AuditLogPage /></ProtectedRoute>} />
+
+                        {/* Motivation / Recognition */}
+                        <Route path="motivation/wall-of-fame" element={<ProtectedRoute><HallOfFame /></ProtectedRoute>} />
+                        <Route path="motivation/awards" element={<ProtectedRoute requiredPermission="ASSIGNMENT_CREATE"><AwardManagement /></ProtectedRoute>} />
                     </Route>
                     
                     {/* Catch-all Route for 404 Not Found */}

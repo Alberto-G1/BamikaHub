@@ -1,0 +1,246 @@
+/* Hall of Fame Styles */
+.hof-page {
+  padding: 0 !important;
+}
+
+.hof-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.hof-card {
+  transition: all var(--reporting-transition);
+  border: 1px solid var(--reporting-border);
+  overflow: hidden;
+  background: var(--reporting-surface-primary);
+  border-radius: var(--reporting-radius);
+  box-shadow: var(--reporting-shadow-card);
+}
+
+.hof-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--reporting-shadow-soft);
+  border-color: var(--reporting-gold);
+}
+
+.hof-card-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.hof-img-wrap {
+  position: relative;
+  height: 240px;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--reporting-surface-secondary) 0%, var(--reporting-surface-tertiary) 100%);
+}
+
+.hof-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--reporting-transition);
+}
+
+.hof-card:hover .hof-image {
+  transform: scale(1.05);
+}
+
+.hof-badge-overlay {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--reporting-gold);
+  font-size: 1.4rem;
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--reporting-gold);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.badge-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.hof-content {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hof-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--reporting-text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.hof-achievement {
+  font-size: 1rem;
+  color: var(--reporting-text-secondary);
+  line-height: 1.5;
+  flex: 1;
+  margin: 0;
+}
+
+.hof-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.hof-date {
+  background: var(--reporting-surface-secondary);
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  color: var(--reporting-text-muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.hof-priority {
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.priority-1, .priority-2 { 
+  background: var(--reporting-green-light); 
+  color: var(--reporting-green); 
+}
+.priority-3, .priority-4 { 
+  background: var(--reporting-blue-light); 
+  color: var(--reporting-blue); 
+}
+.priority-5, .priority-6 { 
+  background: var(--reporting-purple-light); 
+  color: var(--reporting-purple); 
+}
+.priority-7, .priority-8 { 
+  background: var(--reporting-gold-light); 
+  color: var(--reporting-gold); 
+}
+.priority-9, .priority-10 { 
+  background: var(--reporting-red-light); 
+  color: var(--reporting-red); 
+}
+
+.hof-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+/* Empty State */
+.hof-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--reporting-surface-secondary);
+  border-radius: var(--reporting-radius);
+  border: 2px dashed var(--reporting-border);
+}
+
+.hof-error {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  background: var(--reporting-red-light);
+  color: var(--reporting-red);
+  border-radius: var(--reporting-radius);
+  border: 1px solid var(--reporting-red);
+}
+
+/* Header Styles */
+.hof-header {
+  text-align: center;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+}
+
+.hof-header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--reporting-text-primary);
+  margin: 0 0 1rem 0;
+  background: linear-gradient(135deg, var(--reporting-gold) 0%, var(--reporting-purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hof-header p {
+  font-size: 1.1rem;
+  color: var(--reporting-text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .hof-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .hof-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  
+  .hof-img-wrap {
+    height: 200px;
+  }
+  
+  .hof-content {
+    padding: 1.25rem;
+  }
+  
+  .hof-name {
+    font-size: 1.1rem;
+  }
+  
+  .hof-achievement {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hof-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hof-header h1 {
+    font-size: 2rem;
+  }
+  
+  .hof-header p {
+    font-size: 1rem;
+  }
+  
+  .hof-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

@@ -1,0 +1,336 @@
+/* Award Management Styles */
+.award-management-page {
+  padding: 0 !important;
+}
+
+/* Award Card Styles */
+.award-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.award-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.award-avatar-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--reporting-gold);
+}
+
+.award-badge-icon {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  background: var(--reporting-surface-primary);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--reporting-gold);
+  font-size: 0.8rem;
+  border: 2px solid var(--reporting-gold);
+}
+
+.award-header-content {
+  flex: 1;
+}
+
+.award-description {
+  color: var(--reporting-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.award-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.award-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--reporting-text-muted);
+}
+
+.meta-icon {
+  color: var(--reporting-gold);
+  font-size: 0.8rem;
+}
+
+.award-badge-display {
+  margin-top: 0.5rem;
+}
+
+/* Hall of Fame Styles */
+.hof-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.hof-card {
+  transition: all var(--reporting-transition);
+  border: 1px solid var(--reporting-border);
+  overflow: hidden;
+}
+
+.hof-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--reporting-shadow-soft);
+}
+
+.hof-card-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.hof-img-wrap {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.hof-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--reporting-transition);
+}
+
+.hof-card:hover .hof-image {
+  transform: scale(1.05);
+}
+
+.hof-badge-overlay {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--reporting-gold);
+  font-size: 1.2rem;
+  backdrop-filter: blur(10px);
+}
+
+.badge-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.hof-content {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hof-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--reporting-text-primary);
+  margin: 0;
+}
+
+.hof-achievement {
+  font-size: 0.95rem;
+  color: var(--reporting-text-secondary);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.hof-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--reporting-text-muted);
+}
+
+.hof-date {
+  background: var(--reporting-surface-secondary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.hof-priority {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.priority-1 { background: var(--reporting-green-light); color: var(--reporting-green); }
+.priority-2 { background: var(--reporting-blue-light); color: var(--reporting-blue); }
+.priority-3 { background: var(--reporting-purple-light); color: var(--reporting-purple); }
+.priority-4 { background: var(--reporting-gold-light); color: var(--reporting-gold); }
+.priority-5 { background: var(--reporting-red-light); color: var(--reporting-red); }
+
+.hof-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Modal Styles */
+.award-modal {
+  max-width: 800px;
+  width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.image-upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.file-input {
+  display: none;
+}
+
+.image-preview {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: var(--reporting-radius);
+  overflow: hidden;
+  border: 2px solid var(--reporting-border);
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-preview {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--reporting-red);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all var(--reporting-transition);
+}
+
+.remove-preview:hover {
+  background: var(--reporting-red-hover);
+  transform: scale(1.1);
+}
+
+.remove-preview:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Overlay for Modal */
+.reporting-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--reporting-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+}
+
+.reporting-modal {
+  position: relative;
+  z-index: 10001;
+  animation: modalSlideIn 0.3s var(--reporting-motion-ease);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Empty State Enhancements */
+.empty-icon {
+  font-size: 4rem;
+  color: var(--reporting-text-muted);
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hof-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  
+  .award-modal {
+    width: 95vw;
+    margin: 1rem;
+  }
+  
+  .award-card-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  
+  .award-meta-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .reporting-filters__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .hof-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hof-img-wrap {
+    height: 160px;
+  }
+  
+  .hof-content {
+    padding: 1rem;
+  }
+}
