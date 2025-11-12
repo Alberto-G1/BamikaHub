@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { FaKey, FaArrowRight, FaSignInAlt, FaMagic, FaUser, FaBuilding } from 'react-icons/fa';
 import guestApi from '../../api/guestApi.js';
 import { useGuestAuth } from '../../context/GuestAuthContext.jsx';
-import './GuestSelfService.css';
+import WallOfFamePanel from '../../components/auth/WallOfFamePanel';
+import logoImg from '../../assets/logo/logo.png';
+import loginBgImg from '../../assets/images/login-img.jpg';
+import '../auth/Auth.css';
 
 const GuestMagicLoginPage = () => {
     const location = useLocation();
@@ -47,31 +51,121 @@ const GuestMagicLoginPage = () => {
     };
 
     return (
-        <section className="guest-self-wrapper">
-            <div className="guest-self-card">
-                <h1>Complete Your Login</h1>
-                <p>Paste your magic link token or follow the link from your inbox.</p>
-                <form className="guest-self-form" onSubmit={handleSubmit}>
-                    <label>
-                        Magic Token
-                        <textarea rows="3" value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} placeholder="Paste your token here" />
-                    </label>
-                    <div className="guest-self-actions">
-                        <button type="submit" className="guest-self-primary" disabled={submitting}>
+        <div className="auth-page">
+            {/* Animated gradient background */}
+            <div className="gradient-bg">
+                <div className="orb orb1"></div>
+                <div className="orb orb2"></div>
+                <div className="orb orb3"></div>
+            </div>
+            <div className="grid-overlay"></div>
+
+            <div className="main-wrapper">
+                {/* Left side - Wall of Fame */}
+                <div className="image-section" style={{ 
+                    backgroundImage: `linear-gradient(rgba(13, 202, 240, 0.5), rgba(40, 167, 69, 0.5)), url(${loginBgImg})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                }}>
+                    <WallOfFamePanel />
+                </div>
+
+                {/* Right side - Form section */}
+                <div className="form-section">
+                    {/* Logo */}
+                    <div className="logo-section">
+                        <img src={logoImg} alt="Bamika Logo" className="logo" />
+                        <div className="brand-name">
+                            <span className="bamika">Bamika</span>
+                            <span className="hub">Hub</span>
+                        </div>
+                        <p className="tagline">Guest Portal Access</p>
+                    </div>
+
+                    {/* Form header */}
+                    <div className="form-header">
+                        <h1>Complete Your Login</h1>
+                        <p>Paste your magic link token to access your portal</p>
+                    </div>
+
+                    {/* Token verification form */}
+                    <form className="auth-form" onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label>Magic Token</label>
+                            <div className="input-wrapper">
+                                <FaKey className="input-icon" />
+                                <textarea 
+                                    rows="4"
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px 12px 12px 45px',
+                                        border: '2px solid rgba(13, 202, 240, 0.3)',
+                                        borderRadius: '12px',
+                                        fontSize: '0.95rem',
+                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        color: 'var(--text-primary)',
+                                        transition: 'all 0.3s ease',
+                                        resize: 'vertical'
+                                    }}
+                                    placeholder="Paste your token here or click the link from your email"
+                                    value={tokenInput} 
+                                    onChange={(event) => setTokenInput(event.target.value)} 
+                                />
+                            </div>
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            className="submit-btn" 
+                            disabled={submitting}
+                        >
+                            <FaSignInAlt style={{ marginRight: '8px' }} />
                             {submitting ? 'Verifying…' : 'Verify & Sign In'}
                         </button>
+                    </form>
+
+                    <div className="help-text" style={{ marginTop: '20px' }}>
+                        Tokens expire after 30 minutes. Request a new one if needed.
                     </div>
-                </form>
-                <p className="guest-self-note">Tokens expire after 30 minutes. Request a new one if needed.</p>
-                <div className="guest-self-links">
-                    <a href="/guest/magic-link">Request a new magic link</a>
-                    <span> · </span>
-                    <a href="/guest/register">Create a guest account</a>
-                    <span> · </span>
-                    <a href="/login">Back to staff sign in</a>
+
+                    {/* Enhanced navigation links */}
+                    <div className="auth-links">
+                        {/* Guest Links Section */}
+                        <div className="auth-links-section">
+                            <div className="auth-links-title">Guest Access</div>
+                            <div className="auth-links-group">
+                                <Link to="/guest/magic-link" title="Request a new passwordless login link">
+                                    <FaMagic /> Request Magic Link
+                                </Link>
+                                <Link to="/guest/register" title="Create a new guest account">
+                                    <FaUser /> Guest Registration
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div className="auth-links-divider"></div>
+
+                        {/* Staff Links Section */}
+                        <div className="auth-links-section">
+                            <div className="auth-links-title">Staff Portal</div>
+                            <div className="auth-links-group">
+                                <Link to="/login" title="Access staff dashboard">
+                                    <FaBuilding /> Staff Sign In
+                                </Link>
+                                <Link to="/register" title="Register as a staff member">
+                                    <FaBuilding /> Staff Registration
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Copyright */}
+                    <div className="copyright">
+                        © 2025 Bamika Engineering. All rights reserved.
+                    </div>
                 </div>
             </div>
-        </section>
+        </div>
     );
 };
 
