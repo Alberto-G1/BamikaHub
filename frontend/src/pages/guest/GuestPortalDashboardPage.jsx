@@ -9,6 +9,8 @@ import './GuestPortalSelf.css';
 const defaultTicketForm = {
     subject: '',
     description: '',
+    category: 'General',
+    priority: 'MEDIUM',
     attachmentPaths: []
 };
 
@@ -72,6 +74,8 @@ const GuestPortalDashboardPage = () => {
             await guestApi.post('/portal/guest/tickets', {
                 subject: ticketForm.subject,
                 description: ticketForm.description,
+                category: ticketForm.category,
+                priority: ticketForm.priority,
                 attachmentPaths: ticketForm.attachmentPaths
             });
             toast.success('Ticket submitted!');
@@ -111,6 +115,26 @@ const GuestPortalDashboardPage = () => {
                             Description
                             <textarea name="description" rows="4" value={ticketForm.description} onChange={handleTicketInputChange} required />
                         </label>
+                        <div className="guest-self-grid-2">
+                            <label>
+                                Category
+                                <select name="category" value={ticketForm.category} onChange={handleTicketInputChange}>
+                                    <option>General</option>
+                                    <option>Billing</option>
+                                    <option>Technical</option>
+                                    <option>Logistics</option>
+                                </select>
+                            </label>
+                            <label>
+                                Priority
+                                <select name="priority" value={ticketForm.priority} onChange={handleTicketInputChange}>
+                                    <option value="CRITICAL">Critical</option>
+                                    <option value="HIGH">High</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="LOW">Low</option>
+                                </select>
+                            </label>
+                        </div>
                         <button type="submit" className="guest-self-primary" disabled={creating}>
                             {creating ? 'Submitting…' : 'Submit Ticket'}
                         </button>
@@ -130,6 +154,10 @@ const GuestPortalDashboardPage = () => {
                                     <Link to={`/guest/portal/tickets/${ticket.id}`}>
                                         <span className={`guest-status guest-status--${ticket.status?.toLowerCase()}`}>{statusLabels[ticket.status] || ticket.status}</span>
                                         <strong>{ticket.subject}</strong>
+                                        <div className="guest-self-meta">
+                                            <small>Category: {ticket.category || '—'}</small>
+                                            <small>Priority: {ticket.priority || '—'}</small>
+                                        </div>
                                         <small>Updated {ticket.updatedAt ? new Date(ticket.updatedAt).toLocaleString() : 'recently'}</small>
                                         {ticket.ratingScore && (
                                             <span className="guest-self-rating"><FaStar /> {ticket.ratingScore}/5</span>

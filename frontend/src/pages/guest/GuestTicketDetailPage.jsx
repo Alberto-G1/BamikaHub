@@ -25,11 +25,31 @@ const GuestTicketDetailPage = () => {
     const [messageBody, setMessageBody] = useState('');
     const [sending, setSending] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [assigning, setAssigning] = useState(false);
+    const [assignStaffId, setAssignStaffId] = useState('');
+    const [staffOptions, setStaffOptions] = useState([]);
 
     useEffect(() => {
         fetchTicket();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
+
+    useEffect(() => {
+        if (!canManageTickets) return;
+        const loadStaff = async () => {
+            try {
+                const resp = await api.get('/users');
+                const users = Array.isArray(resp.data) ? resp.data : [];
+                // prefer active staff users (exclude guests)
+                const staff = users.filter(u => u.status?.name === 'ACTIVE' && u.role?.name !== 'GUEST')
+                    .map(u => ({ id: u.id, label: `${(u.firstName || '') + ' ' + (u.lastName || '')}`.trim() || u.email || u.username }));
+                setStaffOptions(staff);
+            } catch (err) {
+                console.error('Failed to load staff users', err);
+            }
+        };
+        loadStaff();
+    }, [canManageTickets]);
 
     const fetchTicket = async () => {
         setLoading(true);
@@ -114,6 +134,37 @@ const GuestTicketDetailPage = () => {
                         <div>
                             <span className="guest-ticket-meta-label">Assigned Staff</span>
                             <strong>{ticket.assignedStaffName || 'Unassigned'}</strong>
+                            {canManageTickets && (
+                                <div className="guest-assign-inline">
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.75rem', color: '#374151' }}>Assign to</label>
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <select value={assignStaffId} onChange={(e) => setAssignStaffId(e.target.value)} style={{ minWidth: '220px' }}>
+                                            <option value="">Select staff...</option>
+                                            {staffOptions.map(s => (
+                                                <option key={s.id} value={s.id}>{s.label} (#{s.id})</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            className="guest-secondary"
+                                            disabled={assigning || !assignStaffId}
+                                            onClick={async () => {
+                                                setAssigning(true);
+                                                try {
+                                                    await api.post(`/guest/tickets/${id}/assign`, { staffUserId: Number(assignStaffId) });
+                                                    toast.success('Ticket assigned.');
+                                                    setAssignStaffId('');
+                                                    fetchTicket();
+                                                } catch (error) {
+                                                    const msg = error.response?.data?.message || 'Unable to assign ticket.';
+                                                    toast.error(msg);
+                                                } finally {
+                                                    setAssigning(false);
+                                                }
+                                            }}
+                                        >Assign</button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div>
                             <span className="guest-ticket-meta-label">Status</span>
@@ -126,6 +177,22 @@ const GuestTicketDetailPage = () => {
                             ) : (
                                 <span className={`guest-status guest-status--${ticket.status?.toLowerCase()}`}>{ticket.status}</span>
                             )}
+                        </div>
+                        <div>
+                            <span className="guest-ticket-meta-label">Category</span>
+                            <strong>{ticket.category || '—'}</strong>
+                        </div>
+                        <div>
+                            <span className="guest-ticket-meta-label">Priority</span>
+                            <strong>{ticket.priority || '—'}</strong>
+                        </div>
+                        <div>
+                            <span className="guest-ticket-meta-label">Response due</span>
+                            <strong>{ticket.responseDueAt ? new Date(ticket.responseDueAt).toLocaleString() : '—'}</strong>
+                        </div>
+                        <div>
+                            <span className="guest-ticket-meta-label">Resolution due</span>
+                            <strong>{ticket.resolutionDueAt ? new Date(ticket.resolutionDueAt).toLocaleString() : '—'}</strong>
                         </div>
                     </div>
                 </header>
@@ -158,7 +225,7 @@ const GuestTicketDetailPage = () => {
                                 ticket.messages.map((message, index) => (
                                     <div key={message.id ?? `local-${index}`} className={`guest-message guest-message--${message.sender?.toLowerCase()}`}>
                                         <div className="guest-message-header">
-                                            <span><FaUserShield /> {message.sender}</span>
+                                            <span><FaUserShield /> {message.senderDisplayName || message.sender}</span>
                                             <time>{message.createdAt ? new Date(message.createdAt).toLocaleString() : 'Just now'}</time>
                                         </div>
                                         <p>{message.message}</p>

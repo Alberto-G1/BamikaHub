@@ -82,6 +82,14 @@ const GuestRegistrationPage = () => {
                 )}
 
                 <p className="guest-self-note">We send a secure login link to your email. No passwords to remember!</p>
+
+                <div className="guest-self-links">
+                    <Link to="/guest/magic-login">Have a token already? Complete login</Link>
+                    <span> · </span>
+                    <Link to="/login">Back to staff sign in</Link>
+                    <span> · </span>
+                    <Link to="/register">Staff registration</Link>
+                </div>
             </div>
         </section>
     );

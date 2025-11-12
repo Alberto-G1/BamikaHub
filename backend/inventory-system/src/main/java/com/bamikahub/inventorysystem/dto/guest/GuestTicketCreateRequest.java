@@ -6,6 +6,8 @@ import lombok.Data;
 @Data
 public class GuestTicketCreateRequest {
     private Long guestId;
+    private String category;
+    private String priority; // CRITICAL, HIGH, MEDIUM, LOW
     private String subject;
     private String description;
     private List<String> attachmentPaths;

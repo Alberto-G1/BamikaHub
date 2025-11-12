@@ -10,6 +10,7 @@ public class GuestTicketMessageDto {
     private Long id;
     private Long ticketId;
     private GuestMessageSender sender;
+    private String senderDisplayName;
     private String message;
     private List<String> attachmentPaths;
     private boolean readByGuest;
