@@ -63,6 +63,13 @@ const GuestMagicLoginPage = () => {
                     </div>
                 </form>
                 <p className="guest-self-note">Tokens expire after 30 minutes. Request a new one if needed.</p>
+                <div className="guest-self-links">
+                    <a href="/guest/magic-link">Request a new magic link</a>
+                    <span> · </span>
+                    <a href="/guest/register">Create a guest account</a>
+                    <span> · </span>
+                    <a href="/login">Back to staff sign in</a>
+                </div>
             </div>
         </section>
     );

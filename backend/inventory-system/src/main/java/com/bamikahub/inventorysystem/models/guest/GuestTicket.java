@@ -53,6 +53,13 @@ public class GuestTicket {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @Column(length = 100)
+    private String category;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private GuestTicketPriority priority;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private GuestTicketStatus status;
@@ -68,6 +75,10 @@ public class GuestTicket {
     private List<String> attachmentPaths = new ArrayList<>();
 
     private LocalDateTime dueAt;
+
+    // SLA dates computed from priority
+    private LocalDateTime responseDueAt;
+    private LocalDateTime resolutionDueAt;
 
     private LocalDateTime createdAt;
 

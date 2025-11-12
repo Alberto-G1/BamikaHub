@@ -94,6 +94,16 @@ const GuestPortalTicketPage = () => {
                 <div>
                     <h1>Ticket #{ticket.id}</h1>
                     <p>{ticket.subject}</p>
+                    <div className="guest-self-meta" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                        <small>Category: <strong>{ticket.category || '—'}</strong></small>
+                        <small>Priority: <strong>{ticket.priority || '—'}</strong></small>
+                        {ticket.responseDueAt && (
+                            <small>Response due: {new Date(ticket.responseDueAt).toLocaleString()}</small>
+                        )}
+                        {ticket.resolutionDueAt && (
+                            <small>Resolution due: {new Date(ticket.resolutionDueAt).toLocaleString()}</small>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -107,7 +117,7 @@ const GuestPortalTicketPage = () => {
                             ticket.messages.map((entry) => (
                                 <div key={entry.id} className={`guest-self-message guest-self-message--${entry.sender?.toLowerCase()}`}>
                                     <div className="guest-self-message__meta">
-                                        <span>{entry.sender}</span>
+                                        <span>{entry.sender === 'GUEST' ? 'You' : 'Staff'}</span>
                                         <time>{entry.createdAt ? new Date(entry.createdAt).toLocaleString() : ''}</time>
                                     </div>
                                     <p>{entry.message}</p>

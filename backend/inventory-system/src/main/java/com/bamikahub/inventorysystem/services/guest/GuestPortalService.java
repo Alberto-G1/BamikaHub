@@ -22,6 +22,7 @@ import com.bamikahub.inventorysystem.models.guest.GuestMessageSender;
 import com.bamikahub.inventorysystem.models.guest.GuestTicket;
 import com.bamikahub.inventorysystem.models.guest.GuestTicketMessage;
 import com.bamikahub.inventorysystem.models.guest.GuestTicketStatus;
+import com.bamikahub.inventorysystem.models.guest.GuestTicketPriority;
 import com.bamikahub.inventorysystem.models.guest.GuestUser;
 import com.bamikahub.inventorysystem.models.user.User;
 import com.bamikahub.inventorysystem.repositories.guest.GuestTicketMessageRepository;
@@ -68,6 +69,9 @@ public class GuestPortalService {
 
     @Value("${app.guest.magic-link.base-url:http://localhost:5173/guest/magic}")
     private String magicLinkBaseUrl;
+
+    @Value("${app.guest.magic-link.ttl-minutes:30}")
+    private int magicLinkTtlMinutes;
 
     @Value("${app.company.name:BamikaHub}")
     private String companyName;
@@ -139,8 +143,8 @@ public class GuestPortalService {
             throw new IllegalStateException("Guest account is not active");
         }
 
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(30);
+    String token = UUID.randomUUID().toString().trim();
+    LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(magicLinkTtlMinutes);
         guest.issueVerificationToken(token, expiresAt);
         guestUserRepository.save(guest);
 
@@ -245,23 +249,39 @@ public class GuestPortalService {
         if (!StringUtils.hasText(request.getDescription())) {
             throw new IllegalArgumentException("Ticket description is required");
         }
+        if (!StringUtils.hasText(request.getCategory())) {
+            throw new IllegalArgumentException("Ticket category is required");
+        }
+        if (!StringUtils.hasText(request.getPriority())) {
+            throw new IllegalArgumentException("Ticket priority is required");
+        }
 
-    String subject = request.getSubject().trim();
-    String description = request.getDescription().trim();
+        String subject = request.getSubject().trim();
+        String description = request.getDescription().trim();
+        String category = request.getCategory().trim();
+        GuestTicketPriority priority;
+        try {
+            priority = GuestTicketPriority.valueOf(request.getPriority().trim().toUpperCase());
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Unsupported ticket priority");
+        }
 
-    List<String> attachments = request.getAttachmentPaths() != null
-        ? new ArrayList<>(request.getAttachmentPaths())
-        : new ArrayList<>();
-    attachments.removeIf(item -> !StringUtils.hasText(item));
+        List<String> attachments = request.getAttachmentPaths() != null
+                ? new ArrayList<>(request.getAttachmentPaths())
+                : new ArrayList<>();
+        attachments.removeIf(item -> !StringUtils.hasText(item));
 
         GuestTicket ticket = GuestTicket.builder()
-        .subject(subject)
-        .description(description)
-        .attachmentPaths(attachments)
+                .subject(subject)
+                .description(description)
+                .category(category)
+                .priority(priority)
+                .attachmentPaths(attachments)
                 .guest(guest)
                 .status(GuestTicketStatus.PENDING)
                 .build();
 
+        applySlaDates(ticket, priority);
         guest.addTicket(ticket);
         GuestTicket saved = guestTicketRepository.save(ticket);
         return mapTicket(saved, false);
@@ -369,20 +389,36 @@ public class GuestPortalService {
         if (!StringUtils.hasText(request.getDescription())) {
             throw new IllegalArgumentException("Ticket description is required");
         }
+        if (!StringUtils.hasText(request.getCategory())) {
+            throw new IllegalArgumentException("Ticket category is required");
+        }
+        if (!StringUtils.hasText(request.getPriority())) {
+            throw new IllegalArgumentException("Ticket priority is required");
+        }
 
         List<String> attachments = request.getAttachmentPaths() != null
                 ? new ArrayList<>(request.getAttachmentPaths())
                 : new ArrayList<>();
         attachments.removeIf(item -> !StringUtils.hasText(item));
 
+        GuestTicketPriority priority;
+        try {
+            priority = GuestTicketPriority.valueOf(request.getPriority().trim().toUpperCase());
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Unsupported ticket priority");
+        }
+
         GuestTicket ticket = GuestTicket.builder()
                 .guest(guest)
                 .subject(request.getSubject().trim())
                 .description(request.getDescription().trim())
+                .category(request.getCategory().trim())
+                .priority(priority)
                 .attachmentPaths(attachments)
                 .status(GuestTicketStatus.PENDING)
                 .build();
 
+        applySlaDates(ticket, priority);
         guest.addTicket(ticket);
         GuestTicket saved = guestTicketRepository.save(ticket);
         return mapTicket(saved, false);
@@ -460,6 +496,8 @@ public class GuestPortalService {
         dto.setGuestName(ticket.getGuest() != null ? ticket.getGuest().getFullName() : null);
         dto.setSubject(ticket.getSubject());
         dto.setDescription(ticket.getDescription());
+        dto.setCategory(ticket.getCategory());
+        dto.setPriority(ticket.getPriority());
         dto.setStatus(ticket.getStatus());
         dto.setAssignedStaffId(ticket.getAssignedStaff() != null ? ticket.getAssignedStaff().getId() : null);
         dto.setAssignedStaffName(ticket.getAssignedStaff() != null ? ticket.getAssignedStaff().getUsername() : null);
@@ -467,6 +505,8 @@ public class GuestPortalService {
         ? new ArrayList<>(ticket.getAttachmentPaths())
         : Collections.emptyList());
         dto.setDueAt(ticket.getDueAt());
+        dto.setResponseDueAt(ticket.getResponseDueAt());
+        dto.setResolutionDueAt(ticket.getResolutionDueAt());
         dto.setCreatedAt(ticket.getCreatedAt());
         dto.setUpdatedAt(ticket.getUpdatedAt());
         dto.setLastMessageAt(ticket.getLastMessageAt());
@@ -490,11 +530,47 @@ public class GuestPortalService {
         dto.setId(message.getId());
         dto.setTicketId(message.getTicket() != null ? message.getTicket().getId() : null);
         dto.setSender(message.getSender());
+        if (message.getSender() == GuestMessageSender.GUEST) {
+            dto.setSenderDisplayName(message.getTicket() != null && message.getTicket().getGuest() != null
+                    ? message.getTicket().getGuest().getFullName()
+                    : "Guest");
+        } else {
+            dto.setSenderDisplayName(message.getTicket() != null && message.getTicket().getAssignedStaff() != null
+                    ? message.getTicket().getAssignedStaff().getUsername()
+                    : "Staff");
+        }
         dto.setMessage(message.getMessage());
         dto.setAttachmentPaths(message.getAttachmentPaths());
         dto.setReadByGuest(message.isReadByGuest());
         dto.setReadByStaff(message.isReadByStaff());
         dto.setCreatedAt(message.getCreatedAt());
         return dto;
+    }
+
+    private void applySlaDates(GuestTicket ticket, GuestTicketPriority priority) {
+        LocalDateTime now = LocalDateTime.now();
+        switch (priority) {
+            case CRITICAL -> {
+                ticket.setResponseDueAt(now.plusHours(1));
+                ticket.setResolutionDueAt(now.plusHours(4));
+            }
+            case HIGH -> {
+                ticket.setResponseDueAt(now.plusHours(2));
+                // "Same day" approximated to 8 working hours from now
+                ticket.setResolutionDueAt(now.plusHours(8));
+            }
+            case MEDIUM -> {
+                ticket.setResponseDueAt(now.plusHours(6));
+                ticket.setResolutionDueAt(now.plusHours(48));
+            }
+            case LOW -> {
+                ticket.setResponseDueAt(now.plusHours(24));
+                ticket.setResolutionDueAt(now.plusDays(3));
+            }
+            default -> {
+                ticket.setResponseDueAt(now.plusHours(6));
+                ticket.setResolutionDueAt(now.plusDays(2));
+            }
+        }
     }
 }
