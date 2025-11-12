@@ -496,6 +496,52 @@ form {
     text-decoration: underline;
 }
 
+.guest-access-block {
+    margin-top: 18px;
+    padding: 18px 16px;
+    border: 1px solid #dbe4ff;
+    border-radius: 14px;
+    background: #f5f8ff;
+    text-align: center;
+    box-shadow: 0 8px 18px rgba(70, 193, 235, 0.08);
+}
+
+.guest-access-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+}
+
+.guest-access-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.guest-access-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(70, 193, 235, 0.35);
+    color: #0f4c75;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.guest-access-links a:hover {
+    background: #46C1EB;
+    color: #ffffff;
+    border-color: #46C1EB;
+    box-shadow: 0 10px 20px rgba(70, 193, 235, 0.25);
+}
+
 /* ===========================
    COPYRIGHT FOOTER
    =========================== */
@@ -817,6 +863,28 @@ form {
 
 [data-theme="dark"] .form-footer a:hover {
     color: #f6b41a;
+}
+
+[data-theme="dark"] .guest-access-block {
+    background: rgba(15, 12, 41, 0.85);
+    border-color: rgba(70, 193, 235, 0.25);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .guest-access-title {
+    color: #e8f0ff;
+}
+
+[data-theme="dark"] .guest-access-links a {
+    background: rgba(17, 24, 39, 0.85);
+    color: #eff6ff;
+    border-color: rgba(70, 193, 235, 0.35);
+}
+
+[data-theme="dark"] .guest-access-links a:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #60a5fa;
 }
 
 [data-theme="dark"] .copyright {

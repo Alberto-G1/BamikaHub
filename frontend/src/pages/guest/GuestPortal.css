@@ -274,6 +274,30 @@
     border-radius: 12px;
 }
 
+.guest-ticket-rating {
+    background: rgba(25, 135, 84, 0.08);
+    padding: 18px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.guest-ticket-rating h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.guest-rating-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(25, 135, 84, 0.35);
+    padding: 14px;
+    display: grid;
+    gap: 8px;
+}
+
 .guest-ticket-description h2,
 .guest-ticket-conversation h2 {
     margin-bottom: 12px;
@@ -285,6 +309,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    grid-column: 1 / -1;
 }
 
 .guest-ticket-messages {

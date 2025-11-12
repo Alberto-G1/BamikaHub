@@ -310,6 +310,15 @@ const Register = () => {
                             Already have an account? <Link to="/login">Log In</Link>
                         </p>
                     </div>
+
+                    <div className="guest-access-block">
+                        <p className="guest-access-title">Guests can self-manage access</p>
+                        <div className="guest-access-links">
+                            <Link to="/guest/register">Register as a guest</Link>
+                            <Link to="/guest/magic-link">Email me a magic link</Link>
+                            <Link to="/guest/magic-login">I already have a token</Link>
+                        </div>
+                    </div>
                 </div>
             </div>
 

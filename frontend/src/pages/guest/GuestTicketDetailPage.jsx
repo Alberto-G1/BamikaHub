@@ -136,6 +136,19 @@ const GuestTicketDetailPage = () => {
                         <p>{ticket.description || 'No description provided.'}</p>
                     </article>
 
+                    <aside className="guest-ticket-rating">
+                        <h2>Guest Feedback</h2>
+                        {ticket.ratingScore ? (
+                            <div className="guest-rating-card">
+                                <p><strong>Rating:</strong> {ticket.ratingScore}/5</p>
+                                <p><strong>Comment:</strong> {ticket.ratingComment || 'No comment provided.'}</p>
+                                <p><strong>Rated:</strong> {ticket.ratedAt ? new Date(ticket.ratedAt).toLocaleString() : '—'}</p>
+                            </div>
+                        ) : (
+                            <p className="guest-empty">Guest has not rated this ticket yet.</p>
+                        )}
+                    </aside>
+
                     <div className="guest-ticket-conversation">
                         <h2>Conversation</h2>
                         <div className="guest-ticket-messages">

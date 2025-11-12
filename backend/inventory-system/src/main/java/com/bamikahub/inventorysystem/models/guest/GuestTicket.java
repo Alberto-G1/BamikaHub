@@ -75,6 +75,13 @@ public class GuestTicket {
 
     private LocalDateTime lastMessageAt;
 
+    private Integer ratingScore;
+
+    @Column(columnDefinition = "TEXT")
+    private String ratingComment;
+
+    private LocalDateTime ratedAt;
+
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<GuestTicketMessage> messages = new ArrayList<>();
@@ -93,6 +100,13 @@ public class GuestTicket {
         message.setTicket(this);
         this.messages.add(message);
         touchConversation();
+    }
+
+    public void recordRating(Integer score, String comment) {
+        this.ratingScore = score;
+        this.ratingComment = comment;
+        this.ratedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     @PrePersist

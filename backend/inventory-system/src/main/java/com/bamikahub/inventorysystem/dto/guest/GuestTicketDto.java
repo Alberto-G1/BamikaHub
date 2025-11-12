@@ -20,5 +20,8 @@ public class GuestTicketDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastMessageAt;
+    private Integer ratingScore;
+    private String ratingComment;
+    private LocalDateTime ratedAt;
     private List<GuestTicketMessageDto> messages;
 }
