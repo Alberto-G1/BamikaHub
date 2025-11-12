@@ -160,12 +160,12 @@ const Login = () => {
                             <Link to="/guest/magic-login">Use a magic token</Link>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {/* Copyright */}
-            <div className="copyright">
-                © 2025 Bamika Engineering. All rights reserved.
+                    {/* Copyright */}
+                    <div className="copyright">
+                        © 2025 Bamika Engineering. All rights reserved.
+                    </div>
+                </div>
             </div>
         </div>
     );

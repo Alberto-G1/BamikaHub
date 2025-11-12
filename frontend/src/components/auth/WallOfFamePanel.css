@@ -217,3 +217,173 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* ===========================
+   RESPONSIVE DESIGN
+   =========================== */
+
+@media (max-width: 768px) {
+  .wall-of-fame-inner {
+    padding: 25px 20px;
+  }
+
+  .fame-avatar-wrapper {
+    width: 200px;
+    height: 200px;
+    margin-bottom: 25px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 0 5px rgba(255, 255, 255, 0.1);
+  }
+
+  .fame-text-block {
+    max-width: 100%;
+    padding: 0 10px;
+  }
+
+  .fame-name {
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+
+  .fame-achievement {
+    font-size: 1.1rem;
+    line-height: 1.5;
+  }
+
+  .fame-badges {
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .fame-badge {
+    width: 45px;
+    height: 45px;
+    font-size: 22px;
+    border-radius: 12px;
+  }
+
+  .fame-placeholder-icon {
+    font-size: 100px;
+  }
+
+  .fame-placeholder-title {
+    font-size: 2rem;
+    margin: 20px 0 12px;
+  }
+
+  .fame-placeholder-text {
+    font-size: 1rem;
+    max-width: 100%;
+    padding: 0 10px;
+  }
+
+  .fame-dots {
+    bottom: 25px;
+    gap: 10px;
+  }
+
+  .fame-dot {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .wall-of-fame-inner {
+    padding: 20px 15px;
+  }
+
+  .fame-avatar-wrapper {
+    width: 150px;
+    height: 150px;
+    margin-bottom: 20px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 0 4px rgba(255, 255, 255, 0.1);
+  }
+
+  .fame-name {
+    font-size: 1.6rem;
+    margin-bottom: 8px;
+  }
+
+  .fame-achievement {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .fame-badges {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .fame-badge {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+
+  .fame-placeholder-icon {
+    font-size: 70px;
+  }
+
+  .fame-placeholder-title {
+    font-size: 1.6rem;
+    margin: 15px 0 10px;
+    letter-spacing: 1px;
+  }
+
+  .fame-placeholder-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    padding: 0 8px;
+  }
+
+  .fame-dots {
+    bottom: 20px;
+    gap: 8px;
+  }
+
+  .fame-dot {
+    width: 12px;
+    height: 12px;
+    border-width: 1.5px;
+  }
+}
+
+@media (max-width: 360px) {
+  .wall-of-fame-inner {
+    padding: 15px 10px;
+  }
+
+  .fame-avatar-wrapper {
+    width: 130px;
+    height: 130px;
+    margin-bottom: 15px;
+  }
+
+  .fame-name {
+    font-size: 1.4rem;
+  }
+
+  .fame-achievement {
+    font-size: 0.85rem;
+  }
+
+  .fame-badge {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+
+  .fame-placeholder-icon {
+    font-size: 60px;
+  }
+
+  .fame-placeholder-title {
+    font-size: 1.4rem;
+  }
+
+  .fame-placeholder-text {
+    font-size: 0.85rem;
+  }
+}
+

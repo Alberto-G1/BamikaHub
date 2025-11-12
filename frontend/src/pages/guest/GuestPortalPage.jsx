@@ -4,7 +4,8 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
-import './GuestPortal.css';
+import ThemeToggle from '../../components/common/ThemeToggle';
+import './GuestStyles.css';
 
 const defaultGuestForm = {
     fullName: '',
@@ -125,63 +126,106 @@ const GuestPortalPage = () => {
 
     return (
         <div className="guest-portal-page">
-            <div className="guest-portal-header">
+            <header className="guest-portal-header" data-animate="fade-up">
                 <div>
                     <h1>Guest Support Portal</h1>
                     <p>Manage guest accounts and track guest tickets from a single workspace.</p>
                 </div>
-                <div className="guest-portal-actions">
-                    <button className="guest-portal-refresh" onClick={() => fetchTickets(statusFilter)} disabled={loadingTickets}>
+                <div className="guest-portal-header-actions">
+                    <ThemeToggle />
+                    <button className="guest-portal-logout" onClick={() => fetchTickets(statusFilter)} disabled={loadingTickets}>
                         <FaSync /> Refresh Tickets
                     </button>
                 </div>
-            </div>
+            </header>
 
             {canManageGuests && (
-                <section className="guest-portal-card" data-section="guests">
-                    <div className="guest-section-header">
-                        <div className="guest-section-title">
-                            <FaUsers /> Guest Accounts
-                        </div>
-                        <span className="guest-section-meta">{guests.length} records</span>
-                    </div>
-                    <div className="guest-section-content">
-                        <form className="guest-form" onSubmit={handleCreateGuest}>
-                            <h3><FaUserPlus /> Create Guest Account</h3>
-                            <div className="guest-form-grid">
-                                <label>
-                                    Full Name
-                                    <input type="text" name="fullName" value={guestForm.fullName} onChange={handleGuestInputChange} required />
-                                </label>
-                                <label>
-                                    Email
-                                    <input type="email" name="email" value={guestForm.email} onChange={handleGuestInputChange} required />
-                                </label>
-                                <label>
-                                    Phone Number
-                                    <input type="text" name="phoneNumber" value={guestForm.phoneNumber} onChange={handleGuestInputChange} required />
-                                </label>
-                                <label>
-                                    Company
-                                    <input type="text" name="companyName" value={guestForm.companyName} onChange={handleGuestInputChange} />
-                                </label>
-                                <label>
-                                    Category
-                                    <input type="text" name="category" value={guestForm.category} onChange={handleGuestInputChange} />
-                                </label>
+                <section className="guest-portal-card" data-animate="fade-up" data-delay="0.08">
+                    <h2>
+                        <FaUsers /> Guest Accounts
+                        <span style={{ fontSize: '0.9rem', fontWeight: '400', marginLeft: '1rem', color: 'var(--guest-text-muted)' }}>
+                            ({guests.length} records)
+                        </span>
+                    </h2>
+                    <div>
+                        <form className="guest-portal-form" onSubmit={handleCreateGuest}>
+                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                                <FaUserPlus /> Create Guest Account
+                            </h3>
+                            <div className="guest-portal-grid-2">
+                                <div className="guest-auth-form-group">
+                                    <label className="guest-auth-form-label">Full Name</label>
+                                    <input 
+                                        type="text" 
+                                        className="guest-auth-input"
+                                        name="fullName" 
+                                        value={guestForm.fullName} 
+                                        onChange={handleGuestInputChange} 
+                                        required 
+                                    />
+                                </div>
+                                <div className="guest-auth-form-group">
+                                    <label className="guest-auth-form-label">Email</label>
+                                    <input 
+                                        type="email" 
+                                        className="guest-auth-input"
+                                        name="email" 
+                                        value={guestForm.email} 
+                                        onChange={handleGuestInputChange} 
+                                        required 
+                                    />
+                                </div>
+                                <div className="guest-auth-form-group">
+                                    <label className="guest-auth-form-label">Phone Number</label>
+                                    <input 
+                                        type="text" 
+                                        className="guest-auth-input"
+                                        name="phoneNumber" 
+                                        value={guestForm.phoneNumber} 
+                                        onChange={handleGuestInputChange} 
+                                        required 
+                                    />
+                                </div>
+                                <div className="guest-auth-form-group">
+                                    <label className="guest-auth-form-label">Company</label>
+                                    <input 
+                                        type="text" 
+                                        className="guest-auth-input"
+                                        name="companyName" 
+                                        value={guestForm.companyName} 
+                                        onChange={handleGuestInputChange} 
+                                    />
+                                </div>
+                                <div className="guest-auth-form-group">
+                                    <label className="guest-auth-form-label">Category</label>
+                                    <input 
+                                        type="text" 
+                                        className="guest-auth-input"
+                                        name="category" 
+                                        value={guestForm.category} 
+                                        onChange={handleGuestInputChange} 
+                                    />
+                                </div>
                             </div>
-                            <button type="submit" className="guest-primary" disabled={creatingGuest}>
-                                {creatingGuest ? 'Creating…' : 'Create Guest'}
+                            <button type="submit" className="guest-auth-primary-btn" disabled={creatingGuest}>
+                                <FaUserPlus /> {creatingGuest ? 'Creating…' : 'Create Guest'}
                             </button>
                         </form>
 
-                        <div className="guest-table-wrapper">
+                        <div style={{ marginTop: '2rem' }}>
                             {loadingGuests ? (
-                                <div className="guest-loading">Loading guest accounts…</div>
+                                <div className="guest-empty">Loading guest accounts…</div>
                             ) : guests.length === 0 ? (
                                 <div className="guest-empty">No guest accounts registered yet.</div>
                             ) : (
-                                <table className="guest-table">
+                                <div style={{ overflowX: 'auto' }}>
+                                <table style={{ 
+                                    width: '100%', 
+                                    borderCollapse: 'collapse',
+                                    background: 'var(--guest-surface-secondary)',
+                                    borderRadius: '12px',
+                                    overflow: 'hidden'
+                                }}>
                                     <thead>
                                         <tr>
                                             <th>Name</th>
@@ -219,6 +263,7 @@ const GuestPortalPage = () => {
                                         ))}
                                     </tbody>
                                 </table>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -226,33 +271,41 @@ const GuestPortalPage = () => {
             )}
 
             {canViewTickets && (
-                <section className="guest-portal-card" data-section="tickets">
-                    <div className="guest-section-header">
-                        <div className="guest-section-title">
-                            <FaTicketAlt /> Guest Tickets
-                        </div>
-                        <div className="guest-ticket-controls">
-                            <label>
-                                Status filter
-                                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                                    <option value="">All statuses</option>
-                                    <option value="PENDING">Pending</option>
-                                    <option value="IN_PROGRESS">In Progress</option>
-                                    <option value="AWAITING_GUEST">Awaiting Guest</option>
-                                    <option value="RESOLVED">Resolved</option>
-                                    <option value="CLOSED">Closed</option>
-                                </select>
-                            </label>
-                        </div>
+                <section className="guest-portal-card" data-animate="fade-up" data-delay="0.12">
+                    <h2>
+                        <FaTicketAlt /> Guest Tickets
+                    </h2>
+                    
+                    <div className="guest-auth-form-group" style={{ marginBottom: '1.5rem' }}>
+                        <label className="guest-auth-form-label">Status Filter</label>
+                        <select 
+                            className="guest-auth-select"
+                            value={statusFilter} 
+                            onChange={(event) => setStatusFilter(event.target.value)}
+                        >
+                            <option value="">All statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="AWAITING_GUEST">Awaiting Guest</option>
+                            <option value="RESOLVED">Resolved</option>
+                            <option value="CLOSED">Closed</option>
+                        </select>
                     </div>
 
-                    <div className="guest-table-wrapper">
+                    <div>
                         {loadingTickets ? (
-                            <div className="guest-loading">Loading tickets…</div>
+                            <div className="guest-empty">Loading tickets…</div>
                         ) : ticketSummaries.length === 0 ? (
                             <div className="guest-empty">No guest tickets yet.</div>
                         ) : (
-                            <table className="guest-table guest-table--tickets">
+                            <div style={{ overflowX: 'auto' }}>
+                            <table style={{ 
+                                width: '100%', 
+                                borderCollapse: 'collapse',
+                                background: 'var(--guest-surface-secondary)',
+                                borderRadius: '12px',
+                                overflow: 'hidden'
+                            }}>
                                 <thead>
                                     <tr>
                                         <th>ID</th>
@@ -287,12 +340,21 @@ const GuestPortalPage = () => {
                                     ))}
                                 </tbody>
                             </table>
+                            </div>
                         )}
                     </div>
 
                     {canManageTickets && (
-                        <div className="guest-ticket-footer">
-                            <p>Need to log an issue on behalf of a guest? Use the ticket detail screen to capture internal responses and updates.</p>
+                        <div style={{ 
+                            marginTop: '1.5rem', 
+                            padding: '1rem', 
+                            background: 'var(--guest-blue-light)', 
+                            borderRadius: '12px',
+                            border: '1px solid var(--guest-blue)'
+                        }}>
+                            <p style={{ margin: 0, color: 'var(--guest-text-primary)' }}>
+                                Need to log an issue on behalf of a guest? Use the ticket detail screen to capture internal responses and updates.
+                            </p>
                         </div>
                     )}
                 </section>

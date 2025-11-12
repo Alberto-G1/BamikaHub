@@ -13,6 +13,8 @@
     justify-content: center;
     overflow: hidden;
     background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
 }
 
 /* Animated gradient background with floating orbs */
@@ -101,6 +103,8 @@
     height: 100vh;
     background: transparent;
     overflow: hidden;
+    /* Prevent content from being cut off on mobile */
+    max-width: 100%;
 }
 
 /* ===========================
@@ -118,7 +122,27 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    overflow: hidden;
+    overflow: auto;
+    /* Smooth scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar for image section */
+.image-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.image-section::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.image-section::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 4px;
+}
+
+.image-section::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.6);
 }
 
 /* Remove the gradient overlay - no blocking colors */
@@ -197,6 +221,8 @@
     animation: slideInRight 0.8s ease-out;
     /* Ensure content starts at top */
     align-items: stretch;
+    /* Smooth scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
 }
 
 @keyframes slideInRight {
@@ -540,6 +566,177 @@ form {
     color: #ffffff;
     border-color: #46C1EB;
     box-shadow: 0 10px 20px rgba(70, 193, 235, 0.25);
+    text-decoration: none;
+}
+
+/* ===========================
+   AUTH NAVIGATION LINKS (Guest Auth Pages)
+   =========================== */
+
+.auth-links {
+    margin-top: 30px;
+    padding: 25px 20px;
+    background: linear-gradient(135deg, rgba(70, 193, 235, 0.05), rgba(40, 167, 69, 0.05));
+    border-radius: 16px;
+    border: 1px solid rgba(70, 193, 235, 0.15);
+}
+
+/* Guest Links Section */
+.auth-links-section {
+    margin-bottom: 20px;
+}
+
+.auth-links-section:last-child {
+    margin-bottom: 0;
+}
+
+.auth-links-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.auth-links-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.auth-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 22px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(70, 193, 235, 0.25);
+    color: #0f4c75;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-links a svg {
+    font-size: 1.1rem;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.auth-links a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(70, 193, 235, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.auth-links a:hover {
+    background: linear-gradient(135deg, #46C1EB, #0dcaf0);
+    color: #ffffff;
+    border-color: #46C1EB;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px rgba(70, 193, 235, 0.3);
+    text-decoration: none;
+}
+
+.auth-links a:hover::before {
+    left: 100%;
+}
+
+.auth-links a:hover svg {
+    transform: scale(1.15) rotate(5deg);
+}
+
+.auth-links a:active {
+    transform: translateY(-1px);
+}
+
+/* Divider between sections */
+.auth-links-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+    margin: 20px 0;
+}
+
+/* ===========================
+   HELP TEXT & INFO BOXES
+   =========================== */
+
+.help-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(246, 180, 26, 0.08), rgba(214, 163, 41, 0.08));
+    border-left: 4px solid #f6b41a;
+    border-radius: 12px;
+    color: #856404;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    font-weight: 500;
+    animation: slideInFromLeft 0.6s ease-out;
+    box-shadow: 0 4px 12px rgba(246, 180, 26, 0.1);
+}
+
+.help-text::before {
+    content: '⏱️';
+    font-size: 1.5rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes slideInFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.info-box {
+    padding: 14px 18px;
+    background: rgba(70, 193, 235, 0.1);
+    border-left: 4px solid #46C1EB;
+    border-radius: 10px;
+    color: #0f4c75;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ===========================
@@ -547,14 +744,13 @@ form {
    =========================== */
 
 .copyright {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
-    z-index: 3;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    position: relative;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.85rem;
+    text-align: center;
 }
 
 /* ===========================
@@ -563,37 +759,161 @@ form {
 
 @media (max-width: 1024px) {
     .main-wrapper {
-        width: 90%;
+        width: 95%;
         height: auto;
-        min-height: 500px;
+        min-height: 550px;
+        max-height: none;
     }
 
     .image-section,
     .form-section {
-        padding: 40px;
+        padding: 35px 30px;
     }
 
     .image-title {
-        font-size: 2.5rem;
+        font-size: 2.3rem;
     }
 
     .image-description {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
+        padding: 0 10px;
+    }
+
+    .brand-name {
+        font-size: 2rem;
+    }
+
+    .form-header h1 {
+        font-size: 1.9rem;
+    }
+
+    .form-header p {
+        font-size: 0.95rem;
+    }
+
+    .auth-links {
+        padding: 20px 15px;
+    }
+
+    .auth-links a {
+        padding: 12px 18px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Tablet range - 770px to 948px (specific fix for user's issue) */
+@media (max-width: 948px) and (min-width: 770px) {
+    .main-wrapper {
+        width: 92%;
+        max-width: none;
+        height: auto;
+        min-height: 580px;
+    }
+
+    .image-section {
+        padding: 30px 25px;
+        min-height: 450px;
+        overflow-y: auto;
+    }
+
+    .form-section {
+        padding: 35px 28px;
+        overflow-y: auto;
+        max-height: 580px;
+    }
+
+    .logo {
+        width: 70px;
+        height: 70px;
+    }
+
+    .brand-name {
+        font-size: 1.9rem;
+    }
+
+    .tagline {
+        font-size: 0.85rem;
+    }
+
+    .form-header h1 {
+        font-size: 1.75rem;
+        margin-bottom: 8px;
+    }
+
+    .form-header p {
+        font-size: 0.9rem;
+    }
+
+    .form-group label {
+        font-size: 0.9rem;
+    }
+
+    input, textarea {
+        font-size: 0.9rem !important;
+        padding: 12px 12px 12px 45px !important;
+    }
+
+    .submit-btn {
+        padding: 14px;
+        font-size: 0.95rem;
+    }
+
+    .auth-links {
+        margin-top: 25px;
+        padding: 18px 15px;
+    }
+
+    .auth-links a {
+        padding: 12px 16px;
+        font-size: 0.88rem;
+    }
+
+    .help-text {
+        padding: 14px 16px;
+        font-size: 0.85rem;
+    }
+
+    .guest-access-block {
+        padding: 16px 14px;
+    }
+
+    .guest-access-links a {
+        padding: 9px 15px;
+        font-size: 0.85rem;
+    }
+
+    .copyright {
+        font-size: 0.8rem;
+        padding-top: 15px;
+        margin-top: 20px;
     }
 }
 
 @media (max-width: 768px) {
+    .auth-page {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
     .main-wrapper {
         flex-direction: column;
-        width: 95%;
+        width: 100%;
         height: auto;
+        min-height: 100vh;
         max-height: none;
         overflow: visible;
     }
 
     .image-section {
-        flex: 0 0 250px;
-        padding: 30px;
+        flex: 0 0 auto;
+        width: 100%;
+        min-height: 280px;
+        max-height: 400px;
+        padding: 30px 20px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 
     .image-icon {
@@ -611,10 +931,13 @@ form {
     }
 
     .form-section {
-        padding: 30px;
+        flex: 1;
+        width: 100%;
+        padding: 40px 30px;
         justify-content: flex-start;
         overflow-y: visible;
         max-height: none;
+        box-shadow: none;
     }
 
     .brand-name {
@@ -632,8 +955,46 @@ form {
 
     /* Ensure logo section is always visible at top */
     .logo-section {
-        margin-top: 20px;
+        margin-top: 0;
         margin-bottom: 30px;
+    }
+
+    /* Guest access block adjustments */
+    .guest-access-block {
+        margin-top: 30px;
+    }
+
+    .guest-access-links {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .guest-access-links a {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Auth links adjustments */
+    .auth-links {
+        margin-top: 25px;
+        padding: 20px 15px;
+    }
+
+    .auth-links a {
+        width: 100%;
+        padding: 14px 18px;
+        font-size: 0.92rem;
+    }
+
+    .help-text {
+        padding: 14px 16px;
+        font-size: 0.88rem;
+    }
+
+    /* Copyright positioning */
+    .copyright {
+        margin-top: 25px;
+        padding-top: 15px;
     }
 }
 
@@ -641,6 +1002,9 @@ form {
     .auth-page {
         height: auto;
         min-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
     }
 
     .main-wrapper {
@@ -653,76 +1017,301 @@ form {
     }
 
     .image-section {
-        flex: 0 0 200px;
-        padding: 20px;
+        flex: 0 0 auto;
+        width: 100%;
+        min-height: 220px;
+        max-height: 350px;
+        padding: 25px 15px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 
     .image-icon {
-        font-size: 50px;
+        font-size: 45px;
     }
 
     .image-title {
-        font-size: 1.75rem;
-    }
-
-    .image-description {
-        font-size: 0.9rem;
-    }
-
-    .form-section {
-        padding: 20px;
-        padding-bottom: 40px;
-        overflow-y: visible;
-        justify-content: flex-start;
-    }
-
-    .logo-section {
-        margin-top: 10px;
-        margin-bottom: 25px;
-    }
-
-    .logo-image {
-        width: 60px;
-        height: 60px;
-    }
-
-    .brand-name {
-        font-size: 1.75rem;
-    }
-
-    .tagline {
-        font-size: 0.8rem;
-    }
-
-    .form-header {
-        margin-bottom: 25px;
-    }
-
-    .form-header h1 {
         font-size: 1.5rem;
     }
 
+    .image-description {
+        font-size: 0.85rem;
+        padding: 0 10px;
+    }
+
+    .form-section {
+        padding: 25px 20px 40px;
+        overflow-y: visible;
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .logo-section {
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+    .logo-image {
+        width: 55px;
+        height: 55px;
+    }
+
+    .brand-name {
+        font-size: 1.5rem;
+    }
+
+    .tagline {
+        font-size: 0.75rem;
+    }
+
+    .form-header {
+        margin-bottom: 20px;
+    }
+
+    .form-header h1 {
+        font-size: 1.4rem;
+    }
+
     .form-header p {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        font-size: 0.85rem;
+        margin-bottom: 6px;
     }
 
     .input-wrapper input {
-        padding: 12px 40px;
-        font-size: 0.95rem;
+        padding: 12px 15px 12px 40px;
+        font-size: 0.9rem;
+    }
+
+    .input-icon {
+        left: 12px;
+        font-size: 0.9rem;
+    }
+
+    .toggle-password {
+        right: 12px;
+        font-size: 0.9rem;
     }
 
     .submit-btn {
         padding: 13px;
-        font-size: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .form-footer {
+        margin-top: 20px;
+    }
+
+    .form-footer p {
+        font-size: 0.85rem;
+    }
+
+    /* Guest access block for mobile */
+    .guest-access-block {
+        margin-top: 25px;
+        padding: 20px 15px;
+    }
+
+    .guest-access-title {
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+    }
+
+    .guest-access-links {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .guest-access-links a {
+        width: 100%;
+        text-align: center;
+        padding: 10px 15px;
+        font-size: 0.85rem;
+    }
+
+    /* Password strength indicator */
+    .password-strength {
+        height: 3px;
+        margin-top: 8px;
+    }
+
+    .strength-label {
+        font-size: 0.75rem;
+    }
+
+    /* Auth links for mobile */
+    .auth-links {
+        margin-top: 20px;
+        padding: 18px 12px;
+    }
+
+    .auth-links a {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 0.88rem;
+    }
+
+    .help-text {
+        padding: 12px 14px;
+        font-size: 0.85rem;
+    }
+
+    /* Copyright positioning */
+    .copyright {
+        margin-top: 25px;
+        padding-top: 15px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Extra small devices (320px and below) */
+@media (max-width: 360px) {
+    .image-section {
+        min-height: 200px;
+        max-height: 300px;
+        padding: 20px 10px;
+        overflow-y: auto;
+    }
+
+    .image-icon {
+        font-size: 40px;
+    }
+
+    .image-title {
+        font-size: 1.3rem;
+    }
+
+    .image-description {
+        font-size: 0.8rem;
+    }
+
+    .form-section {
+        padding: 20px 15px 35px;
+    }
+
+    .logo-image {
+        width: 50px;
+        height: 50px;
+    }
+
+    .brand-name {
+        font-size: 1.3rem;
+    }
+
+    .tagline {
+        font-size: 0.7rem;
+    }
+
+    .form-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .form-header p {
+        font-size: 0.8rem;
+    }
+
+    .input-wrapper input {
+        padding: 11px 12px 11px 38px;
+        font-size: 0.85rem;
+    }
+
+    .submit-btn {
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+
+    .guest-access-block {
+        padding: 18px 12px;
+    }
+
+    .guest-access-title {
+        font-size: 0.85rem;
+    }
+
+    .guest-access-links a {
+        padding: 9px 12px;
+        font-size: 0.8rem;
+    }
+
+    .auth-links {
+        padding: 15px 10px;
+    }
+
+    .auth-links a {
+        padding: 11px 12px;
+        font-size: 0.82rem;
+    }
+
+    .help-text {
+        padding: 11px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Landscape orientation adjustments for mobile */
+@media (max-height: 600px) and (orientation: landscape) {
+    .auth-page {
+        height: auto;
+        min-height: 100%;
+    }
+
+    .main-wrapper {
+        height: auto;
+        min-height: 100%;
+    }
+
+    .image-section {
+        min-height: 150px;
+        max-height: 250px;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .image-icon {
+        font-size: 35px;
+        margin-bottom: 10px;
+    }
+
+    .image-title {
+        font-size: 1.3rem;
+        margin-bottom: 5px;
+    }
+
+    .image-description {
+        font-size: 0.8rem;
+    }
+
+    .form-section {
+        padding: 25px 20px;
+    }
+
+    .logo-section {
+        margin-bottom: 15px;
+    }
+
+    .form-header {
+        margin-bottom: 15px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .guest-access-block {
+        margin-top: 20px;
+        padding: 15px;
     }
 
     .copyright {
-        position: relative;
         margin-top: 20px;
-        margin-bottom: 20px;
-        bottom: auto;
-        left: auto;
-        transform: none;
+        padding-top: 12px;
     }
 }
 
@@ -888,7 +1477,8 @@ form {
 }
 
 [data-theme="dark"] .copyright {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.4);
+    border-top-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Logo adjustments for dark mode */
