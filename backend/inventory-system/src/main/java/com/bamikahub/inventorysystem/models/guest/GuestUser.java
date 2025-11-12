@@ -65,6 +65,10 @@ public class GuestUser {
 
     private LocalDateTime verifiedAt;
 
+    private LocalDateTime magicTokenExpiresAt;
+
+    private LocalDateTime lastLoginAt;
+
     @Column(length = 64)
     private String pendingApprovalBy; // staff username/email captured during manual approval
 
@@ -85,6 +89,8 @@ public class GuestUser {
         this.emailVerified = true;
         this.verifiedAt = LocalDateTime.now();
         this.pendingApprovalBy = issuedBy;
+        this.verificationToken = null;
+        this.magicTokenExpiresAt = null;
     }
 
     public void markPendingApproval(String issuedBy) {
@@ -120,5 +126,24 @@ public class GuestUser {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void issueVerificationToken(String token, LocalDateTime expiresAt) {
+        this.verificationToken = token;
+        this.magicTokenExpiresAt = expiresAt;
+    }
+
+    public boolean isVerificationTokenValid(String token) {
+        if (token == null || this.verificationToken == null) {
+            return false;
+        }
+        if (!this.verificationToken.equals(token)) {
+            return false;
+        }
+        return this.magicTokenExpiresAt == null || this.magicTokenExpiresAt.isAfter(LocalDateTime.now());
+    }
+
+    public void recordLogin() {
+        this.lastLoginAt = LocalDateTime.now();
     }
 }

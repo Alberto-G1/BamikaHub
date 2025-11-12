@@ -47,6 +47,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/public/guest/**").permitAll()
                         .requestMatchers("/api/motivation/wall-of-fame").permitAll() // Public Wall of Fame
                         // Allow public access to uploaded files
                         .requestMatchers("/uploads/**").permitAll() // <-- ADD THIS LINE

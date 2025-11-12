@@ -12,4 +12,8 @@ public interface GuestTicketRepository extends JpaRepository<GuestTicket, Long> 
     List<GuestTicket> findAllByGuestIdOrderByCreatedAtDesc(Long guestId);
 
     List<GuestTicket> findAllByStatusOrderByCreatedAtAsc(GuestTicketStatus status);
+
+    List<GuestTicket> findAllByGuestIdOrderByUpdatedAtDesc(Long guestId);
+
+    java.util.Optional<GuestTicket> findByIdAndGuestId(Long id, Long guestId);
 }

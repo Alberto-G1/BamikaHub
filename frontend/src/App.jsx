@@ -1,12 +1,14 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
+import { GuestAuthProvider } from './context/GuestAuthContext.jsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // --- CORE & LAYOUT ---
 import MainLayout from './components/layout/MainLayout.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
+import GuestProtectedRoute from './components/auth/GuestProtectedRoute.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import { ChatProvider } from './context/ChatContext.jsx';
 
@@ -57,6 +59,11 @@ import SupportTicketPage from './pages/support/SupportTicketPage.jsx';
 import TicketDetailsPage from './pages/support/TicketDetailsPage.jsx';
 import GuestPortalPage from './pages/guest/GuestPortalPage.jsx';
 import GuestTicketDetailPage from './pages/guest/GuestTicketDetailPage.jsx';
+import GuestRegistrationPage from './pages/guest/GuestRegistrationPage.jsx';
+import GuestMagicLinkRequestPage from './pages/guest/GuestMagicLinkRequestPage.jsx';
+import GuestMagicLoginPage from './pages/guest/GuestMagicLoginPage.jsx';
+import GuestPortalDashboardPage from './pages/guest/GuestPortalDashboardPage.jsx';
+import GuestPortalTicketPage from './pages/guest/GuestPortalTicketPage.jsx';
 
 // --- REPORTS PAGES ---
 import ReportsPage from './pages/reporting/ReportsPage.jsx';
@@ -83,24 +90,30 @@ import AwardManagement from './pages/motivation/AwardManagement.jsx';
 function App() {
     return (
         <AuthProvider>
-            <ChatProvider>
-                <Router>
-                    <ToastContainer
-                    position="top-right"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="colored"
-                />
-                    <Routes>
+            <GuestAuthProvider>
+                <ChatProvider>
+                    <Router>
+                        <ToastContainer
+                            position="top-right"
+                            autoClose={5000}
+                            hideProgressBar={false}
+                            newestOnTop={false}
+                            closeOnClick
+                            rtl={false}
+                            pauseOnFocusLoss
+                            draggable
+                            pauseOnHover
+                            theme="colored"
+                        />
+                        <Routes>
                     {/* Public Routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/guest/register" element={<GuestRegistrationPage />} />
+                    <Route path="/guest/magic-link" element={<GuestMagicLinkRequestPage />} />
+                    <Route path="/guest/magic-login" element={<GuestMagicLoginPage />} />
+                    <Route path="/guest/portal" element={<GuestProtectedRoute><GuestPortalDashboardPage /></GuestProtectedRoute>} />
+                    <Route path="/guest/portal/tickets/:id" element={<GuestProtectedRoute><GuestPortalTicketPage /></GuestProtectedRoute>} />
                     
                     {/* Protected Routes inside the Main Layout */}
                     <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
@@ -190,9 +203,10 @@ function App() {
                     
                     {/* Catch-all Route for 404 Not Found */}
                     <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-            </Router>
-            </ChatProvider>
+                        </Routes>
+                    </Router>
+                </ChatProvider>
+            </GuestAuthProvider>
         </AuthProvider>
     );
 }

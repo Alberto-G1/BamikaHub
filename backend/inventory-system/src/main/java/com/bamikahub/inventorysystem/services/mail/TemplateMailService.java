@@ -33,6 +33,14 @@ public class TemplateMailService {
                     .append("</p>");
             builder.append("<p>Status: ").append(variables.getOrDefault("ticketStatus", "")).append("</p>");
             builder.append("<p>").append(variables.getOrDefault("slaSummary", "")).append("</p>");
+            if (variables.containsKey("ctaUrl")) {
+                String label = (String) variables.getOrDefault("ctaLabel", "Open Portal");
+                builder.append("<p><a href=\"")
+                        .append(variables.get("ctaUrl"))
+                        .append("\" style=\"display:inline-block;padding:10px 18px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:4px;\">")
+                        .append(label)
+                        .append("</a></p>");
+            }
             helper.setText(builder.toString(), true);
 
             mailSender.send(mimeMessage);

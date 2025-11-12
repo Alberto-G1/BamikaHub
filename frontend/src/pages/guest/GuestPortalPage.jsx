@@ -118,7 +118,9 @@ const GuestPortalPage = () => {
         status: ticket.status,
         assignedStaffName: ticket.assignedStaffName,
         updatedAt: ticket.updatedAt,
-        lastMessageAt: ticket.lastMessageAt
+        lastMessageAt: ticket.lastMessageAt,
+        ratingScore: ticket.ratingScore,
+        ratingComment: ticket.ratingComment
     })), [tickets]);
 
     return (
@@ -259,6 +261,7 @@ const GuestPortalPage = () => {
                                         <th>Status</th>
                                         <th>Assigned</th>
                                         <th>Updated</th>
+                                        <th>Rating</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -271,6 +274,7 @@ const GuestPortalPage = () => {
                                             <td><span className={`guest-status guest-status--${ticket.status?.toLowerCase()}`}>{ticket.status}</span></td>
                                             <td>{ticket.assignedStaffName || 'Unassigned'}</td>
                                             <td>{ticket.updatedAt ? new Date(ticket.updatedAt).toLocaleString() : '—'}</td>
+                                            <td>{ticket.ratingScore ? `${ticket.ratingScore}/5` : '—'}</td>
                                             <td>
                                                 <button
                                                     className="guest-secondary"

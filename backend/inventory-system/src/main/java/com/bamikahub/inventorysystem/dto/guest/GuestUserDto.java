@@ -17,5 +17,6 @@ public class GuestUserDto {
     private LocalDateTime verifiedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime lastLoginAt;
     private Integer ticketCount;
 }

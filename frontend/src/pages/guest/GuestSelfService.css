@@ -1,0 +1,113 @@
+.guest-self-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+    padding: 2rem;
+}
+
+.guest-self-card {
+    width: 100%;
+    max-width: 520px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2.5rem;
+    box-shadow: 0 40px 80px -40px rgba(15, 23, 42, 0.45);
+}
+
+.guest-self-card h1 {
+    margin-bottom: 0.5rem;
+    font-size: 1.75rem;
+    color: #111827;
+}
+
+.guest-self-card p {
+    margin-bottom: 1.5rem;
+    color: #4b5563;
+}
+
+.guest-self-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.guest-self-form label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+    color: #374151;
+    gap: 0.4rem;
+}
+
+.guest-self-form input,
+.guest-self-form textarea,
+.guest-self-form select {
+    padding: 0.75rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.guest-self-form input:focus,
+.guest-self-form textarea:focus,
+.guest-self-form select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    outline: none;
+}
+
+.guest-self-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.guest-self-primary {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.9rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.guest-self-primary:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.guest-self-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.guest-self-secondary {
+    background: transparent;
+    border: none;
+    color: #2563eb;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.guest-self-note {
+    font-size: 0.85rem;
+    color: #6b7280;
+    text-align: center;
+}
+
+.guest-token-box {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px dashed #d1d5db;
+    font-size: 0.85rem;
+    color: #374151;
+    word-break: break-all;
+}

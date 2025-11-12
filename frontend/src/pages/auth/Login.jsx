@@ -151,6 +151,15 @@ const Login = () => {
                             Don't have an account? <Link to="/register">Create Account</Link>
                         </p>
                     </div>
+
+                    <div className="guest-access-block">
+                        <p className="guest-access-title">Visiting as a guest?</p>
+                        <div className="guest-access-links">
+                            <Link to="/guest/register">Create guest profile</Link>
+                            <Link to="/guest/magic-link">Request access link</Link>
+                            <Link to="/guest/magic-login">Use a magic token</Link>
+                        </div>
+                    </div>
                 </div>
             </div>
 
