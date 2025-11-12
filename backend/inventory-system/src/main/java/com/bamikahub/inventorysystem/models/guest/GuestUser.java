@@ -76,6 +76,11 @@ public class GuestUser {
     @Builder.Default
     private List<GuestTicket> tickets = new ArrayList<>();
 
+    public void addTicket(GuestTicket ticket) {
+        ticket.setGuest(this);
+        this.tickets.add(ticket);
+    }
+
     public void markVerified(String issuedBy) {
         this.emailVerified = true;
         this.verifiedAt = LocalDateTime.now();

@@ -55,6 +55,8 @@ import RequisitionDetailsPage from './pages/finance/RequisitionDetailsPage.jsx';
 // --- SUPPORT TICKETS PAGES ---
 import SupportTicketPage from './pages/support/SupportTicketPage.jsx';
 import TicketDetailsPage from './pages/support/TicketDetailsPage.jsx';
+import GuestPortalPage from './pages/guest/GuestPortalPage.jsx';
+import GuestTicketDetailPage from './pages/guest/GuestTicketDetailPage.jsx';
 
 // --- REPORTS PAGES ---
 import ReportsPage from './pages/reporting/ReportsPage.jsx';
@@ -141,6 +143,8 @@ function App() {
                         {/* Support Tickets */}
                         <Route path="support/tickets" element={<ProtectedRoute><SupportTicketPage /></ProtectedRoute>} />
                         <Route path="support/tickets/:id" element={<ProtectedRoute><TicketDetailsPage /></ProtectedRoute>} />
+                        <Route path="support/guest" element={<ProtectedRoute requiredPermission="GUEST_TICKET_VIEW"><GuestPortalPage /></ProtectedRoute>} />
+                        <Route path="support/guest/tickets/:id" element={<ProtectedRoute requiredPermission="GUEST_TICKET_VIEW"><GuestTicketDetailPage /></ProtectedRoute>} />
 
                         {/* Reports & Analytics */}
                         <Route path="reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />

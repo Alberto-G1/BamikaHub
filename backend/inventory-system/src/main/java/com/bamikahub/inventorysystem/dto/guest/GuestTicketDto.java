@@ -20,4 +20,5 @@ public class GuestTicketDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastMessageAt;
+    private List<GuestTicketMessageDto> messages;
 }

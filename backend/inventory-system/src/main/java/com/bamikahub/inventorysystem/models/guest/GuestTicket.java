@@ -2,6 +2,7 @@ package com.bamikahub.inventorysystem.models.guest;
 
 import com.bamikahub.inventorysystem.models.user.User;
 import jakarta.persistence.CollectionTable;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -74,7 +75,7 @@ public class GuestTicket {
 
     private LocalDateTime lastMessageAt;
 
-    @OneToMany(mappedBy = "ticket", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<GuestTicketMessage> messages = new ArrayList<>();
 
@@ -85,6 +86,13 @@ public class GuestTicket {
 
     public void touchConversation() {
         this.lastMessageAt = LocalDateTime.now();
+        this.updatedAt = this.lastMessageAt;
+    }
+
+    public void addMessage(GuestTicketMessage message) {
+        message.setTicket(this);
+        this.messages.add(message);
+        touchConversation();
     }
 
     @PrePersist
