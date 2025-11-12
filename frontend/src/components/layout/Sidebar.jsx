@@ -201,6 +201,13 @@ const Sidebar = ({ isOpen = false, onNavigate }) => {
                                 <FaTicketAlt className="me-2" /> Support Tickets
                             </NavLink>
                         </li>
+                        {hasPermission('GUEST_TICKET_VIEW') && (
+                            <li className="nav-item">
+                                <NavLink to="/support/guest" className="nav-link" onClick={handleNav}>
+                                    <FaTicketAlt className="me-2" /> Guest Portal
+                                </NavLink>
+                            </li>
+                        )}
                     </div>
 
                     {/* Analysis Section */}

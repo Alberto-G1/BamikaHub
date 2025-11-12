@@ -52,6 +52,8 @@ public class DataInitializer implements CommandLineRunner {
         "REQUISITION_CREATE", "REQUISITION_APPROVE", "FINANCE_READ",
         // Technical Support (Future)
         "TICKET_CREATE", "TICKET_MANAGE", "TICKET_COMMENT", "TICKET_ASSIGN", "TICKET_RESOLVE", "TICKET_CLOSE", "TICKET_ARCHIVE",
+    // Guest Portal
+    "GUEST_USER_MANAGE", "GUEST_TICKET_VIEW", "GUEST_TICKET_MANAGE",
         // Assignment Management
         "ASSIGNMENT_CREATE", "ASSIGNMENT_READ", "ASSIGNMENT_UPDATE", "ASSIGNMENT_DELETE",
         // Audit Trail
@@ -78,7 +80,7 @@ public class DataInitializer implements CommandLineRunner {
 
             createRole("Field Engineer (Civil)", filterPermissions(allPermissionsSet, "ITEM_READ", "FIELD_REPORT_SUBMIT", "REQUISITION_CREATE", "ASSIGNMENT_READ"));
 
-            createRole("Technical Support IT", filterPermissions(allPermissionsSet, "TICKET_MANAGE", "USER_READ", "ASSIGNMENT_READ"));
+            createRole("Technical Support IT", filterPermissions(allPermissionsSet, "TICKET_", "GUEST_", "USER_READ", "ASSIGNMENT_READ"));
 
 
             // Create the primary Admin User
@@ -143,7 +145,18 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void createRole(String name, Set<Permission> permissions) {
-        roleRepository.findByName(name).orElseGet(() -> {
+        roleRepository.findByName(name).map(existing -> {
+            Set<Permission> currentPermissions = existing.getPermissions();
+            if (currentPermissions == null) {
+                currentPermissions = new HashSet<>();
+                existing.setPermissions(currentPermissions);
+            }
+            boolean modified = currentPermissions.addAll(permissions);
+            if (modified) {
+                roleRepository.save(existing);
+            }
+            return existing;
+        }).orElseGet(() -> {
             System.out.println("Creating role: " + name);
             Role role = new Role();
             role.setName(name);
