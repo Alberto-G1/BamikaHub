@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useTheme } from '../../hooks/useTheme.js';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
-import Button from '../../components/common/Button.jsx';
-import Card from '../../components/common/Card.jsx';
-import Input from '../../components/common/Input.jsx';
-import Modal from '../../components/common/Modal.jsx';
-import Spinner from '../../components/common/Spinner.jsx';
-import { useTheme } from '../../hooks/useTheme';
+import { FaCog, FaPalette, FaBell, FaEye, FaSave, FaUserCog } from 'react-icons/fa';
 import './Settings.css';
 
 const Settings = () => {
@@ -16,25 +12,6 @@ const Settings = () => {
     const [activeTab, setActiveTab] = useState('user');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-
-    const applyThemePreference = (themePreference) => {
-        if (!themePreference) {
-            return;
-        }
-
-        if (themePreference === 'dark') {
-            setDarkTheme();
-        } else if (themePreference === 'light') {
-            setLightTheme();
-        } else if (themePreference === 'auto') {
-            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (prefersDark) {
-                setDarkTheme();
-            } else {
-                setLightTheme();
-            }
-        }
-    };
 
     // User Settings State
     const [userSettings, setUserSettings] = useState({
@@ -79,12 +56,10 @@ const Settings = () => {
     const loadSettings = async () => {
         setLoading(true);
         try {
-            // Load user settings
             const userResponse = await api.get('/settings/user');
             setUserSettings(userResponse.data);
             applyThemePreference(userResponse.data?.theme);
 
-            // Load system settings if admin
             if (hasPermission('SYSTEM_SETTINGS_READ')) {
                 const systemResponse = await api.get('/settings/system');
                 setSystemSettings(systemResponse.data);
@@ -94,6 +69,16 @@ const Settings = () => {
             toast.error('Failed to load settings');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const applyThemePreference = (themePreference) => {
+        if (!themePreference) return;
+        if (themePreference === 'dark') setDarkTheme();
+        else if (themePreference === 'light') setLightTheme();
+        else if (themePreference === 'auto') {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            prefersDark ? setDarkTheme() : setLightTheme();
         }
     };
 
@@ -127,78 +112,89 @@ const Settings = () => {
     };
 
     const handleUserSettingChange = (field, value) => {
-        setUserSettings(prev => ({
-            ...prev,
-            [field]: value
-        }));
+        setUserSettings(prev => ({ ...prev, [field]: value }));
     };
 
     const handleSystemSettingChange = (field, value) => {
-        setSystemSettings(prev => ({
-            ...prev,
-            [field]: value
-        }));
+        setSystemSettings(prev => ({ ...prev, [field]: value }));
     };
 
     if (loading) {
         return (
-            <div className="settings-loading">
-                <Spinner />
+            <div className="reporting-loading">
+                <div className="reporting-spinner" />
                 <p>Loading settings...</p>
             </div>
         );
     }
 
     return (
-        <div className="settings-page">
-            <div className="settings-header">
-                <h1>Settings</h1>
-                <p>Manage your preferences and system configuration</p>
+        <section className="reporting-page">
+            <div className="reporting-banner" data-animate="fade-up">
+                <div className="reporting-banner__content">
+                    <div className="reporting-banner__info">
+                        <span className="reporting-banner__eyebrow">
+                            <FaCog /> System Configuration
+                        </span>
+                        <h1 className="reporting-banner__title">Settings & Preferences</h1>
+                        <p className="reporting-banner__subtitle">
+                            Customize your experience and manage system-wide configurations. 
+                            Personalize themes, notifications, and application behavior to suit your workflow.
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <div className="settings-tabs">
+            <div className="reporting-tabs" data-animate="fade-up" data-delay="0.04">
                 <button
-                    className={`tab-button ${activeTab === 'user' ? 'active' : ''}`}
+                    className={`reporting-tab ${activeTab === 'user' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('user')}
                 >
-                    User Settings
+                    <FaUserCog /> User Settings
                 </button>
                 {hasPermission('SYSTEM_SETTINGS_READ') && (
                     <button
-                        className={`tab-button ${activeTab === 'system' ? 'active' : ''}`}
+                        className={`reporting-tab ${activeTab === 'system' ? 'is-active' : ''}`}
                         onClick={() => setActiveTab('system')}
                     >
-                        System Settings
+                        <FaCog /> System Settings
                     </button>
                 )}
             </div>
 
             <div className="settings-content">
                 {activeTab === 'user' && (
-                    <Card className="settings-card">
-                        <div className="card-header">
-                            <h2>User Preferences</h2>
-                        </div>
-                        <div className="card-body">
-                            <div className="settings-section">
-                                <h3>Appearance</h3>
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label>Theme</label>
+                    <div className="settings-grid" data-animate="fade-up" data-delay="0.08">
+                        {/* Appearance Card */}
+                        <div className="reporting-card reporting-card--stretch">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">
+                                        <FaPalette /> Appearance
+                                    </h2>
+                                    <p className="reporting-card__subtitle">Customize the look and feel</p>
+                                </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="reporting-filters__grid">
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Theme</label>
                                         <select
                                             value={userSettings.theme}
                                             onChange={(e) => handleUserSettingChange('theme', e.target.value)}
+                                            className="reporting-select"
                                         >
                                             <option value="light">Light</option>
                                             <option value="dark">Dark</option>
                                             <option value="auto">Auto</option>
                                         </select>
                                     </div>
-                                    <div className="form-group">
-                                        <label>Language</label>
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Language</label>
                                         <select
                                             value={userSettings.language}
                                             onChange={(e) => handleUserSettingChange('language', e.target.value)}
+                                            className="reporting-select"
                                         >
                                             <option value="en">English</option>
                                             <option value="es">Spanish</option>
@@ -207,74 +203,97 @@ const Settings = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="settings-section">
-                                <h3>Notifications</h3>
-                                <div className="checkbox-group">
-                                    <label className="checkbox-label">
+                        {/* Notifications Card */}
+                        <div className="reporting-card reporting-card--stretch">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">
+                                        <FaBell /> Notifications
+                                    </h2>
+                                    <p className="reporting-card__subtitle">Manage your notification preferences</p>
+                                </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="settings-checkbox-group">
+                                    <label className="settings-checkbox">
                                         <input
                                             type="checkbox"
                                             checked={userSettings.emailNotifications}
                                             onChange={(e) => handleUserSettingChange('emailNotifications', e.target.checked)}
                                         />
-                                        Email Notifications
+                                        <span className="settings-checkbox__label">Email Notifications</span>
                                     </label>
-                                    <label className="checkbox-label">
+                                    <label className="settings-checkbox">
                                         <input
                                             type="checkbox"
                                             checked={userSettings.smsNotifications}
                                             onChange={(e) => handleUserSettingChange('smsNotifications', e.target.checked)}
                                         />
-                                        SMS Notifications
+                                        <span className="settings-checkbox__label">SMS Notifications</span>
                                     </label>
-                                    <label className="checkbox-label">
+                                    <label className="settings-checkbox">
                                         <input
                                             type="checkbox"
                                             checked={userSettings.pushNotifications}
                                             onChange={(e) => handleUserSettingChange('pushNotifications', e.target.checked)}
                                         />
-                                        Push Notifications
+                                        <span className="settings-checkbox__label">Push Notifications</span>
                                     </label>
-                                    <label className="checkbox-label">
+                                    <label className="settings-checkbox">
                                         <input
                                             type="checkbox"
                                             checked={userSettings.desktopNotifications}
                                             onChange={(e) => handleUserSettingChange('desktopNotifications', e.target.checked)}
                                         />
-                                        Desktop Notifications
+                                        <span className="settings-checkbox__label">Desktop Notifications</span>
                                     </label>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="settings-section">
-                                <h3>Display</h3>
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label>Items Per Page</label>
-                                        <Input
+                        {/* Display Card */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">
+                                        <FaEye /> Display
+                                    </h2>
+                                    <p className="reporting-card__subtitle">Configure display preferences</p>
+                                </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="reporting-filters__grid">
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Items Per Page</label>
+                                        <input
                                             type="number"
                                             min="10"
                                             max="100"
                                             value={userSettings.itemsPerPage}
                                             onChange={(e) => handleUserSettingChange('itemsPerPage', parseInt(e.target.value))}
+                                            className="reporting-input"
                                         />
                                     </div>
-                                    <div className="form-group">
-                                        <label>Date Format</label>
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Date Format</label>
                                         <select
                                             value={userSettings.dateFormat}
                                             onChange={(e) => handleUserSettingChange('dateFormat', e.target.value)}
+                                            className="reporting-select"
                                         >
                                             <option value="MM/dd/yyyy">MM/DD/YYYY</option>
                                             <option value="dd/MM/yyyy">DD/MM/YYYY</option>
                                             <option value="yyyy-MM-dd">YYYY-MM-DD</option>
                                         </select>
                                     </div>
-                                    <div className="form-group">
-                                        <label>Time Format</label>
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Time Format</label>
                                         <select
                                             value={userSettings.timeFormat}
                                             onChange={(e) => handleUserSettingChange('timeFormat', e.target.value)}
+                                            className="reporting-select"
                                         >
                                             <option value="HH:mm">24-hour</option>
                                             <option value="hh:mm a">12-hour</option>
@@ -282,250 +301,140 @@ const Settings = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="settings-section">
-                                <h3>Behavior</h3>
-                                <div className="checkbox-group">
-                                    <label className="checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={userSettings.autoSaveEnabled}
-                                            onChange={(e) => handleUserSettingChange('autoSaveEnabled', e.target.checked)}
-                                        />
-                                        Enable Auto-save
-                                    </label>
-                                    <label className="checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={userSettings.showWelcomeMessage}
-                                            onChange={(e) => handleUserSettingChange('showWelcomeMessage', e.target.checked)}
-                                        />
-                                        Show Welcome Message
-                                    </label>
-                                    <label className="checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={userSettings.compactView}
-                                            onChange={(e) => handleUserSettingChange('compactView', e.target.checked)}
-                                        />
-                                        Compact View
-                                    </label>
+                        {/* Actions */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__content">
+                                <div className="settings-actions">
+                                    <button
+                                        onClick={saveUserSettings}
+                                        disabled={saving}
+                                        className="reporting-btn reporting-btn--gold"
+                                    >
+                                        <FaSave /> {saving ? 'Saving...' : 'Save User Settings'}
+                                    </button>
                                 </div>
-                                {userSettings.autoSaveEnabled && (
-                                    <div className="form-group">
-                                        <label>Auto-save Interval (minutes)</label>
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            max="30"
-                                            value={userSettings.autoSaveIntervalMinutes}
-                                            onChange={(e) => handleUserSettingChange('autoSaveIntervalMinutes', parseInt(e.target.value))}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="settings-actions">
-                                <Button
-                                    onClick={saveUserSettings}
-                                    disabled={saving}
-                                    className="primary"
-                                >
-                                    {saving ? 'Saving...' : 'Save Settings'}
-                                </Button>
                             </div>
                         </div>
-                    </Card>
+                    </div>
                 )}
 
                 {activeTab === 'system' && hasPermission('SYSTEM_SETTINGS_READ') && (
-                    <Card className="settings-card">
-                        <div className="card-header">
-                            <h2>System Configuration</h2>
-                        </div>
-                        <div className="card-body">
-                            <div className="settings-section">
-                                <h3>Company Information</h3>
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label>Company Name *</label>
-                                        <Input
+                    <div className="settings-grid" data-animate="fade-up" data-delay="0.08">
+                        {/* Company Information */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Company Information</h2>
+                                    <p className="reporting-card__subtitle">Basic organization details</p>
+                                </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="reporting-filters__grid">
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Company Name</label>
+                                        <input
                                             value={systemSettings.companyName}
                                             onChange={(e) => handleSystemSettingChange('companyName', e.target.value)}
+                                            className="reporting-input"
                                             required
                                         />
                                     </div>
-                                    <div className="form-group">
-                                        <label>Company Email</label>
-                                        <Input
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Company Email</label>
+                                        <input
                                             type="email"
                                             value={systemSettings.companyEmail}
                                             onChange={(e) => handleSystemSettingChange('companyEmail', e.target.value)}
+                                            className="reporting-input"
                                         />
                                     </div>
-                                    <div className="form-group">
-                                        <label>Company Phone</label>
-                                        <Input
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Company Phone</label>
+                                        <input
                                             value={systemSettings.companyPhone}
                                             onChange={(e) => handleSystemSettingChange('companyPhone', e.target.value)}
+                                            className="reporting-input"
                                         />
                                     </div>
                                 </div>
-                                <div className="form-group">
-                                    <label>Company Address</label>
-                                    <Input
+                                <div className="reporting-form-group">
+                                    <label className="reporting-form-label">Company Address</label>
+                                    <textarea
                                         value={systemSettings.companyAddress}
                                         onChange={(e) => handleSystemSettingChange('companyAddress', e.target.value)}
+                                        className="reporting-textarea"
+                                        rows="3"
                                     />
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="settings-section">
-                                <h3>Localization</h3>
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label>Timezone</label>
-                                        <select
-                                            value={systemSettings.timezone}
-                                            onChange={(e) => handleSystemSettingChange('timezone', e.target.value)}
-                                        >
-                                            <option value="UTC">UTC</option>
-                                            <option value="America/New_York">Eastern Time</option>
-                                            <option value="America/Chicago">Central Time</option>
-                                            <option value="America/Denver">Mountain Time</option>
-                                            <option value="America/Los_Angeles">Pacific Time</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Currency</label>
-                                        <select
-                                            value={systemSettings.currency}
-                                            onChange={(e) => handleSystemSettingChange('currency', e.target.value)}
-                                        >
-                                            <option value="USD">USD</option>
-                                            <option value="EUR">EUR</option>
-                                            <option value="GBP">GBP</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>System Language</label>
-                                        <select
-                                            value={systemSettings.language}
-                                            onChange={(e) => handleSystemSettingChange('language', e.target.value)}
-                                        >
-                                            <option value="en">English</option>
-                                            <option value="es">Spanish</option>
-                                            <option value="fr">French</option>
-                                        </select>
-                                    </div>
+                        {/* Security Settings */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Security Settings</h2>
+                                    <p className="reporting-card__subtitle">System security configuration</p>
                                 </div>
                             </div>
-
-                            <div className="settings-section">
-                                <h3>Security Settings</h3>
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label>Session Timeout (minutes)</label>
-                                        <Input
+                            <div className="reporting-card__content">
+                                <div className="reporting-filters__grid">
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Session Timeout (minutes)</label>
+                                        <input
                                             type="number"
                                             min="5"
                                             max="480"
                                             value={systemSettings.sessionTimeoutMinutes}
                                             onChange={(e) => handleSystemSettingChange('sessionTimeoutMinutes', parseInt(e.target.value))}
+                                            className="reporting-input"
                                         />
                                     </div>
-                                    <div className="form-group">
-                                        <label>Max Login Attempts</label>
-                                        <Input
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Max Login Attempts</label>
+                                        <input
                                             type="number"
                                             min="3"
                                             max="10"
                                             value={systemSettings.maxLoginAttempts}
                                             onChange={(e) => handleSystemSettingChange('maxLoginAttempts', parseInt(e.target.value))}
+                                            className="reporting-input"
                                         />
                                     </div>
                                 </div>
-                                <div className="checkbox-group">
-                                    <label className="checkbox-label">
+                                <div className="settings-checkbox-group">
+                                    <label className="settings-checkbox">
                                         <input
                                             type="checkbox"
                                             checked={systemSettings.twoFactorAuthRequired}
                                             onChange={(e) => handleSystemSettingChange('twoFactorAuthRequired', e.target.checked)}
                                         />
-                                        Require Two-Factor Authentication
+                                        <span className="settings-checkbox__label">Require Two-Factor Authentication</span>
                                     </label>
                                 </div>
-                            </div>
-
-                            <div className="settings-section">
-                                <h3>System Notifications</h3>
-                                <div className="checkbox-group">
-                                    <label className="checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={systemSettings.emailNotificationsEnabled}
-                                            onChange={(e) => handleSystemSettingChange('emailNotificationsEnabled', e.target.checked)}
-                                        />
-                                        Email Notifications
-                                    </label>
-                                    <label className="checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={systemSettings.smsNotificationsEnabled}
-                                            onChange={(e) => handleSystemSettingChange('smsNotificationsEnabled', e.target.checked)}
-                                        />
-                                        SMS Notifications
-                                    </label>
-                                    <label className="checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={systemSettings.pushNotificationsEnabled}
-                                            onChange={(e) => handleSystemSettingChange('pushNotificationsEnabled', e.target.checked)}
-                                        />
-                                        Push Notifications
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className="settings-section">
-                                <h3>Maintenance Mode</h3>
-                                <div className="checkbox-group">
-                                    <label className="checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={systemSettings.maintenanceMode}
-                                            onChange={(e) => handleSystemSettingChange('maintenanceMode', e.target.checked)}
-                                        />
-                                        Enable Maintenance Mode
-                                    </label>
-                                </div>
-                                {systemSettings.maintenanceMode && (
-                                    <div className="form-group">
-                                        <label>Maintenance Message</label>
-                                        <textarea
-                                            value={systemSettings.maintenanceMessage}
-                                            onChange={(e) => handleSystemSettingChange('maintenanceMessage', e.target.value)}
-                                            placeholder="Enter maintenance message..."
-                                            rows="3"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="settings-actions">
-                                <Button
-                                    onClick={saveSystemSettings}
-                                    disabled={saving}
-                                    className="primary"
-                                >
-                                    {saving ? 'Saving...' : 'Save System Settings'}
-                                </Button>
                             </div>
                         </div>
-                    </Card>
+
+                        {/* Actions */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__content">
+                                <div className="settings-actions">
+                                    <button
+                                        onClick={saveSystemSettings}
+                                        disabled={saving}
+                                        className="reporting-btn reporting-btn--gold"
+                                    >
+                                        <FaSave /> {saving ? 'Saving...' : 'Save System Settings'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
-        </div>
+        </section>
     );
 };
 

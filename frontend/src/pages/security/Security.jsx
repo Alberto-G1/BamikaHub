@@ -2,13 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
-import Button from '../../components/common/Button.jsx';
-import Card from '../../components/common/Card.jsx';
-import Input from '../../components/common/Input.jsx';
-import Modal from '../../components/common/Modal.jsx';
-import Spinner from '../../components/common/Spinner.jsx';
-import Table from '../../components/common/Table.jsx';
-import Badge from '../../components/common/Badge.jsx';
+import { FaCog, FaShieldAlt, FaKey, FaMobileAlt, FaBell, FaHistory, FaCheck, FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Security.css';
 
 const Security = () => {
@@ -34,6 +28,11 @@ const Security = () => {
     // 2FA setup modal
     const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
     const [twoFactorSetup, setTwoFactorSetup] = useState(null);
+
+    // Password visibility toggles
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         loadSecurityData();
@@ -89,6 +88,7 @@ const Security = () => {
             setTwoFactorSetup(response.data);
             setTwoFactorStatus(response.data);
             toast.success('Two-factor authentication enabled');
+            setShowTwoFactorModal(false);
         } catch (error) {
             console.error('Error enabling 2FA:', error);
             toast.error('Failed to enable two-factor authentication');
@@ -138,343 +138,591 @@ const Security = () => {
 
     if (loading) {
         return (
-            <div className="security-loading">
-                <Spinner />
+            <div className="reporting-loading">
+                <div className="reporting-spinner" />
                 <p>Loading security information...</p>
             </div>
         );
     }
 
     return (
-        <div className="security-page">
-            <div className="security-header">
-                <h1>Security Center</h1>
-                <p>Manage your account security and monitor activity</p>
+        <section className="reporting-page">
+            <div className="reporting-banner" data-animate="fade-up">
+                <div className="reporting-banner__content">
+                    <div className="reporting-banner__info">
+                        <span className="reporting-banner__eyebrow">
+                            <FaShieldAlt /> Account Protection
+                        </span>
+                        <h1 className="reporting-banner__title">Security Center</h1>
+                        <p className="reporting-banner__subtitle">
+                            Monitor and enhance your account security. Manage passwords, 
+                            two-factor authentication, and review security activity.
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <div className="security-tabs">
+            <div className="reporting-tabs" data-animate="fade-up" data-delay="0.04">
                 <button
-                    className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+                    className={`reporting-tab ${activeTab === 'overview' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('overview')}
                 >
-                    Overview
+                    <FaShieldAlt /> Overview
                 </button>
                 <button
-                    className={`tab-button ${activeTab === 'password' ? 'active' : ''}`}
+                    className={`reporting-tab ${activeTab === 'password' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('password')}
                 >
-                    Password
+                    <FaKey /> Password
                 </button>
                 <button
-                    className={`tab-button ${activeTab === 'twofactor' ? 'active' : ''}`}
+                    className={`reporting-tab ${activeTab === 'twofactor' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('twofactor')}
                 >
-                    Two-Factor Auth
+                    <FaMobileAlt /> Two-Factor Auth
                 </button>
                 <button
-                    className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
+                    className={`reporting-tab ${activeTab === 'history' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('history')}
                 >
-                    Login History
+                    <FaHistory /> Login History
                 </button>
                 <button
-                    className={`tab-button ${activeTab === 'alerts' ? 'active' : ''}`}
+                    className={`reporting-tab ${activeTab === 'alerts' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('alerts')}
                 >
-                    Security Alerts
+                    <FaBell /> Security Alerts
                     {unacknowledgedCount > 0 && (
-                        <Badge variant="danger" className="alert-count">
-                            {unacknowledgedCount}
-                        </Badge>
+                        <span className="security-alert-count">{unacknowledgedCount}</span>
                     )}
                 </button>
             </div>
 
             <div className="security-content">
                 {activeTab === 'overview' && (
-                    <div className="security-overview">
-                        <div className="overview-grid">
-                            <Card className="overview-card">
-                                <div className="card-header">
-                                    <h3>Account Security Status</h3>
+                    <div className="security-grid" data-animate="fade-up" data-delay="0.08">
+                        {/* Security Status */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Security Status</h2>
+                                    <p className="reporting-card__subtitle">Your account security overview</p>
                                 </div>
-                                <div className="card-body">
-                                    <div className="security-status">
-                                        <div className="status-item">
-                                            <span className="status-label">Password Strength:</span>
-                                            <Badge variant="success">Strong</Badge>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="security-status-grid">
+                                    <div className="security-status-item">
+                                        <div className="security-status-icon reporting-banner__meta-icon reporting-banner__meta-icon--green">
+                                            <FaCheck />
                                         </div>
-                                        <div className="status-item">
-                                            <span className="status-label">Two-Factor Auth:</span>
-                                            <Badge variant={twoFactorStatus?.enabled ? 'success' : 'warning'}>
+                                        <div className="security-status-content">
+                                            <h4>Password Strength</h4>
+                                            <span className="reporting-badge reporting-badge--success">Strong</span>
+                                        </div>
+                                    </div>
+                                    <div className="security-status-item">
+                                        <div className={`security-status-icon reporting-banner__meta-icon ${
+                                            twoFactorStatus?.enabled 
+                                                ? 'reporting-banner__meta-icon--green' 
+                                                : 'reporting-banner__meta-icon--gold'
+                                        }`}>
+                                            {twoFactorStatus?.enabled ? <FaCheck /> : <FaTimes />}
+                                        </div>
+                                        <div className="security-status-content">
+                                            <h4>Two-Factor Auth</h4>
+                                            <span className={`reporting-badge ${
+                                                twoFactorStatus?.enabled 
+                                                    ? 'reporting-badge--success' 
+                                                    : 'reporting-badge--warning'
+                                            }`}>
                                                 {twoFactorStatus?.enabled ? 'Enabled' : 'Disabled'}
-                                            </Badge>
+                                            </span>
                                         </div>
-                                        <div className="status-item">
-                                            <span className="status-label">Active Sessions:</span>
-                                            <Badge variant="info">1</Badge>
+                                    </div>
+                                    <div className="security-status-item">
+                                        <div className="security-status-icon reporting-banner__meta-icon reporting-banner__meta-icon--blue">
+                                            <FaHistory />
                                         </div>
-                                        <div className="status-item">
-                                            <span className="status-label">Security Alerts:</span>
-                                            <Badge variant={unacknowledgedCount > 0 ? 'danger' : 'success'}>
+                                        <div className="security-status-content">
+                                            <h4>Active Sessions</h4>
+                                            <span className="reporting-badge reporting-badge--info">1</span>
+                                        </div>
+                                    </div>
+                                    <div className="security-status-item">
+                                        <div className={`security-status-icon reporting-banner__meta-icon ${
+                                            unacknowledgedCount > 0 
+                                                ? 'reporting-banner__meta-icon--red' 
+                                                : 'reporting-banner__meta-icon--green'
+                                        }`}>
+                                            <FaBell />
+                                        </div>
+                                        <div className="security-status-content">
+                                            <h4>Security Alerts</h4>
+                                            <span className={`reporting-badge ${
+                                                unacknowledgedCount > 0 
+                                                    ? 'reporting-badge--danger' 
+                                                    : 'reporting-badge--success'
+                                            }`}>
                                                 {unacknowledgedCount > 0 ? `${unacknowledgedCount} Unacknowledged` : 'All Clear'}
-                                            </Badge>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
-                            </Card>
+                            </div>
+                        </div>
 
-                            <Card className="overview-card">
-                                <div className="card-header">
-                                    <h3>Recent Activity</h3>
+                        {/* Recent Activity */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Recent Activity</h2>
+                                    <p className="reporting-card__subtitle">Latest login attempts and security events</p>
                                 </div>
-                                <div className="card-body">
-                                    <div className="recent-activity">
-                                        {loginHistory.slice(0, 3).map((login, index) => (
-                                            <div key={index} className="activity-item">
-                                                <div className="activity-icon">
-                                                    {login.successful ? '✓' : '✗'}
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="recent-activity-list">
+                                    {loginHistory.slice(0, 5).map((login, index) => (
+                                        <div key={index} className="activity-item">
+                                            <div className={`activity-icon ${
+                                                login.successful ? 'activity-icon--success' : 'activity-icon--danger'
+                                            }`}>
+                                                {login.successful ? <FaCheck /> : <FaTimes />}
+                                            </div>
+                                            <div className="activity-details">
+                                                <div className="activity-type">
+                                                    {login.successful ? 'Successful login' : 'Failed login attempt'}
                                                 </div>
-                                                <div className="activity-details">
-                                                    <div className="activity-type">
-                                                        {login.successful ? 'Successful login' : 'Failed login attempt'}
-                                                    </div>
-                                                    <div className="activity-meta">
-                                                        {formatDateTime(login.loginTime)} • {login.ipAddress}
-                                                    </div>
+                                                <div className="activity-meta">
+                                                    {formatDateTime(login.loginTime)} • {login.ipAddress}
+                                                    {login.deviceType && ` • ${login.deviceType}`}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    ))}
+                                    {loginHistory.length === 0 && (
+                                        <div className="reporting-empty-state">
+                                            <p>No recent activity found.</p>
+                                        </div>
+                                    )}
                                 </div>
-                            </Card>
+                            </div>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Quick Actions</h2>
+                                    <p className="reporting-card__subtitle">Enhance your account security</p>
+                                </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="security-actions-grid">
+                                    <button
+                                        onClick={() => setShowPasswordModal(true)}
+                                        className="security-action-btn"
+                                    >
+                                        <div className="security-action-icon">
+                                            <FaKey />
+                                        </div>
+                                        <div className="security-action-content">
+                                            <h4>Change Password</h4>
+                                            <p>Update your account password</p>
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={() => setShowTwoFactorModal(true)}
+                                        className="security-action-btn"
+                                    >
+                                        <div className="security-action-icon">
+                                            <FaMobileAlt />
+                                        </div>
+                                        <div className="security-action-content">
+                                            <h4>Two-Factor Auth</h4>
+                                            <p>Add an extra layer of security</p>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {activeTab === 'password' && (
-                    <Card className="security-card">
-                        <div className="card-header">
-                            <h2>Change Password</h2>
-                        </div>
-                        <div className="card-body">
-                            <div className="password-section">
-                                <p>Regularly updating your password helps keep your account secure.</p>
-                                <Button
-                                    onClick={() => setShowPasswordModal(true)}
-                                    className="primary"
-                                >
-                                    Change Password
-                                </Button>
+                    <div className="security-grid" data-animate="fade-up" data-delay="0.08">
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Password Management</h2>
+                                    <p className="reporting-card__subtitle">Secure your account with a strong password</p>
+                                </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="password-section">
+                                    <div className="password-info">
+                                        <div className="password-strength">
+                                            <h4>Password Strength: <span className="reporting-text--positive">Strong</span></h4>
+                                            <p>Your current password meets all security requirements.</p>
+                                        </div>
+                                        <div className="password-tips">
+                                            <h5>Password Tips:</h5>
+                                            <ul>
+                                                <li>Use at least 12 characters</li>
+                                                <li>Include numbers, symbols, and mixed case letters</li>
+                                                <li>Avoid common words and personal information</li>
+                                                <li>Don't reuse passwords across different sites</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div className="password-actions">
+                                        <button
+                                            onClick={() => setShowPasswordModal(true)}
+                                            className="reporting-btn reporting-btn--gold"
+                                        >
+                                            <FaKey /> Change Password
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </Card>
+                    </div>
                 )}
 
                 {activeTab === 'twofactor' && (
-                    <Card className="security-card">
-                        <div className="card-header">
-                            <h2>Two-Factor Authentication</h2>
-                        </div>
-                        <div className="card-body">
-                            <div className="twofactor-section">
-                                <div className="twofactor-status">
-                                    <div className="status-indicator">
-                                        <span className={`status-dot ${twoFactorStatus?.enabled ? 'enabled' : 'disabled'}`}></span>
-                                        <span className="status-text">
-                                            Two-factor authentication is {twoFactorStatus?.enabled ? 'enabled' : 'disabled'}
-                                        </span>
-                                    </div>
-                                    <p>
-                                        {twoFactorStatus?.enabled
-                                            ? 'Your account is protected with an additional layer of security.'
-                                            : 'Add an extra layer of security to your account by enabling two-factor authentication.'
-                                        }
-                                    </p>
+                    <div className="security-grid" data-animate="fade-up" data-delay="0.08">
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Two-Factor Authentication</h2>
+                                    <p className="reporting-card__subtitle">Add an extra layer of security to your account</p>
                                 </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="twofactor-section">
+                                    <div className="twofactor-status">
+                                        <div className="status-indicator">
+                                            <span className={`status-dot ${twoFactorStatus?.enabled ? 'enabled' : 'disabled'}`}></span>
+                                            <span className="status-text">
+                                                Two-factor authentication is currently {twoFactorStatus?.enabled ? 'enabled' : 'disabled'}
+                                            </span>
+                                        </div>
+                                        <p className="twofactor-description">
+                                            {twoFactorStatus?.enabled
+                                                ? 'Your account is protected with an additional layer of security. You will need to enter a verification code from your authenticator app when signing in.'
+                                                : 'Add an extra layer of security to your account by enabling two-factor authentication. You will need to enter a verification code from your authenticator app in addition to your password.'
+                                            }
+                                        </p>
+                                    </div>
 
-                                <div className="twofactor-actions">
-                                    {!twoFactorStatus?.enabled ? (
-                                        <Button
-                                            onClick={() => setShowTwoFactorModal(true)}
-                                            className="primary"
-                                        >
-                                            Enable Two-Factor Auth
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            onClick={handleDisableTwoFactor}
-                                            className="danger"
-                                        >
-                                            Disable Two-Factor Auth
-                                        </Button>
-                                    )}
+                                    <div className="twofactor-actions">
+                                        {!twoFactorStatus?.enabled ? (
+                                            <button
+                                                onClick={() => setShowTwoFactorModal(true)}
+                                                className="reporting-btn reporting-btn--gold"
+                                            >
+                                                <FaMobileAlt /> Enable Two-Factor Auth
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={handleDisableTwoFactor}
+                                                className="reporting-btn reporting-btn--red"
+                                            >
+                                                <FaTimes /> Disable Two-Factor Auth
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </Card>
+                    </div>
                 )}
 
                 {activeTab === 'history' && (
-                    <Card className="security-card">
-                        <div className="card-header">
-                            <h2>Login History</h2>
-                        </div>
-                        <div className="card-body">
-                            <Table
-                                columns={[
-                                    { key: 'loginTime', header: 'Date & Time', render: (value) => formatDateTime(value) },
-                                    { key: 'ipAddress', header: 'IP Address' },
-                                    { key: 'deviceType', header: 'Device' },
-                                    { key: 'browser', header: 'Browser' },
-                                    {
-                                        key: 'successful',
-                                        header: 'Status',
-                                        render: (value) => (
-                                            <Badge variant={value ? 'success' : 'danger'}>
-                                                {value ? 'Success' : 'Failed'}
-                                            </Badge>
-                                        )
-                                    }
-                                ]}
-                                data={loginHistory}
-                                emptyMessage="No login history available"
-                            />
-                        </div>
-                    </Card>
-                )}
-
-                {activeTab === 'alerts' && (
-                    <Card className="security-card">
-                        <div className="card-header">
-                            <h2>Security Alerts</h2>
-                        </div>
-                        <div className="card-body">
-                            <div className="alerts-list">
-                                {securityAlerts.map((alert) => (
-                                    <div key={alert.id} className={`alert-item ${alert.acknowledged ? 'acknowledged' : ''}`}>
-                                        <div className="alert-header">
-                                            <Badge variant={getSeverityColor(alert.severity)}>
-                                                {alert.severity}
-                                            </Badge>
-                                            <span className="alert-type">{alert.alertType.replace(/_/g, ' ')}</span>
-                                            <span className="alert-time">{formatDateTime(alert.createdAt)}</span>
-                                        </div>
-                                        <div className="alert-message">{alert.message}</div>
-                                        {alert.ipAddress && (
-                                            <div className="alert-meta">IP: {alert.ipAddress}</div>
-                                        )}
-                                        {!alert.acknowledged && (
-                                            <div className="alert-actions">
-                                                <Button
-                                                    size="small"
-                                                    onClick={() => handleAcknowledgeAlert(alert.id)}
-                                                >
-                                                    Acknowledge
-                                                </Button>
-                                            </div>
-                                        )}
+                    <div className="security-grid" data-animate="fade-up" data-delay="0.08">
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Login History</h2>
+                                    <p className="reporting-card__subtitle">Recent account access attempts</p>
+                                </div>
+                                <span className="reporting-badge reporting-badge--info">{loginHistory.length} Records</span>
+                            </div>
+                            <div className="reporting-card__content">
+                                {loginHistory.length === 0 ? (
+                                    <div className="reporting-empty-state">
+                                        <p>No login history available.</p>
                                     </div>
-                                ))}
-                                {securityAlerts.length === 0 && (
-                                    <div className="no-alerts">
-                                        <p>No security alerts found.</p>
+                                ) : (
+                                    <div className="reporting-table-container">
+                                        <table className="reporting-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date & Time</th>
+                                                    <th>IP Address</th>
+                                                    <th>Device</th>
+                                                    <th>Browser</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {loginHistory.map((login, index) => (
+                                                    <tr key={index}>
+                                                        <td>{formatDateTime(login.loginTime)}</td>
+                                                        <td>{login.ipAddress}</td>
+                                                        <td>{login.deviceType || 'Unknown'}</td>
+                                                        <td>{login.browser || 'Unknown'}</td>
+                                                        <td>
+                                                            <span className={`reporting-badge ${
+                                                                login.successful 
+                                                                    ? 'reporting-badge--success' 
+                                                                    : 'reporting-badge--danger'
+                                                            }`}>
+                                                                {login.successful ? 'Success' : 'Failed'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 )}
                             </div>
                         </div>
-                    </Card>
+                    </div>
+                )}
+
+                {activeTab === 'alerts' && (
+                    <div className="security-grid" data-animate="fade-up" data-delay="0.08">
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Security Alerts</h2>
+                                    <p className="reporting-card__subtitle">Important security notifications</p>
+                                </div>
+                                {unacknowledgedCount > 0 && (
+                                    <span className="reporting-badge reporting-badge--danger">
+                                        {unacknowledgedCount} Unacknowledged
+                                    </span>
+                                )}
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="alerts-list">
+                                    {securityAlerts.map((alert) => (
+                                        <div key={alert.id} className={`alert-item ${alert.acknowledged ? 'acknowledged' : 'unacknowledged'}`}>
+                                            <div className="alert-header">
+                                                <span className={`reporting-badge reporting-badge--${getSeverityColor(alert.severity)}`}>
+                                                    {alert.severity}
+                                                </span>
+                                                <span className="alert-type">{alert.alertType?.replace(/_/g, ' ')}</span>
+                                                <span className="alert-time">{formatDateTime(alert.createdAt)}</span>
+                                            </div>
+                                            <div className="alert-message">{alert.message}</div>
+                                            {alert.ipAddress && (
+                                                <div className="alert-meta">IP Address: {alert.ipAddress}</div>
+                                            )}
+                                            {!alert.acknowledged && (
+                                                <div className="alert-actions">
+                                                    <button
+                                                        onClick={() => handleAcknowledgeAlert(alert.id)}
+                                                        className="reporting-btn reporting-btn--sm reporting-btn--blue"
+                                                    >
+                                                        Acknowledge
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {securityAlerts.length === 0 && (
+                                        <div className="reporting-empty-state">
+                                            <FaCheck className="empty-icon" />
+                                            <p>No security alerts found. Your account is secure.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
 
             {/* Password Change Modal */}
-            <Modal
-                isOpen={showPasswordModal}
-                onClose={() => setShowPasswordModal(false)}
-                title="Change Password"
-            >
-                <div className="password-change-form">
-                    <div className="form-group">
-                        <label>Current Password</label>
-                        <Input
-                            type="password"
-                            value={passwordData.currentPassword}
-                            onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>New Password</label>
-                        <Input
-                            type="password"
-                            value={passwordData.newPassword}
-                            onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Confirm New Password</label>
-                        <Input
-                            type="password"
-                            value={passwordData.confirmPassword}
-                            onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                            required
-                        />
-                    </div>
-                    <div className="modal-actions">
-                        <Button onClick={() => setShowPasswordModal(false)} variant="secondary">
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handlePasswordChange}
-                            disabled={saving}
-                            className="primary"
-                        >
-                            {saving ? 'Changing...' : 'Change Password'}
-                        </Button>
+            {showPasswordModal && (
+                <div className="reporting-modal-overlay">
+                    <div className="reporting-modal" data-animate="fade-up">
+                        <div className="reporting-modal__header">
+                            <h3>Change Password</h3>
+                            <button 
+                                onClick={() => setShowPasswordModal(false)}
+                                className="reporting-modal__close"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div className="reporting-modal__content">
+                            <div className="reporting-form-group">
+                                <label className="reporting-form-label">Current Password</label>
+                                <div className="password-input-container">
+                                    <input
+                                        type={showCurrentPassword ? "text" : "password"}
+                                        value={passwordData.currentPassword}
+                                        onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                                        className="reporting-input"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="password-toggle-btn"
+                                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                        aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                                    >
+                                        {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="reporting-form-group">
+                                <label className="reporting-form-label">New Password</label>
+                                <div className="password-input-container">
+                                    <input
+                                        type={showNewPassword ? "text" : "password"}
+                                        value={passwordData.newPassword}
+                                        onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                                        className="reporting-input"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="password-toggle-btn"
+                                        onClick={() => setShowNewPassword(!showNewPassword)}
+                                        aria-label={showNewPassword ? "Hide password" : "Show password"}
+                                    >
+                                        {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="reporting-form-group">
+                                <label className="reporting-form-label">Confirm New Password</label>
+                                <div className="password-input-container">
+                                    <input
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        value={passwordData.confirmPassword}
+                                        onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                                        className="reporting-input"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="password-toggle-btn"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                    >
+                                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="reporting-modal__actions">
+                            <button 
+                                onClick={() => setShowPasswordModal(false)}
+                                className="reporting-btn reporting-btn--secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handlePasswordChange}
+                                disabled={saving}
+                                className="reporting-btn reporting-btn--gold"
+                            >
+                                {saving ? 'Changing...' : 'Change Password'}
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </Modal>
+            )}
 
             {/* Two-Factor Setup Modal */}
-            <Modal
-                isOpen={showTwoFactorModal}
-                onClose={() => setShowTwoFactorModal(false)}
-                title="Enable Two-Factor Authentication"
-            >
-                <div className="twofactor-setup">
-                    <p>Two-factor authentication adds an extra layer of security to your account.</p>
-                    <div className="setup-steps">
-                        <div className="setup-step">
-                            <h4>Step 1: Install an authenticator app</h4>
-                            <p>Download Google Authenticator, Authy, or similar app on your phone.</p>
+            {showTwoFactorModal && (
+                <div className="reporting-modal-overlay">
+                    <div className="reporting-modal reporting-modal--large" data-animate="fade-up">
+                        <div className="reporting-modal__header">
+                            <h3>Enable Two-Factor Authentication</h3>
+                            <button 
+                                onClick={() => setShowTwoFactorModal(false)}
+                                className="reporting-modal__close"
+                            >
+                                &times;
+                            </button>
                         </div>
-                        <div className="setup-step">
-                            <h4>Step 2: Scan QR Code</h4>
-                            <p>Scan the QR code with your authenticator app.</p>
-                            {twoFactorSetup?.qrCodeUrl && (
-                                <div className="qr-placeholder">
-                                    [QR Code would be displayed here]
+                        <div className="reporting-modal__content">
+                            <div className="twofactor-setup">
+                                <div className="setup-intro">
+                                    <p>Two-factor authentication adds an extra layer of security to your account by requiring a verification code from your mobile device.</p>
                                 </div>
-                            )}
+                                
+                                <div className="setup-steps">
+                                    <div className="setup-step">
+                                        <div className="step-number">1</div>
+                                        <div className="step-content">
+                                            <h4>Install an Authenticator App</h4>
+                                            <p>Download Google Authenticator, Authy, or a similar app on your smartphone.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="setup-step">
+                                        <div className="step-number">2</div>
+                                        <div className="step-content">
+                                            <h4>Scan QR Code</h4>
+                                            <p>Open your authenticator app and scan this QR code:</p>
+                                            {twoFactorSetup?.qrCodeUrl ? (
+                                                <div className="qr-code-container">
+                                                    {/* QR Code would be displayed here */}
+                                                    <div className="qr-placeholder">
+                                                        [QR Code Display]
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="qr-placeholder">
+                                                    QR code will appear after enabling 2FA
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="setup-step">
+                                        <div className="step-number">3</div>
+                                        <div className="step-content">
+                                            <h4>Enter Verification Code</h4>
+                                            <p>Enter the 6-digit code from your authenticator app to verify setup:</p>
+                                            <div className="verification-input">
+                                                <input
+                                                    type="text"
+                                                    placeholder="000000"
+                                                    maxLength="6"
+                                                    className="reporting-input"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div className="setup-step">
-                            <h4>Step 3: Enter verification code</h4>
-                            <p>Enter the 6-digit code from your authenticator app.</p>
-                            <Input placeholder="000000" maxLength="6" />
+                        <div className="reporting-modal__actions">
+                            <button 
+                                onClick={() => setShowTwoFactorModal(false)}
+                                className="reporting-btn reporting-btn--secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleEnableTwoFactor}
+                                className="reporting-btn reporting-btn--gold"
+                            >
+                                Enable 2FA
+                            </button>
                         </div>
-                    </div>
-                    <div className="modal-actions">
-                        <Button onClick={() => setShowTwoFactorModal(false)} variant="secondary">
-                            Cancel
-                        </Button>
-                        <Button onClick={handleEnableTwoFactor} className="primary">
-                            Enable 2FA
-                        </Button>
                     </div>
                 </div>
-            </Modal>
-        </div>
+            )}
+        </section>
     );
 };
 

@@ -60,7 +60,7 @@
 
 .main-content {
   flex-grow: 1;
-  overflow-y: auto; /* This makes the content area scrollable */
+  overflow-y: hidden; /* This makes the content area scrollable */
   padding: calc(var(--header-height) + 1.75rem) 1.75rem 2.25rem; /* Offset top content so it never hides behind the fixed header */
   position: relative;
   z-index: 1;
