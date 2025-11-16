@@ -5,7 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+        "com.bamikahub.inventorysystem",
+        "com.bamika.inventorysystem"
+})
 @EnableAsync
 @EnableScheduling
 public class InventorySystemApplication {

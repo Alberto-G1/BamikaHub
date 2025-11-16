@@ -1,9 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Col, Row, Spinner, Alert } from 'react-bootstrap';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { FaBoxes, FaExclamationTriangle, FaProjectDiagram, FaUsers, FaUserClock, FaTruck } from 'react-icons/fa';
+import { 
+    FaBoxes, 
+    FaExclamationTriangle, 
+    FaProjectDiagram, 
+    FaUsers, 
+    FaUserClock, 
+    FaTruck,
+    FaChartLine,
+    FaChartBar,
+    FaChartPie,
+    FaTable,
+    FaArrowUp,
+    FaArrowDown,
+    FaDollarSign
+} from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
+import SkeletonLoader from '../../components/common/SkeletonLoader.jsx';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement, Filler } from 'chart.js';
 import { Doughnut, Bar, Line } from 'react-chartjs-2';
 import './Dashboard.css';
@@ -33,7 +47,6 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
  * 
  * Dependencies:
  * - Chart.js & react-chartjs-2 for data visualization
- * - Bootstrap for responsive grid system
  * - React Icons for card icons
  * 
  * @component
@@ -60,6 +73,11 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [financeTrend, setFinanceTrend] = useState(null);
     const [stockOutSummary, setStockOutSummary] = useState(null);
+    const [limitedView, setLimitedView] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [myTickets, setMyTickets] = useState(null);
+    const [assignments, setAssignments] = useState(null);
+    const [personalLoading, setPersonalLoading] = useState(false);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -77,7 +95,74 @@ const Dashboard = () => {
                 setFinanceTrend(trendRes.data);
                 setStockOutSummary(stockOutRes.data);
             } catch (error) {
-                toast.error("Failed to load dashboard data.");
+                // If it's an authorization / permission issue for this endpoint (non-admin users),
+                // don't show a global error toast. Instead switch to a limited dashboard view
+                // and load lighter-weight, user-specific info such as recent notifications.
+                const status = error?.response?.status;
+                // Treat 401/403 as permission-limited. Also treat 400 from certain
+                // reporting endpoints as a non-fatal 'limited view' (some users
+                // experience 400 for finance endpoints when filters/permissions differ).
+                if (status === 401 || status === 403 || status === 400) {
+                    setLimitedView(true);
+                    try {
+                        setPersonalLoading(true);
+
+                        // Use consolidated personal summary endpoint for efficiency
+                        const summaryRes = await api.get('/dashboard/personal-summary', { params: { page: 0, size: 5 } });
+                        const summary = summaryRes?.data || {};
+
+                        const notifData = Array.isArray(summary.notifications)
+                            ? summary.notifications
+                            : [];
+                        const ticketData = Array.isArray(summary.tickets)
+                            ? summary.tickets
+                            : [];
+                        const assignmentData = Array.isArray(summary.assignments)
+                            ? summary.assignments
+                            : [];
+
+                        setNotifications(notifData);
+                        setMyTickets(ticketData);
+                        setAssignments(assignmentData);
+                    } catch (pErr) {
+                        // Fallback to best-effort individual fetches if consolidated endpoint is unavailable
+                        console.warn('Personal summary endpoint failed, falling back to individual fetches', pErr);
+                        try {
+                            const notifRes = await api.get('/notifications', { params: { page: 0, size: 5 } });
+                            const notifData = Array.isArray(notifRes.data?.content) ? notifRes.data.content : (Array.isArray(notifRes.data) ? notifRes.data : []);
+                            setNotifications(notifData);
+                        } catch (nerr) {
+                            console.error('Failed to load notifications for limited dashboard view', nerr);
+                        }
+
+                        try {
+                            const tRes = await api.get('/support/tickets', { params: { submittedById: user?.id || user?.userId, page: 0, size: 5 } });
+                            const tickets = Array.isArray(tRes.data?.content) ? tRes.data.content : (Array.isArray(tRes.data) ? tRes.data : []);
+                            setMyTickets(tickets);
+                        } catch (tErr) {
+                            // ignore
+                        }
+
+                        try {
+                            const aRes = await api.get('/assignments/my-assignments');
+                            const assigns = Array.isArray(aRes.data) ? aRes.data : (Array.isArray(aRes.data?.content) ? aRes.data.content : []);
+                            setAssignments(assigns.slice ? assigns.slice(0,5) : assigns);
+                        } catch (aErr) {
+                            // ignore
+                        }
+                    } finally {
+                        setPersonalLoading(false);
+                    }
+                } else if (!error?.response) {
+                    // Network error or no response from server
+                    toast.error('Network error: Failed to reach dashboard API.');
+                } else if (status >= 500) {
+                    // Real server error
+                    toast.error('Failed to load dashboard data. Server error occurred.');
+                } else {
+                    // Other non-permission errors: show a generic message
+                    toast.error('Failed to load dashboard data.');
+                }
             } finally {
                 setLoading(false);
             }
@@ -93,7 +178,15 @@ const Dashboard = () => {
             datasets: [{
                 label: 'Stock Value (UGX)',
                 data: chartData.inventoryValueByCategory.map(c => c.totalValue),
-                backgroundColor: ['#00a8e8', '#fecb00', '#343a40', '#6c757d', '#198754', '#fd7e14', '#6f42c1'],
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(147, 51, 234, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(139, 92, 246, 0.8)',
+                    'rgba(14, 165, 233, 0.8)'
+                ],
                 borderColor: '#ffffff',
                 borderWidth: 2,
             }],
@@ -107,9 +200,10 @@ const Dashboard = () => {
             datasets: [{
                 label: '# of Projects',
                 data: chartData.projectsByStatus.map(p => p.count),
-                backgroundColor: 'rgba(0, 168, 232, 0.6)', // Semi-transparent version of theme blue
-                borderColor: 'rgba(0, 168, 232, 1)',
-                borderWidth: 1,
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 2,
+                borderRadius: 8,
             }],
         };
     }, [chartData]);
@@ -126,26 +220,30 @@ const Dashboard = () => {
                 {
                     label: 'Revenue',
                     data: revenue,
-                    borderColor: '#10B981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    borderColor: 'rgb(16, 185, 129)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     fill: true,
-                    tension: 0.35,
+                    tension: 0.4,
+                    borderWidth: 3,
                 },
                 {
                     label: 'Expenditure',
                     data: expenditure,
-                    borderColor: '#EF4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    borderColor: 'rgb(239, 68, 68)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
                     fill: true,
-                    tension: 0.35,
+                    tension: 0.4,
+                    borderWidth: 3,
                 },
                 {
                     label: 'Net',
                     data: net,
-                    borderColor: '#3B82F6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     fill: false,
-                    tension: 0.35,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    borderDash: [5, 5],
                 }
             ]
         };
@@ -158,229 +256,629 @@ const Dashboard = () => {
 
     if (loading) {
         return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-                <Spinner animation="border" />
-            </div>
+            <section className="reporting-page">
+                <div className="reporting-loading">
+                    <div className="reporting-spinner" />
+                    <p className="reporting-card__subtitle">Loading dashboard data...</p>
+                </div>
+            </section>
         );
     }
 
+    // Determine if the current user likely has access to full dashboard data
+    const canViewFullDashboard = typeof hasPermission === 'function' ? (
+        hasPermission('FINANCE_READ') || hasPermission('ITEM_READ') || hasPermission('PROJECT_READ')
+    ) : false;
+
+    // Welcome banner (shown to all users). The quick stat cards are only shown
+    // when the user can view the full dashboard and summary/chart data is present.
+    const WelcomeBanner = (
+        <>
+            {/* Welcome Banner */}
+            <div className="reporting-banner reporting-banner--compact" data-animate="fade-up" data-delay="0.04">
+                <div className="reporting-banner__content">
+                    <div className="reporting-banner__info">
+                        <span className="reporting-banner__eyebrow">
+                            <FaChartLine /> Operational Overview
+                        </span>
+                        <h1 className="reporting-banner__title">
+                            Welcome back, {user ? user.email.split('@')[0] : 'Guest'}!
+                        </h1>
+                        <p className="reporting-banner__subtitle">
+                            Real-time summary of your engineering operations and performance metrics
+                        </p>
+                    </div>
+                </div>
+
+                {/* Quick Stats: only visible to users with dashboard access and data */}
+                {canViewFullDashboard && summaryData && chartData && (
+                    <div className="reporting-banner__meta">
+                        <div className="reporting-banner__meta-item">
+                            <div className="reporting-banner__meta-icon reporting-banner__meta-icon--blue">
+                                <FaBoxes />
+                            </div>
+                            <div className="reporting-banner__meta-content">
+                                <span className="reporting-banner__meta-label">Total Stock Value</span>
+                                <span className="reporting-banner__meta-value">
+                                    {formatCurrency(summaryData.totalStockValue)}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="reporting-banner__meta-item">
+                            <div className="reporting-banner__meta-icon reporting-banner__meta-icon--green">
+                                <FaProjectDiagram />
+                            </div>
+                            <div className="reporting-banner__meta-content">
+                                <span className="reporting-banner__meta-label">Active Projects</span>
+                                <span className="reporting-banner__meta-value">
+                                    {chartData.projectsByStatus?.find(p => p.status === 'IN_PROGRESS')?.count || 0}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="reporting-banner__meta-item">
+                            <div className="reporting-banner__meta-icon reporting-banner__meta-icon--purple">
+                                <FaUsers />
+                            </div>
+                            <div className="reporting-banner__meta-content">
+                                <span className="reporting-banner__meta-label">Team Members</span>
+                                <span className="reporting-banner__meta-value">
+                                    {summaryData.totalUsers || 0}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </>
+    );
+
     if (!summaryData || !chartData) {
-        return <Alert variant="danger">Could not load dashboard summary. Please try refreshing the page.</Alert>;
+        // If we already detected limitedView via 401/403, or the user is authenticated
+        // but lacks dashboard-related permissions, show the limited dashboard instead
+            if (limitedView || (user && !canViewFullDashboard)) {
+            // Render a simplified dashboard for non-admin users where the main
+            // admin summary endpoints are not available. Show profile, recent
+            // notifications and helpful quick links.
+            return (
+                <section className="reporting-page dashboard-page">
+                    <div className="reporting-back" data-animate="fade-up">
+                        <p className="reporting-back__title">Dashboard • Overview</p>
+                    </div>
+
+                    {WelcomeBanner}
+
+                    <div className="reporting-card" data-animate="fade-up">
+                        <div className="reporting-card__header">
+                            <h2 className="reporting-card__title"><FaChartLine /> Your Dashboard</h2>
+                            <p className="reporting-card__subtitle">A personalized view — limited by your permissions</p>
+                        </div>
+                        <div className="reporting-card__content">
+                            <div className="grid-2-up" style={{gap: '1rem'}}>
+                                <div className="reporting-card small-card">
+                                    <div className="reporting-card__header">
+                                        <h3 className="reporting-card__title">Profile</h3>
+                                    </div>
+                                    <div className="reporting-card__content">
+                                        <p><strong>{user?.fullName || user?.email || 'You'}</strong></p>
+                                        <p className="reporting-text--muted">Role: {user?.role || user?.roles?.join(', ') || 'User'}</p>
+                                        <p className="reporting-text--muted">Email: {user?.email}</p>
+                                    </div>
+                                </div>
+
+                                <div className="reporting-card small-card">
+                                    <div className="reporting-card__header">
+                                        <h3 className="reporting-card__title">Recent Notifications</h3>
+                                    </div>
+                                    <div className="reporting-card__content">
+                                        {notifications.length === 0 ? (
+                                            <p className="reporting-text--muted">No recent notifications</p>
+                                        ) : (
+                                            <ul className="notification-list" style={{margin:0,padding:0,listStyle:'none'}}>
+                                                {notifications.map((n) => (
+                                                    <li key={n.id} style={{padding: '0.5rem 0', borderBottom: '1px solid rgba(0,0,0,0.04)'}}>
+                                                        <div className="fw-semibold">{n.title || n.message}</div>
+                                                        <small className="reporting-text--muted">{new Date(n.createdAt || n.createdOn || n.date || Date.now()).toLocaleString()}</small>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                        <div style={{marginTop: '0.75rem'}}>
+                                            <a href="/notifications" className="reporting-link">View all notifications</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid-2-up" style={{gap: '1rem', marginTop: '1rem'}}>
+                                <div className="reporting-card small-card">
+                                    <div className="reporting-card__header">
+                                        <h3 className="reporting-card__title">My Open Tickets</h3>
+                                    </div>
+                                    <div className="reporting-card__content">
+                                        {(!myTickets || myTickets.length === 0) ? (
+                                            <p className="reporting-text--muted">You have no open tickets. <a href="/support/new">Create a ticket</a></p>
+                                        ) : (
+                                            <ul className="personal-list" style={{margin:0,padding:0,listStyle:'none'}}>
+                                                {myTickets.map(t => (
+                                                    <li key={t.id} className="personal-item">
+                                                        <a href={t.link || `/support/tickets/${t.id}`} className="fw-semibold">{t.subject || t.title || `Ticket #${t.id}`}</a>
+                                                        <div className="reporting-text--muted small">{t.status || t.state} • {new Date(t.lastUpdated || t.updatedAt || t.updatedOn || Date.now()).toLocaleString()}</div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                        <div style={{marginTop: '0.75rem'}}>
+                                            <a href="/support/tickets" className="reporting-link">View all tickets</a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="reporting-card small-card">
+                                    <div className="reporting-card__header">
+                                        <h3 className="reporting-card__title">Assigned Items</h3>
+                                    </div>
+                                    <div className="reporting-card__content">
+                                        {(!assignments || assignments.length === 0) ? (
+                                            <p className="reporting-text--muted">No assigned items.</p>
+                                        ) : (
+                                            <ul className="personal-list" style={{margin:0,padding:0,listStyle:'none'}}>
+                                                {assignments.map(a => (
+                                                    <li key={a.itemId || a.id} className="personal-item">
+                                                        <div className="fw-semibold">{a.itemName || a.name}</div>
+                                                        <div className="reporting-text--muted small">Qty: {a.quantityAssigned || a.quantity || 1} {a.dueDate ? `• due ${new Date(a.dueDate).toLocaleDateString()}` : ''}</div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                        <div style={{marginTop: '0.75rem'}}>
+                                            <a href="/inventory/assignments" className="reporting-link">View all assignments</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{marginTop: '1rem'}}>
+                                <h4 className="reporting-card__title">Quick Links</h4>
+                                <div className="quick-links">
+                                    <a className="quick-link outline-primary" href="/support/tickets">
+                                        <FaTruck className="quick-link-icon" />
+                                        My Support Tickets
+                                    </a>
+                                    <a className="quick-link outline-secondary" href="/notifications">
+                                        <FaUserClock className="quick-link-icon" />
+                                        Notifications
+                                    </a>
+                                    <a className="quick-link outline-info" href="/profile">
+                                        <FaUsers className="quick-link-icon" />
+                                        My Profile
+                                    </a>
+                                    <a className="quick-link outline-success" href="/assignments">
+                                        <FaProjectDiagram className="quick-link-icon" />
+                                        My Assignments
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        }
+
+        // If we reach here, it's a genuine failure to load dashboard for a user who
+        // should have access — show the error empty state and a suggestion to retry.
+        return (
+            <section className="reporting-page">
+                {WelcomeBanner}
+                <div className="reporting-card">
+                    <div className="reporting-empty-state">
+                        <FaExclamationTriangle className="empty-icon" />
+                        <h3>Unable to Load Dashboard</h3>
+                        <p>Could not load dashboard summary. Please try refreshing the page or contact support.</p>
+                    </div>
+                </div>
+            </section>
+        );
     }
 
     return (
-        <div className="dashboard-page">
-            <div className="mb-4 dashboard-header dashboard-welcome">
-                <h3>Welcome back, {user ? user.email.split('@')[0] : 'Guest'}!</h3>
-                <p className="text-muted">Here's a real-time summary of your engineering operations.</p>
+        <section className="reporting-page dashboard-page">
+            {/* Header */}
+            <div className="reporting-back" data-animate="fade-up">
+                <p className="reporting-back__title">Dashboard • Overview</p>
             </div>
 
-            {/* Summary Stat Cards */}
-            <Row className="kpi-row">
-                <Col md={6} lg={4} className="mb-4">
-                    <Card className="h-100 kpi-card-primary">
-                        <Card.Body>
-                            <div className="kpi-icon-wrapper">
-                                <FaBoxes size={24} />
-                            </div>
-                            <div className="kpi-content">
-                                <div className="kpi-label">Total Stock Value</div>
-                                <div className="kpi-value">{formatCurrency(summaryData.totalStockValue)}</div>
-                            </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={6} lg={4} className="mb-4">
-                    <Card className="h-100 kpi-card-warning">
-                        <Card.Body>
-                            <div className="kpi-icon-wrapper">
-                                <FaExclamationTriangle size={24} />
-                            </div>
-                            <div className="kpi-content">
-                                <div className="kpi-label">Low Stock Items</div>
-                                <div className="kpi-value">{summaryData.lowStockItems}</div>
-                            </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={6} lg={4} className="mb-4">
-                    <Card className="h-100 kpi-card-info">
-                        <Card.Body>
-                            <div className="kpi-icon-wrapper">
-                                <FaUserClock size={24} />
-                            </div>
-                            <div className="kpi-content">
-                                <div className="kpi-label">Pending User Approvals</div>
-                                <div className="kpi-value">{summaryData.pendingUsers}</div>
-                            </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
+            {/* Welcome Banner */}
+            <div className="reporting-banner reporting-banner--compact" data-animate="fade-up" data-delay="0.04">
+                <div className="reporting-banner__content">
+                    <div className="reporting-banner__info">
+                        <span className="reporting-banner__eyebrow">
+                            <FaChartLine /> Operational Overview
+                        </span>
+                        <h1 className="reporting-banner__title">
+                            Welcome back, {user ? user.email.split('@')[0] : 'Guest'}!
+                        </h1>
+                        <p className="reporting-banner__subtitle">
+                            Real-time summary of your engineering operations and performance metrics
+                        </p>
+                    </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="reporting-banner__meta">
+                    <div className="reporting-banner__meta-item">
+                        <div className="reporting-banner__meta-icon reporting-banner__meta-icon--blue">
+                            <FaBoxes />
+                        </div>
+                        <div className="reporting-banner__meta-content">
+                            <span className="reporting-banner__meta-label">Total Stock Value</span>
+                            <span className="reporting-banner__meta-value">
+                                {formatCurrency(summaryData.totalStockValue)}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="reporting-banner__meta-item">
+                        <div className="reporting-banner__meta-icon reporting-banner__meta-icon--green">
+                            <FaProjectDiagram />
+                        </div>
+                        <div className="reporting-banner__meta-content">
+                            <span className="reporting-banner__meta-label">Active Projects</span>
+                            <span className="reporting-banner__meta-value">
+                                {chartData.projectsByStatus?.find(p => p.status === 'IN_PROGRESS')?.count || 0}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="reporting-banner__meta-item">
+                        <div className="reporting-banner__meta-icon reporting-banner__meta-icon--purple">
+                            <FaUsers />
+                        </div>
+                        <div className="reporting-banner__meta-content">
+                            <span className="reporting-banner__meta-label">Team Members</span>
+                            <span className="reporting-banner__meta-value">
+                                {summaryData.totalUsers || 0}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* KPI Metrics Grid */}
+            <div className="dashboard-metrics-grid" data-animate="fade-up" data-delay="0.08">
+                {/* Total Stock Value */}
+                <div className="reporting-metric reporting-metric--blue">
+                    <div className="metric-header">
+                        <FaBoxes className="metric-icon" />
+                        <span className="metric-label">Total Stock Value</span>
+                    </div>
+                    <div className="metric-value">{formatCurrency(summaryData.totalStockValue)}</div>
+                    <div className="metric-trend positive">
+                        <FaArrowUp /> Stable
+                    </div>
+                </div>
+
+                {/* Low Stock Items */}
+                <div className="reporting-metric reporting-metric--red">
+                    <div className="metric-header">
+                        <FaExclamationTriangle className="metric-icon" />
+                        <span className="metric-label">Low Stock Items</span>
+                    </div>
+                    <div className="metric-value">{summaryData.lowStockItems}</div>
+                    <div className="metric-trend warning">
+                        <FaExclamationTriangle /> Needs Attention
+                    </div>
+                </div>
+
+                {/* Pending User Approvals */}
+                <div className="reporting-metric reporting-metric--gold">
+                    <div className="metric-header">
+                        <FaUserClock className="metric-icon" />
+                        <span className="metric-label">Pending Approvals</span>
+                    </div>
+                    <div className="metric-value">{summaryData.pendingUsers}</div>
+                    <div className="metric-trend neutral">
+                        <FaUserClock /> Awaiting Action
+                    </div>
+                </div>
+
+                {/* Additional Stock Metrics */}
                 {stockOutSummary && (hasPermission ? (typeof hasPermission === 'function' ? hasPermission('FINANCE_READ') || hasPermission('ITEM_READ') : true) : true) && (
                     <>
-                        <Col md={6} lg={4} className="mb-4">
-                            <Card className="h-100 kpi-card-primary">
-                                <Card.Body>
-                                    <div className="kpi-icon-wrapper">
-                                        <FaTruck size={24} />
-                                    </div>
-                                    <div className="kpi-content">
-                                        <div className="kpi-label">Stock-Out Revenue</div>
-                                        <div className="kpi-value">{formatCurrency(stockOutSummary.totalRevenue)}</div>
-                                    </div>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                        <Col md={6} lg={4} className="mb-4">
-                            <Card className="h-100 kpi-card-info">
-                                <Card.Body>
-                                    <div className="kpi-icon-wrapper">
-                                        <FaBoxes size={24} />
-                                    </div>
-                                    <div className="kpi-content">
-                                        <div className="kpi-label">Items Taken Out</div>
-                                        <div className="kpi-value">{stockOutSummary.totalQuantityOut}</div>
-                                    </div>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                        <Col md={6} lg={4} className="mb-4">
-                            <Card className="h-100 kpi-card-primary">
-                                <Card.Body>
-                                    <div className="kpi-icon-wrapper">
-                                        <FaProjectDiagram size={24} />
-                                    </div>
-                                    <div className="kpi-content">
-                                        <div className="kpi-label">Gross Margin</div>
-                                        <div className="kpi-value">{formatCurrency(stockOutSummary.totalMargin)}</div>
-                                    </div>
-                                </Card.Body>
-                            </Card>
-                        </Col>
+                        <div className="reporting-metric reporting-metric--green">
+                            <div className="metric-header">
+                                <FaTruck className="metric-icon" />
+                                <span className="metric-label">Stock-Out Revenue</span>
+                            </div>
+                            <div className="metric-value">{formatCurrency(stockOutSummary.totalRevenue)}</div>
+                            <div className="metric-trend positive">
+                                <FaArrowUp /> Active
+                            </div>
+                        </div>
+
+                        <div className="reporting-metric reporting-metric--purple">
+                            <div className="metric-header">
+                                <FaBoxes className="metric-icon" />
+                                <span className="metric-label">Items Taken Out</span>
+                            </div>
+                            <div className="metric-value">{stockOutSummary.totalQuantityOut}</div>
+                            <div className="metric-trend positive">
+                                <FaArrowUp /> Movement
+                            </div>
+                        </div>
+
+                        <div className="reporting-metric reporting-metric--blue">
+                            <div className="metric-header">
+                                <FaDollarSign className="metric-icon" />
+                                <span className="metric-label">Gross Margin</span>
+                            </div>
+                            <div className="metric-value">{formatCurrency(stockOutSummary.totalMargin)}</div>
+                            <div className="metric-trend positive">
+                                <FaArrowUp /> Profitable
+                            </div>
+                        </div>
                     </>
                 )}
-            </Row>
+            </div>
 
-            {/* Chart Section */}
-            <Row>
-                <Col lg={7} className="mb-4">
-                    <Card className="h-100 chart-card">
-                        <Card.Body>
-                            <Card.Title>Projects by Status</Card.Title>
-                            <div style={{ height: '300px' }}>
-                                <Bar data={projectChartData} options={{ responsive: true, maintainAspectRatio: false }} />
-                            </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col lg={5} className="mb-4">
-                    <Card className="h-100 chart-card">
-                        <Card.Body>
-                            <Card.Title>Inventory Value by Category</Card.Title>
-                            <div style={{ height: '300px', position: 'relative' }}>
-                                <Doughnut data={inventoryChartData} options={{ responsive: true, maintainAspectRatio: false }} />
-                            </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+            {/* Charts Section */}
+            <div className="dashboard-charts-grid" data-animate="fade-up" data-delay="0.12">
+                {/* Projects by Status */}
+                <div className="reporting-card chart-card">
+                    <div className="reporting-card__header">
+                        <h2 className="reporting-card__title">
+                            <FaChartBar /> Projects by Status
+                        </h2>
+                        <p className="reporting-card__subtitle">Current distribution of project progress</p>
+                    </div>
+                    <div className="reporting-card__content">
+                        <div className="chart-container">
+                            <Bar 
+                                data={projectChartData} 
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            titleColor: '#ffffff',
+                                            bodyColor: '#ffffff'
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            grid: {
+                                                color: 'rgba(0, 0, 0, 0.1)'
+                                            }
+                                        },
+                                        x: {
+                                            grid: {
+                                                display: false
+                                            }
+                                        }
+                                    }
+                                }} 
+                            />
+                        </div>
+                    </div>
+                </div>
 
+                {/* Inventory by Category */}
+                <div className="reporting-card chart-card">
+                    <div className="reporting-card__header">
+                        <h2 className="reporting-card__title">
+                            <FaChartPie /> Inventory Value by Category
+                        </h2>
+                        <p className="reporting-card__subtitle">Breakdown of stock value across categories</p>
+                    </div>
+                    <div className="reporting-card__content">
+                        <div className="chart-container">
+                            <Doughnut 
+                                data={inventoryChartData} 
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                padding: 20,
+                                                usePointStyle: true
+                                            }
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const value = context.parsed;
+                                                    return ` ${context.label}: ${formatCurrency(value)}`;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }} 
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Finance Performance Chart */}
             {financeTrend && (
-                <Row>
-                    <Col lg={12} className="mb-4">
-                        <Card className="h-100 chart-card">
-                            <Card.Body>
-                                <Card.Title>Finance Performance (Revenue vs Expenditure)</Card.Title>
-                                <div style={{ height: '360px' }}>
-                                    <Line data={financeLineData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }} />
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
+                <div className="reporting-card" data-animate="fade-up" data-delay="0.16">
+                    <div className="reporting-card__header">
+                        <h2 className="reporting-card__title">
+                            <FaChartLine /> Finance Performance Trend
+                        </h2>
+                        <p className="reporting-card__subtitle">Monthly revenue, expenditure, and net performance</p>
+                    </div>
+                    <div className="reporting-card__content">
+                        <div className="chart-container-large">
+                            <Line 
+                                data={financeLineData} 
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'top',
+                                            labels: {
+                                                usePointStyle: true,
+                                                padding: 20
+                                            }
+                                        },
+                                        tooltip: {
+                                            mode: 'index',
+                                            intersect: false,
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            titleColor: '#ffffff',
+                                            bodyColor: '#ffffff'
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            grid: {
+                                                color: 'rgba(0, 0, 0, 0.1)'
+                                            },
+                                            ticks: {
+                                                callback: function(value) {
+                                                    return formatCurrency(value);
+                                                }
+                                            }
+                                        },
+                                        x: {
+                                            grid: {
+                                                display: false
+                                            }
+                                        }
+                                    },
+                                    interaction: {
+                                        intersect: false,
+                                        mode: 'nearest'
+                                    }
+                                }} 
+                            />
+                        </div>
+                    </div>
+                </div>
             )}
 
+            {/* Field Report Activity Table */}
             {fieldReportLeaders.length > 0 && (
-                <Row>
-                    <Col md={12} className="mb-4">
-                        <Card className="shadow-sm h-100">
-                            <Card.Body>
-                                <Card.Title as="h5">Top Field Report Activity</Card.Title>
-                                <div className="table-responsive">
-                                    <table className="table table-striped table-hover table-sm align-middle mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th style={{ minWidth: '220px' }}>Project</th>
-                                                <th style={{ minWidth: '200px' }}>Site</th>
-                                                <th className="text-end">Reports Submitted</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {fieldReportLeaders.map((entry, index) => (
-                                                <tr key={`${entry.projectId || 'project'}-${entry.siteId || 'all'}-${index}`}>
-                                                    <td>{entry.projectName || 'Unassigned Project'}</td>
-                                                    <td>
-                                                        {entry.projectLevel ? (
-                                                            <span className="text-muted">Whole Project</span>
-                                                        ) : (
-                                                            <>
-                                                                <div className="fw-semibold">{entry.siteName}</div>
-                                                                {entry.siteLocation && <div className="text-muted small">{entry.siteLocation}</div>}
-                                                            </>
+                <div className="reporting-card" data-animate="fade-up" data-delay="0.2">
+                    <div className="reporting-card__header">
+                        <h2 className="reporting-card__title">
+                            <FaTable /> Top Field Report Activity
+                        </h2>
+                        <p className="reporting-card__subtitle">Most active projects and sites by report submissions</p>
+                    </div>
+                    <div className="reporting-card__content">
+                        <div className="reporting-table-container">
+                            <table className="reporting-table">
+                                <thead>
+                                    <tr>
+                                        <th>Project</th>
+                                        <th>Site</th>
+                                        <th className="text-end">Reports Submitted</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {fieldReportLeaders.map((entry, index) => (
+                                        <tr key={`${entry.projectId || 'project'}-${entry.siteId || 'all'}-${index}`}>
+                                            <td>
+                                                <strong>{entry.projectName || 'Unassigned Project'}</strong>
+                                            </td>
+                                            <td>
+                                                {entry.projectLevel ? (
+                                                    <span className="reporting-text--muted">Whole Project</span>
+                                                ) : (
+                                                    <>
+                                                        <div className="fw-semibold">{entry.siteName}</div>
+                                                        {entry.siteLocation && (
+                                                            <div className="reporting-text--muted small">
+                                                                {entry.siteLocation}
+                                                            </div>
                                                         )}
-                                                    </td>
-                                                    <td className="text-end fw-semibold">{entry.reportCount}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
+                                                    </>
+                                                )}
+                                            </td>
+                                            <td className="text-end">
+                                                <span className="reporting-badge reporting-badge--info">
+                                                    {entry.reportCount}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             )}
 
+            {/* Stock-Out Revenue Table */}
             {stockOutSummary && stockOutSummary.items && stockOutSummary.items.length > 0 && (
-                <Row>
-                    <Col md={12} className="mb-4">
-                        <Card className="shadow-sm h-100">
-                            <Card.Body>
-                                <Card.Title as="h5">Top Items by Stock-Out Revenue</Card.Title>
-                                <div className="table-responsive">
-                                    <table className="table table-striped table-hover table-sm align-middle mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th>Item</th>
-                                                <th>SKU</th>
-                                                <th className="text-end">Qty Out</th>
-                                                <th className="text-end">Revenue</th>
-                                                <th className="text-end">COGS</th>
-                                                <th className="text-end">Margin</th>
-                                                <th className="text-end">Margin %</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {stockOutSummary.items.slice(0, 10).map((it) => (
-                                                <tr key={it.itemId}>
-                                                    <td>{it.itemName}</td>
-                                                    <td>{it.sku}</td>
-                                                    <td className="text-end">{it.quantityOut}</td>
-                                                    <td className="text-end">{formatCurrency(it.revenue)}</td>
-                                                    <td className="text-end">{formatCurrency(it.cogs)}</td>
-                                                    <td className="text-end">{formatCurrency(it.margin)}</td>
-                                                    <td className="text-end">{(it.marginPercentage || 0).toFixed(1)}%</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
+                <div className="reporting-card" data-animate="fade-up" data-delay="0.24">
+                    <div className="reporting-card__header">
+                        <h2 className="reporting-card__title">
+                            <FaDollarSign /> Top Items by Stock-Out Revenue
+                        </h2>
+                        <p className="reporting-card__subtitle">Highest revenue-generating items from stock-outs</p>
+                    </div>
+                    <div className="reporting-card__content">
+                        <div className="reporting-table-container">
+                            <table className="reporting-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>SKU</th>
+                                        <th className="text-end">Qty Out</th>
+                                        <th className="text-end">Revenue</th>
+                                        <th className="text-end">COGS</th>
+                                        <th className="text-end">Margin</th>
+                                        <th className="text-end">Margin %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {stockOutSummary.items.slice(0, 10).map((it) => (
+                                        <tr key={it.itemId}>
+                                            <td>
+                                                <strong>{it.itemName}</strong>
+                                            </td>
+                                            <td>
+                                                <code className="reporting-text--muted">{it.sku}</code>
+                                            </td>
+                                            <td className="text-end">
+                                                <span className="reporting-badge reporting-badge--neutral">
+                                                    {it.quantityOut}
+                                                </span>
+                                            </td>
+                                            <td className="text-end">
+                                                <strong>{formatCurrency(it.revenue)}</strong>
+                                            </td>
+                                            <td className="text-end reporting-text--muted">
+                                                {formatCurrency(it.cogs)}
+                                            </td>
+                                            <td className="text-end">
+                                                <span className={`${it.margin >= 0 ? 'reporting-text--positive' : 'reporting-text--negative'}`}>
+                                                    {formatCurrency(it.margin)}
+                                                </span>
+                                            </td>
+                                            <td className="text-end">
+                                                <span className={`reporting-badge ${it.marginPercentage >= 0 ? 'reporting-badge--success' : 'reporting-badge--danger'}`}>
+                                                    {(it.marginPercentage || 0).toFixed(1)}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             )}
-        </div>
+        </section>
     );
 };
 
