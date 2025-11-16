@@ -2,14 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
-import Button from '../../components/common/Button.jsx';
-import Card from '../../components/common/Card.jsx';
-import Input from '../../components/common/Input.jsx';
-import Modal from '../../components/common/Modal.jsx';
-import Spinner from '../../components/common/Spinner.jsx';
-import Table from '../../components/common/Table.jsx';
-import Badge from '../../components/common/Badge.jsx';
-import Switch from '../../components/common/Switch.jsx';
+import { FaShieldAlt, FaUserShield, FaDatabase, FaFileAlt, FaDownload, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
 import './Privacy.css';
 
 const Privacy = () => {
@@ -40,7 +33,6 @@ const Privacy = () => {
     // Modals
     const [showExportModal, setShowExportModal] = useState(false);
     const [showDeletionModal, setShowDeletionModal] = useState(false);
-    const [showPolicyModal, setShowPolicyModal] = useState(false);
 
     // Form states
     const [exportForm, setExportForm] = useState({
@@ -101,7 +93,7 @@ const Privacy = () => {
             toast.success('Data export request submitted successfully');
             setShowExportModal(false);
             setExportForm({ requestType: 'PERSONAL_DATA', format: 'JSON', reason: '' });
-            loadPrivacyData(); // Refresh the list
+            loadPrivacyData();
         } catch (error) {
             console.error('Error requesting data export:', error);
             toast.error('Failed to submit data export request');
@@ -114,7 +106,7 @@ const Privacy = () => {
             toast.success('Data deletion request submitted successfully');
             setShowDeletionModal(false);
             setDeletionForm({ deletionType: 'SPECIFIC_DATA', dataCategories: [], reason: '' });
-            loadPrivacyData(); // Refresh the list
+            loadPrivacyData();
         } catch (error) {
             console.error('Error requesting data deletion:', error);
             toast.error('Failed to submit data deletion request');
@@ -134,7 +126,6 @@ const Privacy = () => {
                 await api.delete(`/privacy/consents/${consentType}`);
             }
 
-            // Update local state
             setPrivacySettings(prev => ({
                 ...prev,
                 consents: {
@@ -180,443 +171,602 @@ const Privacy = () => {
 
     if (loading) {
         return (
-            <div className="privacy-loading">
-                <Spinner />
+            <div className="reporting-loading">
+                <div className="reporting-spinner" />
                 <p>Loading privacy information...</p>
             </div>
         );
     }
 
     return (
-        <div className="privacy-page">
-            <div className="privacy-header">
-                <h1>Privacy Center</h1>
-                <p>Manage your data privacy and consent preferences</p>
+        <section className="reporting-page">
+            <div className="reporting-banner" data-animate="fade-up">
+                <div className="reporting-banner__content">
+                    <div className="reporting-banner__info">
+                        <span className="reporting-banner__eyebrow">
+                            <FaShieldAlt /> Data Protection
+                        </span>
+                        <h1 className="reporting-banner__title">Privacy Center</h1>
+                        <p className="reporting-banner__subtitle">
+                            Control your data privacy, manage consents, and exercise your data rights. 
+                            Your privacy is our priority.
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <div className="privacy-tabs">
+            <div className="reporting-tabs" data-animate="fade-up" data-delay="0.04">
                 <button
-                    className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
+                    className={`reporting-tab ${activeTab === 'settings' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('settings')}
                 >
-                    Privacy Settings
+                    <FaUserShield /> Privacy Settings
                 </button>
                 <button
-                    className={`tab-button ${activeTab === 'consents' ? 'active' : ''}`}
+                    className={`reporting-tab ${activeTab === 'consents' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('consents')}
                 >
-                    Consents
+                    <FaCheck /> Consents
                 </button>
                 <button
-                    className={`tab-button ${activeTab === 'data' ? 'active' : ''}`}
+                    className={`reporting-tab ${activeTab === 'data' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('data')}
                 >
-                    Data Management
+                    <FaDatabase /> Data Management
                 </button>
                 <button
-                    className={`tab-button ${activeTab === 'policy' ? 'active' : ''}`}
+                    className={`reporting-tab ${activeTab === 'policy' ? 'is-active' : ''}`}
                     onClick={() => setActiveTab('policy')}
                 >
-                    Privacy Policy
+                    <FaFileAlt /> Privacy Policy
                 </button>
             </div>
 
             <div className="privacy-content">
                 {activeTab === 'settings' && (
-                    <div className="privacy-settings">
-                        <Card className="settings-card">
-                            <div className="card-header">
-                                <h2>Data Sharing Preferences</h2>
-                            </div>
-                            <div className="card-body">
-                                <div className="setting-group">
-                                    <div className="setting-item">
-                                        <div className="setting-info">
-                                            <label>Profile Visibility</label>
-                                            <p>Allow others to see your profile information</p>
-                                        </div>
-                                        <Switch
-                                            checked={privacySettings.profileVisible}
-                                            onChange={(checked) => setPrivacySettings(prev => ({...prev, profileVisible: checked}))}
-                                        />
-                                    </div>
-                                    <div className="setting-item">
-                                        <div className="setting-info">
-                                            <label>Activity Visibility</label>
-                                            <p>Show your activity and login history to others</p>
-                                        </div>
-                                        <Switch
-                                            checked={privacySettings.activityVisible}
-                                            onChange={(checked) => setPrivacySettings(prev => ({...prev, activityVisible: checked}))}
-                                        />
-                                    </div>
-                                    <div className="setting-item">
-                                        <div className="setting-info">
-                                            <label>Statistics Visibility</label>
-                                            <p>Display usage statistics and analytics</p>
-                                        </div>
-                                        <Switch
-                                            checked={privacySettings.statisticsVisible}
-                                            onChange={(checked) => setPrivacySettings(prev => ({...prev, statisticsVisible: checked}))}
-                                        />
-                                    </div>
+                    <div className="privacy-grid" data-animate="fade-up" data-delay="0.08">
+                        {/* Data Sharing Preferences */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Data Sharing Preferences</h2>
+                                    <p className="reporting-card__subtitle">Control what information is visible to others</p>
                                 </div>
                             </div>
-                        </Card>
-
-                        <Card className="settings-card">
-                            <div className="card-header">
-                                <h2>Cookie Preferences</h2>
+                            <div className="reporting-card__content">
+                                <div className="privacy-checkbox-group">
+                                    <label className="privacy-checkbox">
+                                        <input
+                                            type="checkbox"
+                                            checked={privacySettings.profileVisible}
+                                            onChange={(e) => setPrivacySettings(prev => ({...prev, profileVisible: e.target.checked}))}
+                                        />
+                                        <span className="privacy-checkbox__label">
+                                            <strong>Profile Visibility</strong>
+                                            <span>Allow others to see your profile information</span>
+                                        </span>
+                                    </label>
+                                    <label className="privacy-checkbox">
+                                        <input
+                                            type="checkbox"
+                                            checked={privacySettings.activityVisible}
+                                            onChange={(e) => setPrivacySettings(prev => ({...prev, activityVisible: e.target.checked}))}
+                                        />
+                                        <span className="privacy-checkbox__label">
+                                            <strong>Activity Visibility</strong>
+                                            <span>Show your activity and login history to others</span>
+                                        </span>
+                                    </label>
+                                    <label className="privacy-checkbox">
+                                        <input
+                                            type="checkbox"
+                                            checked={privacySettings.statisticsVisible}
+                                            onChange={(e) => setPrivacySettings(prev => ({...prev, statisticsVisible: e.target.checked}))}
+                                        />
+                                        <span className="privacy-checkbox__label">
+                                            <strong>Statistics Visibility</strong>
+                                            <span>Display usage statistics and analytics</span>
+                                        </span>
+                                    </label>
+                                </div>
                             </div>
-                            <div className="card-body">
-                                <div className="setting-group">
-                                    <div className="setting-item">
-                                        <div className="setting-info">
-                                            <label>Essential Cookies</label>
-                                            <p>Required for basic website functionality</p>
-                                        </div>
-                                        <Switch
+                        </div>
+
+                        {/* Cookie Preferences */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Cookie Preferences</h2>
+                                    <p className="reporting-card__subtitle">Manage your cookie settings</p>
+                                </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="privacy-checkbox-group">
+                                    <label className="privacy-checkbox privacy-checkbox--disabled">
+                                        <input
+                                            type="checkbox"
                                             checked={privacySettings.essentialCookies}
-                                            onChange={(checked) => setPrivacySettings(prev => ({...prev, essentialCookies: checked}))}
+                                            onChange={(e) => setPrivacySettings(prev => ({...prev, essentialCookies: e.target.checked}))}
                                             disabled
                                         />
-                                    </div>
-                                    <div className="setting-item">
-                                        <div className="setting-info">
-                                            <label>Analytics Cookies</label>
-                                            <p>Help us improve our services</p>
-                                        </div>
-                                        <Switch
+                                        <span className="privacy-checkbox__label">
+                                            <strong>Essential Cookies</strong>
+                                            <span>Required for basic website functionality</span>
+                                        </span>
+                                    </label>
+                                    <label className="privacy-checkbox">
+                                        <input
+                                            type="checkbox"
                                             checked={privacySettings.analyticsCookies}
-                                            onChange={(checked) => setPrivacySettings(prev => ({...prev, analyticsCookies: checked}))}
+                                            onChange={(e) => setPrivacySettings(prev => ({...prev, analyticsCookies: e.target.checked}))}
                                         />
-                                    </div>
-                                    <div className="setting-item">
-                                        <div className="setting-info">
-                                            <label>Marketing Cookies</label>
-                                            <p>Used for personalized advertising</p>
-                                        </div>
-                                        <Switch
+                                        <span className="privacy-checkbox__label">
+                                            <strong>Analytics Cookies</strong>
+                                            <span>Help us improve our services</span>
+                                        </span>
+                                    </label>
+                                    <label className="privacy-checkbox">
+                                        <input
+                                            type="checkbox"
                                             checked={privacySettings.marketingCookies}
-                                            onChange={(checked) => setPrivacySettings(prev => ({...prev, marketingCookies: checked}))}
+                                            onChange={(e) => setPrivacySettings(prev => ({...prev, marketingCookies: e.target.checked}))}
                                         />
-                                    </div>
-                                    <div className="setting-item">
-                                        <div className="setting-info">
-                                            <label>Functional Cookies</label>
-                                            <p>Enhance your browsing experience</p>
-                                        </div>
-                                        <Switch
+                                        <span className="privacy-checkbox__label">
+                                            <strong>Marketing Cookies</strong>
+                                            <span>Used for personalized advertising</span>
+                                        </span>
+                                    </label>
+                                    <label className="privacy-checkbox">
+                                        <input
+                                            type="checkbox"
                                             checked={privacySettings.functionalCookies}
-                                            onChange={(checked) => setPrivacySettings(prev => ({...prev, functionalCookies: checked}))}
+                                            onChange={(e) => setPrivacySettings(prev => ({...prev, functionalCookies: e.target.checked}))}
                                         />
-                                    </div>
+                                        <span className="privacy-checkbox__label">
+                                            <strong>Functional Cookies</strong>
+                                            <span>Enhance your browsing experience</span>
+                                        </span>
+                                    </label>
                                 </div>
                             </div>
-                        </Card>
+                        </div>
 
-                        <Card className="settings-card">
-                            <div className="card-header">
-                                <h2>Data Retention</h2>
+                        {/* Data Retention */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Data Retention</h2>
+                                    <p className="reporting-card__subtitle">Control how long your data is stored</p>
+                                </div>
                             </div>
-                            <div className="card-body">
-                                <div className="setting-group">
-                                    <div className="setting-item">
-                                        <div className="setting-info">
-                                            <label>Auto-delete Old Data</label>
-                                            <p>Automatically delete data older than the retention period</p>
-                                        </div>
-                                        <Switch
+                            <div className="reporting-card__content">
+                                <div className="privacy-checkbox-group">
+                                    <label className="privacy-checkbox">
+                                        <input
+                                            type="checkbox"
                                             checked={privacySettings.autoDeleteOldData}
-                                            onChange={(checked) => setPrivacySettings(prev => ({...prev, autoDeleteOldData: checked}))}
+                                            onChange={(e) => setPrivacySettings(prev => ({...prev, autoDeleteOldData: e.target.checked}))}
                                         />
-                                    </div>
-                                    <div className="setting-item">
-                                        <div className="setting-info">
-                                            <label>Data Retention Period (Days)</label>
-                                            <p>How long to keep your data before deletion</p>
-                                        </div>
-                                        <Input
+                                        <span className="privacy-checkbox__label">
+                                            <strong>Auto-delete Old Data</strong>
+                                            <span>Automatically delete data older than the retention period</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                {privacySettings.autoDeleteOldData && (
+                                    <div className="reporting-form-group">
+                                        <label className="reporting-form-label">Data Retention Period (Days)</label>
+                                        <input
                                             type="number"
-                                            value={privacySettings.dataRetentionDays}
-                                            onChange={(e) => setPrivacySettings(prev => ({...prev, dataRetentionDays: parseInt(e.target.value)}))}
                                             min="30"
                                             max="3650"
-                                            disabled={!privacySettings.autoDeleteOldData}
+                                            value={privacySettings.dataRetentionDays}
+                                            onChange={(e) => setPrivacySettings(prev => ({...prev, dataRetentionDays: parseInt(e.target.value)}))}
+                                            className="reporting-input"
                                         />
                                     </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Save Actions */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__content">
+                                <div className="privacy-actions">
+                                    <button
+                                        onClick={handleSettingsUpdate}
+                                        disabled={saving}
+                                        className="reporting-btn reporting-btn--gold"
+                                    >
+                                        <FaCheck /> {saving ? 'Saving...' : 'Save Privacy Settings'}
+                                    </button>
                                 </div>
                             </div>
-                        </Card>
-
-                        <div className="settings-actions">
-                            <Button
-                                onClick={handleSettingsUpdate}
-                                disabled={saving}
-                                className="primary"
-                            >
-                                {saving ? 'Saving...' : 'Save Settings'}
-                            </Button>
                         </div>
                     </div>
                 )}
 
                 {activeTab === 'consents' && (
-                    <Card className="privacy-card">
-                        <div className="card-header">
-                            <h2>Data Processing Consents</h2>
-                        </div>
-                        <div className="card-body">
-                            <div className="consents-list">
-                                {Object.entries(privacySettings.consents || {}).map(([consentType, consent]) => (
-                                    <div key={consentType} className="consent-item">
-                                        <div className="consent-info">
-                                            <h4>{consentType.replace(/_/g, ' ')}</h4>
-                                            <p>{consent.consentText}</p>
-                                            {consent.granted && consent.grantedAt && (
-                                                <small className="consent-date">
-                                                    Granted on {formatDateTime(consent.grantedAt)}
-                                                </small>
-                                            )}
+                    <div className="privacy-grid" data-animate="fade-up" data-delay="0.08">
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Data Processing Consents</h2>
+                                    <p className="reporting-card__subtitle">Manage your data processing permissions</p>
+                                </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="consents-list">
+                                    {Object.entries(privacySettings.consents || {}).map(([consentType, consent]) => (
+                                        <div key={consentType} className="consent-item">
+                                            <div className="consent-info">
+                                                <h4>{consentType.replace(/_/g, ' ')}</h4>
+                                                <p>{consent.consentText}</p>
+                                                {consent.granted && consent.grantedAt && (
+                                                    <small className="consent-date">
+                                                        Granted on {formatDateTime(consent.grantedAt)}
+                                                    </small>
+                                                )}
+                                            </div>
+                                            <label className="privacy-toggle">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={consent.granted || false}
+                                                    onChange={(e) => handleConsentChange(consentType, e.target.checked)}
+                                                />
+                                                <span className="privacy-toggle__slider"></span>
+                                            </label>
                                         </div>
-                                        <Switch
-                                            checked={consent.granted || false}
-                                            onChange={(checked) => handleConsentChange(consentType, checked)}
-                                        />
+                                    ))}
+                                    {Object.keys(privacySettings.consents || {}).length === 0 && (
+                                        <div className="reporting-empty-state">
+                                            <FaTimes className="empty-icon" />
+                                            <p>No consents found. Consents will appear here when you interact with privacy-related features.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'data' && (
+                    <div className="privacy-grid" data-animate="fade-up" data-delay="0.08">
+                        {/* Data Actions */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Data Rights</h2>
+                                    <p className="reporting-card__subtitle">Exercise your data protection rights</p>
+                                </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                <div className="data-actions-grid">
+                                    <div className="data-action-card">
+                                        <div className="data-action-icon reporting-banner__meta-icon reporting-banner__meta-icon--blue">
+                                            <FaDownload />
+                                        </div>
+                                        <div className="data-action-content">
+                                            <h3>Export Your Data</h3>
+                                            <p>Download a copy of your personal data in your preferred format</p>
+                                            <button
+                                                onClick={() => setShowExportModal(true)}
+                                                className="reporting-btn reporting-btn--blue"
+                                            >
+                                                Request Export
+                                            </button>
+                                        </div>
                                     </div>
-                                ))}
-                                {Object.keys(privacySettings.consents || {}).length === 0 && (
-                                    <div className="no-consents">
-                                        <p>No consents found. Consents will appear here when you interact with privacy-related features.</p>
+                                    <div className="data-action-card">
+                                        <div className="data-action-icon reporting-banner__meta-icon reporting-banner__meta-icon--red">
+                                            <FaTrash />
+                                        </div>
+                                        <div className="data-action-content">
+                                            <h3>Delete Your Data</h3>
+                                            <p>Request deletion of your personal data from our systems</p>
+                                            <button
+                                                onClick={() => setShowDeletionModal(true)}
+                                                className="reporting-btn reporting-btn--red"
+                                            >
+                                                Request Deletion
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Export Requests */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Data Export Requests</h2>
+                                    <p className="reporting-card__subtitle">Track your data export requests</p>
+                                </div>
+                                <span className="reporting-badge reporting-badge--info">{exportRequests.length} Requests</span>
+                            </div>
+                            <div className="reporting-card__content">
+                                {exportRequests.length === 0 ? (
+                                    <div className="reporting-empty-state">
+                                        <p>No data export requests found.</p>
+                                    </div>
+                                ) : (
+                                    <div className="reporting-table-container">
+                                        <table className="reporting-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Type</th>
+                                                    <th>Format</th>
+                                                    <th>Requested</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {exportRequests.map((request, index) => (
+                                                    <tr key={index}>
+                                                        <td>{request.requestType?.replace(/_/g, ' ')}</td>
+                                                        <td>{request.format}</td>
+                                                        <td>{formatDateTime(request.requestedAt)}</td>
+                                                        <td>
+                                                            <span className={`reporting-badge reporting-badge--${getStatusColor(request.status)}`}>
+                                                                {request.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 )}
                             </div>
                         </div>
-                    </Card>
-                )}
 
-                {activeTab === 'data' && (
-                    <div className="data-management">
-                        <div className="data-actions">
-                            <Button
-                                onClick={() => setShowExportModal(true)}
-                                className="primary"
-                            >
-                                Request Data Export
-                            </Button>
-                            <Button
-                                onClick={() => setShowDeletionModal(true)}
-                                className="danger"
-                            >
-                                Request Data Deletion
-                            </Button>
+                        {/* Deletion Requests */}
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Data Deletion Requests</h2>
+                                    <p className="reporting-card__subtitle">Track your data deletion requests</p>
+                                </div>
+                                <span className="reporting-badge reporting-badge--info">{deletionRequests.length} Requests</span>
+                            </div>
+                            <div className="reporting-card__content">
+                                {deletionRequests.length === 0 ? (
+                                    <div className="reporting-empty-state">
+                                        <p>No data deletion requests found.</p>
+                                    </div>
+                                ) : (
+                                    <div className="reporting-table-container">
+                                        <table className="reporting-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Type</th>
+                                                    <th>Categories</th>
+                                                    <th>Requested</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {deletionRequests.map((request, index) => (
+                                                    <tr key={index}>
+                                                        <td>{request.deletionType?.replace(/_/g, ' ')}</td>
+                                                        <td>
+                                                            {Array.isArray(request.dataCategories) 
+                                                                ? request.dataCategories.join(', ') 
+                                                                : request.dataCategories
+                                                            }
+                                                        </td>
+                                                        <td>{formatDateTime(request.requestedAt)}</td>
+                                                        <td>
+                                                            <span className={`reporting-badge reporting-badge--${getStatusColor(request.status)}`}>
+                                                                {request.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-
-                        <Card className="data-card">
-                            <div className="card-header">
-                                <h2>Data Export Requests</h2>
-                            </div>
-                            <div className="card-body">
-                                <Table
-                                    columns={[
-                                        { key: 'requestType', header: 'Type', render: (value) => value.replace(/_/g, ' ') },
-                                        { key: 'format', header: 'Format' },
-                                        { key: 'requestedAt', header: 'Requested', render: (value) => formatDateTime(value) },
-                                        {
-                                            key: 'status',
-                                            header: 'Status',
-                                            render: (value) => (
-                                                <Badge variant={getStatusColor(value)}>
-                                                    {value}
-                                                </Badge>
-                                            )
-                                        }
-                                    ]}
-                                    data={exportRequests}
-                                    emptyMessage="No data export requests found"
-                                />
-                            </div>
-                        </Card>
-
-                        <Card className="data-card">
-                            <div className="card-header">
-                                <h2>Data Deletion Requests</h2>
-                            </div>
-                            <div className="card-body">
-                                <Table
-                                    columns={[
-                                        { key: 'deletionType', header: 'Type', render: (value) => value.replace(/_/g, ' ') },
-                                        { key: 'dataCategories', header: 'Categories', render: (value) => Array.isArray(value) ? value.join(', ') : value },
-                                        { key: 'requestedAt', header: 'Requested', render: (value) => formatDateTime(value) },
-                                        {
-                                            key: 'status',
-                                            header: 'Status',
-                                            render: (value) => (
-                                                <Badge variant={getStatusColor(value)}>
-                                                    {value}
-                                                </Badge>
-                                            )
-                                        }
-                                    ]}
-                                    data={deletionRequests}
-                                    emptyMessage="No data deletion requests found"
-                                />
-                            </div>
-                        </Card>
                     </div>
                 )}
 
                 {activeTab === 'policy' && (
-                    <Card className="privacy-card">
-                        <div className="card-header">
-                            <h2>Privacy Policy</h2>
-                        </div>
-                        <div className="card-body">
-                            {currentPolicy ? (
-                                <div className="policy-content">
-                                    <div className="policy-header">
-                                        <h3>{currentPolicy.title}</h3>
-                                        <div className="policy-meta">
-                                            <Badge variant="info">Version {currentPolicy.version}</Badge>
-                                            <span>Effective: {formatDateTime(currentPolicy.effectiveDate)}</span>
+                    <div className="privacy-grid" data-animate="fade-up" data-delay="0.08">
+                        <div className="reporting-card">
+                            <div className="reporting-card__header">
+                                <div>
+                                    <h2 className="reporting-card__title">Privacy Policy</h2>
+                                    <p className="reporting-card__subtitle">Our commitment to protecting your data</p>
+                                </div>
+                            </div>
+                            <div className="reporting-card__content">
+                                {currentPolicy ? (
+                                    <div className="policy-content">
+                                        <div className="policy-header">
+                                            <h3>{currentPolicy.title}</h3>
+                                            <div className="policy-meta">
+                                                <span className="reporting-badge reporting-badge--info">
+                                                    Version {currentPolicy.version}
+                                                </span>
+                                                <span>Effective: {formatDateTime(currentPolicy.effectiveDate)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="policy-text">
+                                            <pre>{currentPolicy.content}</pre>
                                         </div>
                                     </div>
-                                    <div className="policy-text">
-                                        <pre>{currentPolicy.content}</pre>
+                                ) : (
+                                    <div className="reporting-empty-state">
+                                        <p>No privacy policy is currently available.</p>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="no-policy">
-                                    <p>No privacy policy is currently available.</p>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
-                    </Card>
+                    </div>
                 )}
             </div>
 
             {/* Data Export Modal */}
-            <Modal
-                isOpen={showExportModal}
-                onClose={() => setShowExportModal(false)}
-                title="Request Data Export"
-            >
-                <div className="export-form">
-                    <div className="form-group">
-                        <label>Data Type</label>
-                        <select
-                            value={exportForm.requestType}
-                            onChange={(e) => setExportForm(prev => ({...prev, requestType: e.target.value}))}
-                            className="form-control"
-                        >
-                            <option value="PERSONAL_DATA">Personal Data</option>
-                            <option value="ACCOUNT_DATA">Account Data</option>
-                            <option value="ALL_DATA">All Data</option>
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label>Format</label>
-                        <select
-                            value={exportForm.format}
-                            onChange={(e) => setExportForm(prev => ({...prev, format: e.target.value}))}
-                            className="form-control"
-                        >
-                            <option value="JSON">JSON</option>
-                            <option value="CSV">CSV</option>
-                            <option value="PDF">PDF</option>
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label>Reason (Optional)</label>
-                        <textarea
-                            value={exportForm.reason}
-                            onChange={(e) => setExportForm(prev => ({...prev, reason: e.target.value}))}
-                            className="form-control"
-                            rows="3"
-                            placeholder="Please provide a reason for your data export request..."
-                        />
-                    </div>
-                    <div className="modal-actions">
-                        <Button onClick={() => setShowExportModal(false)} variant="secondary">
-                            Cancel
-                        </Button>
-                        <Button onClick={handleExportRequest} className="primary">
-                            Submit Request
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
-
-            {/* Data Deletion Modal */}
-            <Modal
-                isOpen={showDeletionModal}
-                onClose={() => setShowDeletionModal(false)}
-                title="Request Data Deletion"
-            >
-                <div className="deletion-form">
-                    <div className="deletion-warning">
-                        <div className="warning-icon">⚠️</div>
-                        <p><strong>Warning:</strong> This action cannot be undone. Please be certain about what data you want to delete.</p>
-                    </div>
-                    <div className="form-group">
-                        <label>Deletion Type</label>
-                        <select
-                            value={deletionForm.deletionType}
-                            onChange={(e) => setDeletionForm(prev => ({...prev, deletionType: e.target.value}))}
-                            className="form-control"
-                        >
-                            <option value="SPECIFIC_DATA">Specific Data Categories</option>
-                            <option value="PERSONAL_DATA">All Personal Data</option>
-                            <option value="ACCOUNT">Delete Account</option>
-                        </select>
-                    </div>
-                    {deletionForm.deletionType === 'SPECIFIC_DATA' && (
-                        <div className="form-group">
-                            <label>Data Categories</label>
-                            <div className="checkbox-group">
-                                {dataCategories.map(category => (
-                                    <label key={category.value} className="checkbox-item">
-                                        <input
-                                            type="checkbox"
-                                            checked={deletionForm.dataCategories.includes(category.value)}
-                                            onChange={(e) => {
-                                                const value = category.value;
-                                                setDeletionForm(prev => ({
-                                                    ...prev,
-                                                    dataCategories: e.target.checked
-                                                        ? [...prev.dataCategories, value]
-                                                        : prev.dataCategories.filter(cat => cat !== value)
-                                                }));
-                                            }}
-                                        />
-                                        {category.label}
-                                    </label>
-                                ))}
+            {showExportModal && (
+                <div className="reporting-modal-overlay">
+                    <div className="reporting-modal" data-animate="fade-up">
+                        <div className="reporting-modal__header">
+                            <h3>Request Data Export</h3>
+                            <button 
+                                onClick={() => setShowExportModal(false)}
+                                className="reporting-modal__close"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div className="reporting-modal__content">
+                            <div className="reporting-filters__grid">
+                                <div className="reporting-form-group">
+                                    <label className="reporting-form-label">Data Type</label>
+                                    <select
+                                        value={exportForm.requestType}
+                                        onChange={(e) => setExportForm(prev => ({...prev, requestType: e.target.value}))}
+                                        className="reporting-select"
+                                    >
+                                        <option value="PERSONAL_DATA">Personal Data</option>
+                                        <option value="ACCOUNT_DATA">Account Data</option>
+                                        <option value="ALL_DATA">All Data</option>
+                                    </select>
+                                </div>
+                                <div className="reporting-form-group">
+                                    <label className="reporting-form-label">Format</label>
+                                    <select
+                                        value={exportForm.format}
+                                        onChange={(e) => setExportForm(prev => ({...prev, format: e.target.value}))}
+                                        className="reporting-select"
+                                    >
+                                        <option value="JSON">JSON</option>
+                                        <option value="CSV">CSV</option>
+                                        <option value="PDF">PDF</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="reporting-form-group">
+                                <label className="reporting-form-label">Reason (Optional)</label>
+                                <textarea
+                                    value={exportForm.reason}
+                                    onChange={(e) => setExportForm(prev => ({...prev, reason: e.target.value}))}
+                                    className="reporting-textarea"
+                                    rows="3"
+                                    placeholder="Please provide a reason for your data export request..."
+                                />
                             </div>
                         </div>
-                    )}
-                    <div className="form-group">
-                        <label>Reason</label>
-                        <textarea
-                            value={deletionForm.reason}
-                            onChange={(e) => setDeletionForm(prev => ({...prev, reason: e.target.value}))}
-                            className="form-control"
-                            rows="3"
-                            placeholder="Please provide a reason for your data deletion request..."
-                            required
-                        />
-                    </div>
-                    <div className="modal-actions">
-                        <Button onClick={() => setShowDeletionModal(false)} variant="secondary">
-                            Cancel
-                        </Button>
-                        <Button onClick={handleDeletionRequest} className="danger">
-                            Submit Deletion Request
-                        </Button>
+                        <div className="reporting-modal__actions">
+                            <button 
+                                onClick={() => setShowExportModal(false)}
+                                className="reporting-btn reporting-btn--secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleExportRequest}
+                                className="reporting-btn reporting-btn--blue"
+                            >
+                                Submit Request
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </Modal>
-        </div>
+            )}
+
+            {/* Data Deletion Modal */}
+            {showDeletionModal && (
+                <div className="reporting-modal-overlay">
+                    <div className="reporting-modal reporting-modal--large" data-animate="fade-up">
+                        <div className="reporting-modal__header">
+                            <h3>Request Data Deletion</h3>
+                            <button 
+                                onClick={() => setShowDeletionModal(false)}
+                                className="reporting-modal__close"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div className="reporting-modal__content">
+                            <div className="privacy-warning">
+                                <div className="privacy-warning__icon">⚠️</div>
+                                <div className="privacy-warning__content">
+                                    <strong>Warning:</strong> This action cannot be undone. Please be certain about what data you want to delete.
+                                </div>
+                            </div>
+                            <div className="reporting-form-group">
+                                <label className="reporting-form-label">Deletion Type</label>
+                                <select
+                                    value={deletionForm.deletionType}
+                                    onChange={(e) => setDeletionForm(prev => ({...prev, deletionType: e.target.value}))}
+                                    className="reporting-select"
+                                >
+                                    <option value="SPECIFIC_DATA">Specific Data Categories</option>
+                                    <option value="PERSONAL_DATA">All Personal Data</option>
+                                    <option value="ACCOUNT">Delete Account</option>
+                                </select>
+                            </div>
+                            {deletionForm.deletionType === 'SPECIFIC_DATA' && (
+                                <div className="reporting-form-group">
+                                    <label className="reporting-form-label">Data Categories</label>
+                                    <div className="privacy-checkbox-group">
+                                        {dataCategories.map(category => (
+                                            <label key={category.value} className="privacy-checkbox">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={deletionForm.dataCategories.includes(category.value)}
+                                                    onChange={(e) => {
+                                                        const value = category.value;
+                                                        setDeletionForm(prev => ({
+                                                            ...prev,
+                                                            dataCategories: e.target.checked
+                                                                ? [...prev.dataCategories, value]
+                                                                : prev.dataCategories.filter(cat => cat !== value)
+                                                        }));
+                                                    }}
+                                                />
+                                                <span className="privacy-checkbox__label">
+                                                    {category.label}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="reporting-form-group">
+                                <label className="reporting-form-label">Reason</label>
+                                <textarea
+                                    value={deletionForm.reason}
+                                    onChange={(e) => setDeletionForm(prev => ({...prev, reason: e.target.value}))}
+                                    className="reporting-textarea"
+                                    rows="3"
+                                    placeholder="Please provide a reason for your data deletion request..."
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div className="reporting-modal__actions">
+                            <button 
+                                onClick={() => setShowDeletionModal(false)}
+                                className="reporting-btn reporting-btn--secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleDeletionRequest}
+                                className="reporting-btn reporting-btn--red"
+                            >
+                                Submit Deletion Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </section>
     );
 };
 
