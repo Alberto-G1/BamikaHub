@@ -10,4 +10,5 @@ export { default as Table } from './Table';
 export { default as EmptyState } from './EmptyState';
 export { default as SkeletonLoader } from './SkeletonLoader';
 export { default as ThemeToggle } from './ThemeToggle';
+export { default as Switch } from './Switch';
 export { ToastProvider, useToast } from './Toast';

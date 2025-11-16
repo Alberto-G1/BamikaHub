@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/guest/**").permitAll()
+                    .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/motivation/wall-of-fame").permitAll() // Public Wall of Fame
                         // Allow public access to uploaded files
                         .requestMatchers("/uploads/**").permitAll() // <-- ADD THIS LINE
@@ -66,8 +67,13 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // Allow your frontend origin
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        // Allow credentials (cookies / Authorization header) to be included in cross-origin requests
+        configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration); // Apply this config to your API paths
+        // Apply this configuration to all paths so that non-/api endpoints (e.g. websocket /ws/**)
+        // receive proper CORS headers during development. In production you may want to
+        // restrict this more narrowly.
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }

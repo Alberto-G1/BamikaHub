@@ -86,6 +86,18 @@ import ChatPage from './pages/chat/ChatPage.jsx';
 import HallOfFame from './pages/motivation/HallOfFame.jsx';
 import AwardManagement from './pages/motivation/AwardManagement.jsx';
 
+// --- SETTINGS PAGES ---
+import Settings from './pages/settings/Settings.jsx';
+
+// --- SECURITY PAGES ---
+import Security from './pages/security/Security.jsx';
+
+// --- PRIVACY PAGES ---
+import Privacy from './pages/privacy/Privacy.jsx';
+
+// --- HELP CENTER PAGES ---
+import HelpCenter from './pages/help/HelpCenter.jsx';
+
 
 function App() {
     return (
@@ -130,6 +142,9 @@ function App() {
                         <Route path="roles/edit/:id" element={<ProtectedRoute requiredPermission="ROLE_UPDATE"><RoleForm /></ProtectedRoute>} />
                         <Route path="profile" element={<ProfileViewPage />} />
                         <Route path="profile/edit" element={<ProfileEditPage />} />
+                        <Route path="profile/settings" element={<Settings />} />
+                        <Route path="profile/security" element={<Security />} />
+                        <Route path="profile/privacy" element={<Privacy />} />
 
                         {/* Inventory & Supplier Management */}
                         <Route path="inventory" element={<ProtectedRoute requiredPermission="ITEM_READ"><InventoryPage /></ProtectedRoute>} />
@@ -199,6 +214,9 @@ function App() {
                         {/* Motivation / Recognition */}
                         <Route path="motivation/wall-of-fame" element={<ProtectedRoute><HallOfFame /></ProtectedRoute>} />
                         <Route path="motivation/awards" element={<ProtectedRoute requiredPermission="ASSIGNMENT_CREATE"><AwardManagement /></ProtectedRoute>} />
+
+                        {/* Help Center */}
+                        <Route path="help" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
                     </Route>
                     
                     {/* Catch-all Route for 404 Not Found */}

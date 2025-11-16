@@ -16,9 +16,12 @@ import com.bamikahub.inventorysystem.security.jwt.JwtUtil;
 import com.bamikahub.inventorysystem.security.services.UserDetailsImpl;
 import com.bamikahub.inventorysystem.services.audit.AuditService;
 import com.bamikahub.inventorysystem.services.notification.NotificationService;
-import lombok.extern.slf4j.Slf4j;
+import com.bamikahub.inventorysystem.services.security.SecurityService;
 import com.bamikahub.inventorysystem.util.ValidationUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,7 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -46,29 +49,43 @@ public class AuthService {
     @Autowired private JwtUtil jwtUtil;
     @Autowired private NotificationService notificationService;
     @Autowired private AuditService auditService;
+    @Autowired private SecurityService securityService;
+
+    @Autowired private HttpServletRequest httpServletRequest;
 
     @Transactional
     public JwtResponse loginUser(AuthRequest authRequest) {
         // Optional: pre-check for lock before attempting authentication
         userRepository.findByEmail(authRequest.getEmail()).ifPresent(u -> {
-            if (u.getLockedUntil() != null && u.getLockedUntil().isAfter(java.time.LocalDateTime.now())) {
-                throw new ResponseStatusException(HttpStatus.LOCKED,
-                        "Account locked until " + u.getLockedUntil() + ". Try again later.");
+            if (u.getLockedUntil() != null && u.getLockedUntil().isAfter(LocalDateTime.now())) {
+                throw new ResponseStatusException(
+                        HttpStatus.LOCKED,
+                        "Account locked until " + u.getLockedUntil() + ". Try again later."
+                );
             }
         });
 
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword()));
+                    new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())
+            );
         } catch (BadCredentialsException ex) {
+            // Capture request context for security logging
+            final String ipAddress = (httpServletRequest != null)
+                    ? httpServletRequest.getRemoteAddr()
+                    : null;
+            final String userAgent = (httpServletRequest != null)
+                    ? httpServletRequest.getHeader("User-Agent")
+                    : null;
+
             // Handle failed attempt: increment counter, lock if necessary, and audit
             userRepository.findByEmail(authRequest.getEmail()).ifPresent(user -> {
                 int attempts = user.getFailedLoginAttempts() + 1;
                 user.setFailedLoginAttempts(attempts);
-                java.time.LocalDateTime lockedUntil = null;
+                LocalDateTime lockedUntil = null;
                 if (attempts >= 5) { // lock after 5 consecutive failures
-                    lockedUntil = java.time.LocalDateTime.now().plusMinutes(15);
+                    lockedUntil = LocalDateTime.now().plusMinutes(15);
                     user.setLockedUntil(lockedUntil);
                 }
                 userRepository.save(user);
@@ -87,6 +104,19 @@ public class AuthService {
                         details,
                         AuditLog.Severity.WARNING
                 );
+
+                // Record failed login attempt for security history
+                try {
+                    securityService.recordLoginAttempt(
+                            user.getEmail(),
+                            ipAddress,
+                            userAgent,
+                            false,
+                            "Bad credentials"
+                    );
+                } catch (Exception e) {
+                    log.error("Failed to record failed login attempt for {}: {}", user.getEmail(), e.getMessage());
+                }
             });
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
@@ -94,28 +124,47 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtil.generateToken(authentication);
 
-    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-    User userEntity = userRepository.findByEmail(userDetails.getUsername())
+        User userEntity = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found after authentication"));
 
-    // Reset failed attempts on success
-    userEntity.setFailedLoginAttempts(0);
-    userEntity.setLockedUntil(null);
-    userEntity.setLastLoginAt(LocalDateTime.now());
+        // Reset failed attempts on success
+        userEntity.setFailedLoginAttempts(0);
+        userEntity.setLockedUntil(null);
+        userEntity.setLastLoginAt(LocalDateTime.now());
         userRepository.save(userEntity);
+
+        // Record successful login attempt in history
+        try {
+            String ipAddress = null;
+            String userAgent = null;
+            if (httpServletRequest != null) {
+                ipAddress = httpServletRequest.getRemoteAddr();
+                userAgent = httpServletRequest.getHeader("User-Agent");
+            }
+            securityService.recordLoginAttempt(
+                    userEntity.getEmail(),
+                    ipAddress,
+                    userAgent,
+                    true,
+                    null
+            );
+        } catch (Exception e) {
+            log.error("Failed to record login history for {}: {}", userEntity.getEmail(), e.getMessage());
+        }
 
         List<String> permissions = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority().toString())
                 .collect(Collectors.toList());
 
-    String role = permissions.stream()
+        String role = permissions.stream()
                 .filter(p -> p.startsWith("ROLE_"))
                 .findFirst()
                 .orElse("ROLE_UNKNOWN")
                 .substring(5);
 
-    JwtResponse response = new JwtResponse(
+        JwtResponse response = new JwtResponse(
                 jwt,
                 userDetails.getId(),
                 userDetails.getUsername(),
@@ -124,25 +173,25 @@ public class AuthService {
                 permissions
         );
 
-    // Audit login action
-    try {
-        auditService.logAction(
-            userEntity,
-            AuditLog.ActionType.USER_LOGIN,
-            "User",
-            userEntity.getId(),
-            userEntity.getFullName(),
-            Map.of(
-                "email", userEntity.getEmail(),
-                "role", role,
-                "permissions", permissions
-            )
-        );
-    } catch (Exception e) {
-        log.error("Failed to audit login for {}: {}", userEntity.getEmail(), e.getMessage());
-    }
+        // Audit login action (non-blocking)
+        try {
+            auditService.logAction(
+                    userEntity,
+                    AuditLog.ActionType.USER_LOGIN,
+                    "User",
+                    userEntity.getId(),
+                    userEntity.getFullName(),
+                    Map.of(
+                            "email", userEntity.getEmail(),
+                            "role", role,
+                            "permissions", permissions
+                    )
+            );
+        } catch (Exception e) {
+            log.error("Failed to audit login for {}: {}", userEntity.getEmail(), e.getMessage());
+        }
 
-    return response;
+        return response;
     }
 
     @Transactional
