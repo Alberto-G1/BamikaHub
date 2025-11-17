@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { FaCalendarAlt, FaEdit, FaEnvelope, FaMapMarkerAlt, FaPhoneAlt, FaUserCircle, FaUserShield, FaUserTag } from 'react-icons/fa';
+import { FaCalendarAlt, FaEdit, FaEnvelope, FaMapMarkerAlt, FaPhoneAlt, FaUserCircle, FaUserShield, FaUserTag, FaArrowLeft } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import './ProfilePage.css';
@@ -19,7 +18,7 @@ const ProfileViewPage = () => {
                 setProfile(res.data);
             } catch (error) {
                 toast.error('Could not load profile data.');
-                navigate('/dashboard'); // Redirect if profile can't be loaded
+                navigate('/dashboard');
             } finally {
                 setLoading(false);
             }
@@ -29,14 +28,21 @@ const ProfileViewPage = () => {
 
     if (loading) {
         return (
-            <div className="profile-loading">
-                <Spinner animation="border" role="status" />
+            <div className="reporting-loading">
+                <div className="reporting-spinner" />
+                <p>Loading profile...</p>
             </div>
         );
     }
 
     if (!profile) {
-        return <section className="profile-page"><p>Could not load profile.</p></section>;
+        return (
+            <section className="reporting-page">
+                <div className="reporting-empty-state">
+                    <p>Could not load profile.</p>
+                </div>
+            </section>
+        );
     }
 
     const formatValue = (value, fallback = 'Not provided') => (value ? value : fallback);
@@ -62,38 +68,49 @@ const ProfileViewPage = () => {
             label: 'Email',
             value: formatValue(profile.email),
             icon: FaEnvelope,
-            modifier: 'profile-banner__meta-icon--teal'
+            accent: 'blue'
         },
         {
             label: 'Contact',
             value: formatValue(profile.phoneNumber),
             icon: FaPhoneAlt,
-            modifier: 'profile-banner__meta-icon--gold'
+            accent: 'gold'
         },
         {
             label: 'Role',
             value: roleLabel,
             icon: FaUserTag,
-            modifier: 'profile-banner__meta-icon--purple'
+            accent: 'purple'
         },
         {
             label: 'Joined',
             value: joinedOn,
             icon: FaCalendarAlt,
-            modifier: 'profile-banner__meta-icon--teal'
+            accent: 'green'
         },
         {
             label: 'Location',
             value: locationLabel || formatValue(profile.address),
             icon: FaMapMarkerAlt,
-            modifier: 'profile-banner__meta-icon--gold'
+            accent: 'red'
         }
     ];
 
     return (
-        <section className="profile-page">
-            <div className="profile-banner">
-                <div className="profile-banner__header">
+        <section className="reporting-page">
+            <div className="reporting-back" data-animate="fade-up">
+                <button
+                    type="button"
+                    className="reporting-btn reporting-btn--secondary reporting-btn--sm"
+                    onClick={() => navigate('/dashboard')}
+                >
+                    <FaArrowLeft /> Back to Dashboard
+                </button>
+                <p className="reporting-back__title">User Profile • Overview</p>
+            </div>
+
+            <div className="reporting-banner" data-animate="fade-up" data-delay="0.04">
+                <div className="reporting-banner__content">
                     <div className="profile-banner__avatar">
                         <div className="profile-avatar-wrapper">
                             {profile.profilePictureUrl ? (
@@ -106,132 +123,147 @@ const ProfileViewPage = () => {
                                 <FaUserCircle className="profile-avatar-placeholder" />
                             )}
                         </div>
-
-                        <span className="profile-chip">{roleLabel}</span>
+                        <span className="reporting-badge reporting-badge--info">{roleLabel}</span>
                     </div>
 
-                    <div className="profile-banner__info">
-                        <span className="profile-banner__eyebrow">
-                            <FaUserShield aria-hidden="true" />
-                            Profile Overview
+                    <div className="reporting-banner__info">
+                        <span className="reporting-banner__eyebrow">
+                            <FaUserShield /> Profile Overview
                         </span>
-                        <h1 className="profile-banner__title">{fullName}</h1>
-                        <p className="profile-banner__subtitle">{bannerSubtitle}</p>
+                        <h1 className="reporting-banner__title">{fullName}</h1>
+                        <p className="reporting-banner__subtitle">{bannerSubtitle}</p>
                     </div>
 
-                    <div className="profile-banner__actions">
+                    <div className="reporting-banner__actions">
                         <button
                             type="button"
-                            className="profile-secondary-btn"
+                            className="reporting-btn reporting-btn--secondary"
                             onClick={() => navigate('/dashboard')}
                         >
                             Go to Dashboard
                         </button>
                         <button
                             type="button"
-                            className="profile-primary-btn"
+                            className="reporting-btn reporting-btn--gold"
                             onClick={() => navigate('/profile/edit')}
                         >
-                            <FaEdit aria-hidden="true" />
-                            Edit Profile
+                            <FaEdit /> Edit Profile
                         </button>
                     </div>
                 </div>
 
-                <div className="profile-banner__meta">
-                    {bannerMetrics.map(metric => {
-                        const MetricIcon = metric.icon;
-                        return (
-                            <div key={metric.label} className="profile-banner__meta-item">
-                                <div className={`profile-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
-                                    <MetricIcon />
-                                </div>
-                                <div className="profile-banner__meta-content">
-                                    <span className="profile-banner__meta-label">{metric.label}</span>
-                                    <span className="profile-banner__meta-value">{metric.value}</span>
-                                </div>
+                <div className="reporting-banner__meta">
+                    {bannerMetrics.map((metric, index) => (
+                        <div key={metric.label} className="reporting-banner__meta-item" data-animate="fade-up" data-delay={0.08 + (index * 0.04)}>
+                            <div className={`reporting-banner__meta-icon reporting-banner__meta-icon--${metric.accent}`}>
+                                <metric.icon />
                             </div>
-                        );
-                    })}
+                            <div className="reporting-banner__meta-content">
+                                <span className="reporting-banner__meta-label">{metric.label}</span>
+                                <span className="reporting-banner__meta-value">{metric.value}</span>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 
-            <div className="profile-body">
-                <div className="profile-column profile-column--left">
-                    <div className="profile-card">
-                        <h3>Identity</h3>
-                        <div className="profile-info-grid">
-                            <div className="info-item">
-                                <span className="info-label">Full Name</span>
-                                <span className="info-value">{fullName}</span>
+            <div className="profile-content">
+                <div className="profile-grid" data-animate="fade-up" data-delay="0.12">
+                    {/* Identity Card */}
+                    <div className="reporting-card reporting-card--stretch">
+                        <div className="reporting-card__header">
+                            <div>
+                                <h2 className="reporting-card__title">Identity Information</h2>
+                                <p className="reporting-card__subtitle">Personal details and identification</p>
                             </div>
-                            <div className="info-item">
-                                <span className="info-label">Username</span>
-                                <span className="info-value">{formatValue(profile.username)}</span>
-                            </div>
-                            <div className="info-item">
-                                <span className="info-label">Gender</span>
-                                <span className="info-value">{genderDisplay}</span>
-                            </div>
-                            <div className="info-item">
-                                <span className="info-label">Date of Birth</span>
-                                <span className="info-value">{formatDate(profile.dateOfBirth, 'Not provided')}</span>
+                        </div>
+                        <div className="reporting-card__content">
+                            <div className="profile-info-grid">
+                                <div className="profile-info-item">
+                                    <span className="profile-info-label">Full Name</span>
+                                    <span className="profile-info-value">{fullName}</span>
+                                </div>
+                                <div className="profile-info-item">
+                                    <span className="profile-info-label">Username</span>
+                                    <span className="profile-info-value">{formatValue(profile.username)}</span>
+                                </div>
+                                <div className="profile-info-item">
+                                    <span className="profile-info-label">Gender</span>
+                                    <span className="profile-info-value">{genderDisplay}</span>
+                                </div>
+                                <div className="profile-info-item">
+                                    <span className="profile-info-label">Date of Birth</span>
+                                    <span className="profile-info-value">{formatDate(profile.dateOfBirth, 'Not provided')}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="profile-card profile-card--secondary">
-                        <h3>Contact Information</h3>
-                        <ul className="profile-detail-list">
-                            <li>
-                                <span className="profile-detail-key">Address</span>
-                                <span className="profile-detail-value">{formatValue(profile.address)}</span>
-                            </li>
-                            <li>
-                                <span className="profile-detail-key">City</span>
-                                <span className="profile-detail-value">{formatValue(profile.city)}</span>
-                            </li>
-                            <li>
-                                <span className="profile-detail-key">Country</span>
-                                <span className="profile-detail-value">{formatValue(profile.country)}</span>
-                            </li>
-                        </ul>
+                    {/* Contact Information */}
+                    <div className="reporting-card reporting-card--stretch">
+                        <div className="reporting-card__header">
+                            <div>
+                                <h2 className="reporting-card__title">Contact Information</h2>
+                                <p className="reporting-card__subtitle">Address and location details</p>
+                            </div>
+                        </div>
+                        <div className="reporting-card__content">
+                            <div className="profile-detail-list">
+                                <div className="profile-detail-item">
+                                    <span className="profile-detail-label">Address</span>
+                                    <span className="profile-detail-value">{formatValue(profile.address)}</span>
+                                </div>
+                                <div className="profile-detail-item">
+                                    <span className="profile-detail-label">City</span>
+                                    <span className="profile-detail-value">{formatValue(profile.city)}</span>
+                                </div>
+                                <div className="profile-detail-item">
+                                    <span className="profile-detail-label">Country</span>
+                                    <span className="profile-detail-value">{formatValue(profile.country)}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div className="profile-column profile-column--right">
-                    <div className="profile-card">
-                        <h3>Account Overview</h3>
-                        <ul className="profile-detail-list">
-                            <li>
-                                <span className="profile-detail-key">Status</span>
-                                <span className="profile-detail-value">{formatValue(profile.statusName)}</span>
-                            </li>
-                            <li>
-                                <span className="profile-detail-key">Role</span>
-                                <span className="profile-detail-value">{roleLabel}</span>
-                            </li>
-                            <li>
-                                <span className="profile-detail-key">Last Updated</span>
-                                <span className="profile-detail-value">{formatDate(profile.updatedAt, '—')}</span>
-                            </li>
-                        </ul>
-
-                        <div className="profile-card__actions">
-                            <button
-                                type="button"
-                                className="profile-primary-btn"
-                                onClick={() => navigate('/profile/edit')}
-                            >
-                                Update Details
-                            </button>
-                            <button
-                                type="button"
-                                className="profile-secondary-btn"
-                                onClick={() => navigate('/dashboard')}
-                            >
-                                Go to Dashboard
-                            </button>
+                    {/* Account Overview */}
+                    <div className="reporting-card">
+                        <div className="reporting-card__header">
+                            <div>
+                                <h2 className="reporting-card__title">Account Overview</h2>
+                                <p className="reporting-card__subtitle">Account status and metadata</p>
+                            </div>
+                        </div>
+                        <div className="reporting-card__content">
+                            <div className="profile-detail-list">
+                                <div className="profile-detail-item">
+                                    <span className="profile-detail-label">Status</span>
+                                    <span className="profile-detail-value">{formatValue(profile.statusName)}</span>
+                                </div>
+                                <div className="profile-detail-item">
+                                    <span className="profile-detail-label">Role</span>
+                                    <span className="profile-detail-value">{roleLabel}</span>
+                                </div>
+                                <div className="profile-detail-item">
+                                    <span className="profile-detail-label">Last Updated</span>
+                                    <span className="profile-detail-value">{formatDate(profile.updatedAt, '—')}</span>
+                                </div>
+                            </div>
+                            <div className="profile-card-actions">
+                                <button
+                                    type="button"
+                                    className="reporting-btn reporting-btn--gold"
+                                    onClick={() => navigate('/profile/edit')}
+                                >
+                                    Update Details
+                                </button>
+                                <button
+                                    type="button"
+                                    className="reporting-btn reporting-btn--secondary"
+                                    onClick={() => navigate('/dashboard')}
+                                >
+                                    Go to Dashboard
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
