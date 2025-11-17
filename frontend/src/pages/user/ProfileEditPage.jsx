@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { FaCalendarAlt, FaEnvelope, FaMapMarkerAlt, FaPhoneAlt, FaUserCircle, FaUserShield, FaUserTag } from 'react-icons/fa';
+import { FaCalendarAlt, FaEnvelope, FaMapMarkerAlt, FaPhoneAlt, FaUserCircle, FaUserShield, FaUserTag, FaArrowLeft, FaSave, FaKey } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import './ProfilePage.css';
@@ -42,7 +41,7 @@ const ProfileEditPage = () => {
                 });
             } catch (error) {
                 toast.error('Could not load profile data for editing.');
-                navigate('/profile'); // Redirect back if data fails to load
+                navigate('/profile');
             } finally {
                 setLoading(false);
             }
@@ -122,8 +121,9 @@ const ProfileEditPage = () => {
 
     if (loading) {
         return (
-            <div className="profile-loading">
-                <Spinner animation="border" role="status" />
+            <div className="reporting-loading">
+                <div className="reporting-spinner" />
+                <p>Loading profile editor...</p>
             </div>
         );
     }
@@ -151,43 +151,54 @@ const ProfileEditPage = () => {
             label: 'Email',
             value: formatValue(profileData.email),
             icon: FaEnvelope,
-            modifier: 'profile-banner__meta-icon--teal'
+            accent: 'blue'
         },
         {
             label: 'Contact',
             value: formatValue(formData.phoneNumber),
             icon: FaPhoneAlt,
-            modifier: 'profile-banner__meta-icon--gold'
+            accent: 'gold'
         },
         {
             label: 'Role',
             value: roleLabel,
             icon: FaUserTag,
-            modifier: 'profile-banner__meta-icon--purple'
+            accent: 'purple'
         },
         {
             label: 'Joined',
             value: joinedAt,
             icon: FaCalendarAlt,
-            modifier: 'profile-banner__meta-icon--teal'
+            accent: 'green'
         },
         {
             label: 'Location',
             value: locationLabel || formatValue(formData.address),
             icon: FaMapMarkerAlt,
-            modifier: 'profile-banner__meta-icon--gold'
+            accent: 'red'
         }
     ];
 
     return (
-        <section className="profile-page">
-            <div className="profile-banner">
-                <div className="profile-banner__header">
+        <section className="reporting-page">
+            <div className="reporting-back" data-animate="fade-up">
+                <button
+                    type="button"
+                    className="reporting-btn reporting-btn--secondary reporting-btn--sm"
+                    onClick={() => navigate('/profile')}
+                >
+                    <FaArrowLeft /> Back to Profile
+                </button>
+                <p className="reporting-back__title">User Profile • Editor</p>
+            </div>
+
+            <div className="reporting-banner" data-animate="fade-up" data-delay="0.04">
+                <div className="reporting-banner__content">
                     <div className="profile-banner__avatar">
                         <div className="profile-avatar-wrapper">
                             {uploading && (
                                 <div className="profile-avatar-overlay">
-                                    <Spinner animation="border" variant="light" />
+                                    <div className="reporting-spinner" />
                                 </div>
                             )}
 
@@ -210,22 +221,21 @@ const ProfileEditPage = () => {
                             style={{ display: 'none' }}
                         />
 
-                        <span className="profile-chip">{roleLabel}</span>
+                        <span className="reporting-badge reporting-badge--info">{roleLabel}</span>
                     </div>
 
-                    <div className="profile-banner__info">
-                        <span className="profile-banner__eyebrow">
-                            <FaUserShield aria-hidden="true" />
-                            Profile Editor
+                    <div className="reporting-banner__info">
+                        <span className="reporting-banner__eyebrow">
+                            <FaUserShield /> Profile Editor
                         </span>
-                        <h1 className="profile-banner__title">{fullName}</h1>
-                        <p className="profile-banner__subtitle">{bannerSubtitle}</p>
+                        <h1 className="reporting-banner__title">{fullName}</h1>
+                        <p className="reporting-banner__subtitle">{bannerSubtitle}</p>
                     </div>
 
-                    <div className="profile-banner__actions">
+                    <div className="reporting-banner__actions">
                         <button
                             type="button"
-                            className="profile-secondary-btn"
+                            className="reporting-btn reporting-btn--secondary"
                             onClick={handlePictureButtonClick}
                             disabled={uploading}
                         >
@@ -233,7 +243,7 @@ const ProfileEditPage = () => {
                         </button>
                         <button
                             type="button"
-                            className="profile-secondary-btn"
+                            className="reporting-btn reporting-btn--secondary"
                             onClick={() => navigate('/profile')}
                         >
                             Cancel &amp; Go Back
@@ -241,241 +251,249 @@ const ProfileEditPage = () => {
                     </div>
                 </div>
 
-                <div className="profile-banner__meta">
-                    {bannerMetrics.map(metric => {
-                        const MetricIcon = metric.icon;
-                        return (
-                            <div key={metric.label} className="profile-banner__meta-item">
-                                <div className={`profile-banner__meta-icon ${metric.modifier}`} aria-hidden="true">
-                                    <MetricIcon />
-                                </div>
-                                <div className="profile-banner__meta-content">
-                                    <span className="profile-banner__meta-label">{metric.label}</span>
-                                    <span className="profile-banner__meta-value">{metric.value}</span>
-                                </div>
+                <div className="reporting-banner__meta">
+                    {bannerMetrics.map((metric, index) => (
+                        <div key={metric.label} className="reporting-banner__meta-item" data-animate="fade-up" data-delay={0.08 + (index * 0.04)}>
+                            <div className={`reporting-banner__meta-icon reporting-banner__meta-icon--${metric.accent}`}>
+                                <metric.icon />
                             </div>
-                        );
-                    })}
+                            <div className="reporting-banner__meta-content">
+                                <span className="reporting-banner__meta-label">{metric.label}</span>
+                                <span className="reporting-banner__meta-value">{metric.value}</span>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 
-            <div className="profile-body">
-                <div className="profile-column profile-column--left">
-                    <div className="profile-card">
-                        <h3>Current Snapshot</h3>
-                        <div className="profile-info-grid">
-                            <div className="info-item">
-                                <span className="info-label">Address</span>
-                                <span className="info-value">{formatValue(formData.address)}</span>
+            <div className="profile-content">
+                <div className="profile-grid" data-animate="fade-up" data-delay="0.12">
+                    {/* Current Snapshot */}
+                    <div className="reporting-card reporting-card--stretch">
+                        <div className="reporting-card__header">
+                            <div>
+                                <h2 className="reporting-card__title">Current Snapshot</h2>
+                                <p className="reporting-card__subtitle">Your current profile information</p>
                             </div>
-                            <div className="info-item">
-                                <span className="info-label">City</span>
-                                <span className="info-value">{formatValue(formData.city)}</span>
-                            </div>
-                            <div className="info-item">
-                                <span className="info-label">Country</span>
-                                <span className="info-value">{formatValue(formData.country)}</span>
-                            </div>
-                            <div className="info-item">
-                                <span className="info-label">Date of Birth</span>
-                                <span className="info-value">{formatValue(formatDate(formData.dateOfBirth), '—')}</span>
-                            </div>
-                            <div className="info-item">
-                                <span className="info-label">Gender</span>
-                                <span className="info-value">{formatValue(genderDisplay)}</span>
+                        </div>
+                        <div className="reporting-card__content">
+                            <div className="profile-info-grid">
+                                <div className="profile-info-item">
+                                    <span className="profile-info-label">Address</span>
+                                    <span className="profile-info-value">{formatValue(formData.address)}</span>
+                                </div>
+                                <div className="profile-info-item">
+                                    <span className="profile-info-label">City</span>
+                                    <span className="profile-info-value">{formatValue(formData.city)}</span>
+                                </div>
+                                <div className="profile-info-item">
+                                    <span className="profile-info-label">Country</span>
+                                    <span className="profile-info-value">{formatValue(formData.country)}</span>
+                                </div>
+                                <div className="profile-info-item">
+                                    <span className="profile-info-label">Date of Birth</span>
+                                    <span className="profile-info-value">{formatValue(formatDate(formData.dateOfBirth), '—')}</span>
+                                </div>
+                                <div className="profile-info-item">
+                                    <span className="profile-info-label">Gender</span>
+                                    <span className="profile-info-value">{formatValue(genderDisplay)}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="profile-column profile-column--right">
-                    <div className="profile-card profile-card--form">
-                        <div className="profile-tabs">
-                            <button
-                                type="button"
-                                className={`profile-tab-btn ${activeTab === 'info' ? 'is-active' : ''}`}
-                                onClick={() => setActiveTab('info')}
-                            >
-                                Personal Information
-                            </button>
-                            <button
-                                type="button"
-                                className={`profile-tab-btn ${activeTab === 'security' ? 'is-active' : ''}`}
-                                onClick={() => setActiveTab('security')}
-                            >
-                                Security
-                            </button>
+                    {/* Edit Form */}
+                    <div className="reporting-card">
+                        <div className="reporting-card__header">
+                            <div>
+                                <h2 className="reporting-card__title">Edit Profile</h2>
+                                <p className="reporting-card__subtitle">Update your personal information</p>
+                            </div>
                         </div>
+                        <div className="reporting-card__content">
+                            <div className="reporting-tabs">
+                                <button
+                                    className={`reporting-tab ${activeTab === 'info' ? 'is-active' : ''}`}
+                                    onClick={() => setActiveTab('info')}
+                                >
+                                    <FaUserShield /> Personal Information
+                                </button>
+                                <button
+                                    className={`reporting-tab ${activeTab === 'security' ? 'is-active' : ''}`}
+                                    onClick={() => setActiveTab('security')}
+                                >
+                                    <FaKey /> Security
+                                </button>
+                            </div>
 
-                        <div className="profile-tab-panels">
-                            {activeTab === 'info' && (
-                                <form className="profile-form" onSubmit={handleProfileUpdate}>
-                                    <div className="profile-form-grid">
-                                        <div className="profile-input-group">
-                                            <label htmlFor="firstName">First Name</label>
-                                            <input
-                                                id="firstName"
-                                                name="firstName"
-                                                type="text"
-                                                value={formData.firstName}
-                                                onChange={handleFormChange}
-                                                required
-                                                autoComplete="given-name"
-                                            />
+                            <div className="profile-tab-content">
+                                {activeTab === 'info' && (
+                                    <form className="profile-form" onSubmit={handleProfileUpdate}>
+                                        <div className="reporting-filters__grid">
+                                            <div className="reporting-form-group">
+                                                <label className="reporting-form-label">First Name *</label>
+                                                <input
+                                                    name="firstName"
+                                                    type="text"
+                                                    value={formData.firstName}
+                                                    onChange={handleFormChange}
+                                                    required
+                                                    autoComplete="given-name"
+                                                    className="reporting-input"
+                                                />
+                                            </div>
+                                            <div className="reporting-form-group">
+                                                <label className="reporting-form-label">Last Name *</label>
+                                                <input
+                                                    name="lastName"
+                                                    type="text"
+                                                    value={formData.lastName}
+                                                    onChange={handleFormChange}
+                                                    required
+                                                    autoComplete="family-name"
+                                                    className="reporting-input"
+                                                />
+                                            </div>
+                                            <div className="reporting-form-group">
+                                                <label className="reporting-form-label">Phone Number</label>
+                                                <input
+                                                    name="phoneNumber"
+                                                    type="tel"
+                                                    value={formData.phoneNumber}
+                                                    onChange={handleFormChange}
+                                                    placeholder="+256700123456"
+                                                    autoComplete="tel"
+                                                    className="reporting-input"
+                                                />
+                                            </div>
+                                            <div className="reporting-form-group">
+                                                <label className="reporting-form-label">Date of Birth</label>
+                                                <input
+                                                    name="dateOfBirth"
+                                                    type="date"
+                                                    value={formData.dateOfBirth}
+                                                    onChange={handleFormChange}
+                                                    className="reporting-input"
+                                                />
+                                            </div>
+                                            <div className="reporting-form-group">
+                                                <label className="reporting-form-label">Gender</label>
+                                                <select
+                                                    name="gender"
+                                                    value={formData.gender}
+                                                    onChange={handleFormChange}
+                                                    className="reporting-select"
+                                                >
+                                                    <option value="">Select...</option>
+                                                    <option value="MALE">Male</option>
+                                                    <option value="FEMALE">Female</option>
+                                                    <option value="OTHER">Other</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                        <div className="profile-input-group">
-                                            <label htmlFor="lastName">Last Name</label>
+                                        <div className="reporting-form-group">
+                                            <label className="reporting-form-label">Address</label>
                                             <input
-                                                id="lastName"
-                                                name="lastName"
-                                                type="text"
-                                                value={formData.lastName}
-                                                onChange={handleFormChange}
-                                                required
-                                                autoComplete="family-name"
-                                            />
-                                        </div>
-                                        <div className="profile-input-group">
-                                            <label htmlFor="phoneNumber">Phone Number</label>
-                                            <input
-                                                id="phoneNumber"
-                                                name="phoneNumber"
-                                                type="tel"
-                                                value={formData.phoneNumber}
-                                                onChange={handleFormChange}
-                                                placeholder="+256700123456"
-                                                autoComplete="tel"
-                                            />
-                                        </div>
-                                        <div className="profile-input-group">
-                                            <label htmlFor="dateOfBirth">Date of Birth</label>
-                                            <input
-                                                id="dateOfBirth"
-                                                name="dateOfBirth"
-                                                type="date"
-                                                value={formData.dateOfBirth}
-                                                onChange={handleFormChange}
-                                            />
-                                        </div>
-                                        <div className="profile-input-group">
-                                            <label htmlFor="gender">Gender</label>
-                                            <select
-                                                id="gender"
-                                                name="gender"
-                                                value={formData.gender}
-                                                onChange={handleFormChange}
-                                            >
-                                                <option value="">Select...</option>
-                                                <option value="MALE">Male</option>
-                                                <option value="FEMALE">Female</option>
-                                                <option value="OTHER">Other</option>
-                                            </select>
-                                        </div>
-                                        <div className="profile-input-group profile-input-group--full">
-                                            <label htmlFor="address">Address</label>
-                                            <input
-                                                id="address"
                                                 name="address"
                                                 type="text"
                                                 value={formData.address}
                                                 onChange={handleFormChange}
                                                 autoComplete="street-address"
+                                                className="reporting-input"
                                             />
                                         </div>
-                                        <div className="profile-input-group">
-                                            <label htmlFor="city">City</label>
-                                            <input
-                                                id="city"
-                                                name="city"
-                                                type="text"
-                                                value={formData.city}
-                                                onChange={handleFormChange}
-                                                autoComplete="address-level2"
-                                            />
+                                        <div className="reporting-filters__grid">
+                                            <div className="reporting-form-group">
+                                                <label className="reporting-form-label">City</label>
+                                                <input
+                                                    name="city"
+                                                    type="text"
+                                                    value={formData.city}
+                                                    onChange={handleFormChange}
+                                                    autoComplete="address-level2"
+                                                    className="reporting-input"
+                                                />
+                                            </div>
+                                            <div className="reporting-form-group">
+                                                <label className="reporting-form-label">Country</label>
+                                                <input
+                                                    name="country"
+                                                    type="text"
+                                                    value={formData.country}
+                                                    onChange={handleFormChange}
+                                                    autoComplete="country-name"
+                                                    className="reporting-input"
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="profile-input-group">
-                                            <label htmlFor="country">Country</label>
-                                            <input
-                                                id="country"
-                                                name="country"
-                                                type="text"
-                                                value={formData.country}
-                                                onChange={handleFormChange}
-                                                autoComplete="country-name"
-                                            />
+                                        <div className="profile-form-actions">
+                                            <button
+                                                type="button"
+                                                className="reporting-btn reporting-btn--secondary"
+                                                onClick={() => navigate('/profile')}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button type="submit" className="reporting-btn reporting-btn--gold">
+                                                <FaSave /> Save Changes
+                                            </button>
                                         </div>
-                                    </div>
+                                    </form>
+                                )}
 
-                                    <div className="profile-form-actions">
-                                        <button
-                                            type="button"
-                                            className="profile-secondary-btn"
-                                            onClick={() => navigate('/profile')}
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button type="submit" className="profile-primary-btn">
-                                            Save Changes
-                                        </button>
-                                    </div>
-                                </form>
-                            )}
-
-                            {activeTab === 'security' && (
-                                <form className="profile-form" onSubmit={handlePasswordChange}>
-                                    <div className="profile-form-grid">
-                                        <div className="profile-input-group profile-input-group--full">
-                                            <label htmlFor="currentPassword">Current Password</label>
+                                {activeTab === 'security' && (
+                                    <form className="profile-form" onSubmit={handlePasswordChange}>
+                                        <div className="reporting-form-group">
+                                            <label className="reporting-form-label">Current Password *</label>
                                             <input
-                                                id="currentPassword"
                                                 name="currentPassword"
                                                 type="password"
                                                 value={passwordData.currentPassword}
                                                 onChange={handlePasswordFormChange}
                                                 required
                                                 autoComplete="current-password"
+                                                className="reporting-input"
                                             />
                                         </div>
-                                        <div className="profile-input-group profile-input-group--full">
-                                            <label htmlFor="newPassword">New Password</label>
+                                        <div className="reporting-form-group">
+                                            <label className="reporting-form-label">New Password *</label>
                                             <input
-                                                id="newPassword"
                                                 name="newPassword"
                                                 type="password"
                                                 value={passwordData.newPassword}
                                                 onChange={handlePasswordFormChange}
                                                 required
                                                 autoComplete="new-password"
+                                                className="reporting-input"
                                             />
                                         </div>
-                                        <div className="profile-input-group profile-input-group--full">
-                                            <label htmlFor="confirmPassword">Confirm New Password</label>
+                                        <div className="reporting-form-group">
+                                            <label className="reporting-form-label">Confirm New Password *</label>
                                             <input
-                                                id="confirmPassword"
                                                 name="confirmPassword"
                                                 type="password"
                                                 value={passwordData.confirmPassword}
                                                 onChange={handlePasswordFormChange}
                                                 required
                                                 autoComplete="new-password"
+                                                className="reporting-input"
                                             />
                                         </div>
-                                    </div>
-
-                                    <div className="profile-form-actions">
-                                        <button
-                                            type="button"
-                                            className="profile-secondary-btn"
-                                            onClick={() => navigate('/profile')}
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button type="submit" className="profile-primary-btn">
-                                            Update Password
-                                        </button>
-                                    </div>
-                                </form>
-                            )}
+                                        <div className="profile-form-actions">
+                                            <button
+                                                type="button"
+                                                className="reporting-btn reporting-btn--secondary"
+                                                onClick={() => navigate('/profile')}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button type="submit" className="reporting-btn reporting-btn--gold">
+                                                <FaKey /> Update Password
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
