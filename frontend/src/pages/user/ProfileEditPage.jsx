@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaCalendarAlt, FaEnvelope, FaMapMarkerAlt, FaPhoneAlt, FaUserCircle, FaUserShield, FaUserTag, FaArrowLeft, FaSave, FaKey } from 'react-icons/fa';
+import { FaCalendarAlt, FaEnvelope, FaMapMarkerAlt, FaPhoneAlt, FaUserCircle, FaUserShield, FaUserTag, FaArrowLeft, FaSave, FaKey, FaEye, FaEyeSlash } from 'react-icons/fa';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
 import './ProfilePage.css';
@@ -19,6 +19,9 @@ const ProfileEditPage = () => {
     const [passwordData, setPasswordData] = useState({
         currentPassword: '', newPassword: '', confirmPassword: ''
     });
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [activeTab, setActiveTab] = useState('info');
 
     const fileInputRef = useRef(null);
@@ -445,39 +448,75 @@ const ProfileEditPage = () => {
                                     <form className="profile-form" onSubmit={handlePasswordChange}>
                                         <div className="reporting-form-group">
                                             <label className="reporting-form-label">Current Password *</label>
-                                            <input
-                                                name="currentPassword"
-                                                type="password"
-                                                value={passwordData.currentPassword}
-                                                onChange={handlePasswordFormChange}
-                                                required
-                                                autoComplete="current-password"
-                                                className="reporting-input"
-                                            />
+                                            <div className="password-input-group">
+                                                <input
+                                                    name="currentPassword"
+                                                    type={showCurrentPassword ? 'text' : 'password'}
+                                                    value={passwordData.currentPassword}
+                                                    onChange={handlePasswordFormChange}
+                                                    required
+                                                    autoComplete="current-password"
+                                                    className="reporting-input"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="password-toggle"
+                                                    aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
+                                                    aria-pressed={showCurrentPassword}
+                                                    title={showCurrentPassword ? 'Hide current password' : 'Show current password'}
+                                                    onClick={() => setShowCurrentPassword(prev => !prev)}
+                                                >
+                                                    {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="reporting-form-group">
                                             <label className="reporting-form-label">New Password *</label>
-                                            <input
-                                                name="newPassword"
-                                                type="password"
-                                                value={passwordData.newPassword}
-                                                onChange={handlePasswordFormChange}
-                                                required
-                                                autoComplete="new-password"
-                                                className="reporting-input"
-                                            />
+                                            <div className="password-input-group">
+                                                <input
+                                                    name="newPassword"
+                                                    type={showNewPassword ? 'text' : 'password'}
+                                                    value={passwordData.newPassword}
+                                                    onChange={handlePasswordFormChange}
+                                                    required
+                                                    autoComplete="new-password"
+                                                    className="reporting-input"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="password-toggle"
+                                                    aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                                                    aria-pressed={showNewPassword}
+                                                    title={showNewPassword ? 'Hide new password' : 'Show new password'}
+                                                    onClick={() => setShowNewPassword(prev => !prev)}
+                                                >
+                                                    {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="reporting-form-group">
                                             <label className="reporting-form-label">Confirm New Password *</label>
-                                            <input
-                                                name="confirmPassword"
-                                                type="password"
-                                                value={passwordData.confirmPassword}
-                                                onChange={handlePasswordFormChange}
-                                                required
-                                                autoComplete="new-password"
-                                                className="reporting-input"
-                                            />
+                                            <div className="password-input-group">
+                                                <input
+                                                    name="confirmPassword"
+                                                    type={showConfirmPassword ? 'text' : 'password'}
+                                                    value={passwordData.confirmPassword}
+                                                    onChange={handlePasswordFormChange}
+                                                    required
+                                                    autoComplete="new-password"
+                                                    className="reporting-input"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="password-toggle"
+                                                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                                                    aria-pressed={showConfirmPassword}
+                                                    title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                                                    onClick={() => setShowConfirmPassword(prev => !prev)}
+                                                >
+                                                    {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="profile-form-actions">
                                             <button

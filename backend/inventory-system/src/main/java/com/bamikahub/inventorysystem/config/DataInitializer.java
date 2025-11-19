@@ -60,6 +60,9 @@ public class DataInitializer implements CommandLineRunner {
         "AUDIT_READ", "AUDIT_EXPORT",
         // Notifications
         "NOTIFICATION_SEND"
+        ,
+        // Admin Email Module
+        "EMAIL_SEND", "EMAIL_VIEW_LOGS", "EMAIL_MANAGE_TEMPLATES"
     );
 
     permissionNames.forEach(this::createPermissionIfNotFound);

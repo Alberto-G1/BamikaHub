@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Ticket Assigned</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;color:#111}.cta{background:#10b981;color:#fff;padding:8px 14px;border-radius:4px;text-decoration:none}</style>
+</head>
+<body>
+  <div th:inline="text">
+    <h3>Ticket Assigned: [[${ticketSubject}]]</h3>
+    <p>Hi [[${firstName}]],</p>
+    <p>You have been assigned a ticket: <strong>[[${ticketSubject}]]</strong> (#[[${ticketId}]])</p>
+    <p>Priority: [[${ticketPriority}]]</p>
+    <p><a class="cta" th:href="/support/tickets/${ticketId}">View Ticket</a></p>
+    <p>Thanks,<br/>Support Team</p>
+  </div>
+</body>
+</html>

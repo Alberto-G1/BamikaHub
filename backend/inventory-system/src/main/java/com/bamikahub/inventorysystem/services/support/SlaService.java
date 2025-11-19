@@ -4,6 +4,8 @@ import com.bamikahub.inventorysystem.models.support.SupportTicket;
 import com.bamikahub.inventorysystem.models.support.TicketActivity;
 import com.bamikahub.inventorysystem.models.user.User;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -30,6 +32,9 @@ public class SlaService {
         resolutionTargets.put(SupportTicket.TicketPriority.MEDIUM, Duration.ofHours(48));
         resolutionTargets.put(SupportTicket.TicketPriority.LOW, Duration.ofHours(72));
     }
+
+    @Autowired
+    private com.bamikahub.inventorysystem.dao.support.TicketActivityRepository activityRepository;
 
     public void applyInitialSla(SupportTicket ticket) {
         LocalDateTime now = LocalDateTime.now();
@@ -105,6 +110,7 @@ public class SlaService {
         return "Ticket #" + ticket.getId() + " has breached its resolution SLA. Please review immediately.";
     }
 
+    @Transactional
     public TicketActivity createActivity(SupportTicket ticket, TicketActivity.ActionType type, String details, User actor) {
         TicketActivity activity = new TicketActivity();
         activity.setTicket(ticket);
@@ -115,6 +121,9 @@ public class SlaService {
             ticket.setActivities(new java.util.ArrayList<>());
         }
         ticket.getActivities().add(activity);
+        if (activityRepository != null) {
+            activityRepository.save(activity);
+        }
         return activity;
     }
 }

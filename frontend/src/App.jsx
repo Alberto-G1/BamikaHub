@@ -76,6 +76,11 @@ import SlaComplianceReport from './pages/reporting/SlaComplianceReport.jsx';
 // --- AUDIT TRAIL PAGES ---
 import AuditLogPage from './pages/audit/AuditLogPage.jsx';
 
+// --- ADMIN EMAIL PAGES ---
+import EmailComposerPage from './pages/admin/email/EmailComposerPage.jsx';
+import EmailTemplatesPage from './pages/admin/email/EmailTemplatesPage.jsx';
+import EmailLogsPage from './pages/admin/email/EmailLogsPage.jsx';
+
 // --- ASSIGNMENTS PAGES ---
 import MyAssignmentsPage from './pages/assignments/MyAssignmentsPage.jsx';
 import CreateAssignmentPage from './pages/assignments/CreateAssignmentPage.jsx';
@@ -217,6 +222,9 @@ function App() {
 
                         {/* Help Center */}
                         <Route path="help" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
+                        <Route path="admin/email/compose" element={<ProtectedRoute requiredPermission="EMAIL_SEND"><EmailComposerPage /></ProtectedRoute>} />
+                        <Route path="admin/email/templates" element={<ProtectedRoute requiredPermission="EMAIL_MANAGE_TEMPLATES"><EmailTemplatesPage /></ProtectedRoute>} />
+                        <Route path="admin/email/logs" element={<ProtectedRoute requiredPermission="EMAIL_VIEW_LOGS"><EmailLogsPage /></ProtectedRoute>} />
                     </Route>
                     
                     {/* Catch-all Route for 404 Not Found */}

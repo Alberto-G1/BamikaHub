@@ -17,6 +17,8 @@ import {
     FaChartLine,
     FaClipboardList,
     FaTasks,
+    FaEnvelope,
+    FaFileAlt,
     FaChevronDown,
     FaComments,
     FaTrophy,
@@ -229,7 +231,7 @@ const Sidebar = ({ isOpen = false, onNavigate }) => {
                     </div>
 
                     {/* Administration Section */}
-                    {hasPermission('AUDIT_READ') && (
+                    { (hasPermission('AUDIT_READ') || hasPermission('EMAIL_SEND') || hasPermission('EMAIL_MANAGE_TEMPLATES') || hasPermission('EMAIL_VIEW_LOGS')) && (
                         <>
                             <li className="nav-item">
                                 <div 
@@ -246,6 +248,27 @@ const Sidebar = ({ isOpen = false, onNavigate }) => {
                                         <FaClipboardList className="me-2" /> Audit Trail
                                     </NavLink>
                                 </li>
+                                {hasPermission('EMAIL_SEND') && (
+                                    <li className="nav-item">
+                                        <NavLink to="/admin/email/compose" className="nav-link" onClick={handleNav}>
+                                            <FaEnvelope className="me-2" /> Compose Email
+                                        </NavLink>
+                                    </li>
+                                )}
+                                {hasPermission('EMAIL_MANAGE_TEMPLATES') && (
+                                    <li className="nav-item">
+                                        <NavLink to="/admin/email/templates" className="nav-link" onClick={handleNav}>
+                                            <FaFileAlt className="me-2" /> Email Templates
+                                        </NavLink>
+                                    </li>
+                                )}
+                                {hasPermission('EMAIL_VIEW_LOGS') && (
+                                    <li className="nav-item">
+                                        <NavLink to="/admin/email/logs" className="nav-link" onClick={handleNav}>
+                                            <FaClipboardList className="me-2" /> Email Logs
+                                        </NavLink>
+                                    </li>
+                                )}
                             </div>
                         </>
                     )}
