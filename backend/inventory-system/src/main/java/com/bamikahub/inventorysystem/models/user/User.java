@@ -43,6 +43,9 @@ public class User {
     @Column(length = 100)
     private String country;
 
+    @Column(length = 100)
+    private String department;
+
     private String profilePictureUrl; // Store URL, not the file itself
 
     // --- Account Information ---

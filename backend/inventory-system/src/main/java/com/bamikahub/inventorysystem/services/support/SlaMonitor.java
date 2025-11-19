@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumSet;
@@ -22,6 +23,7 @@ public class SlaMonitor {
     private final TicketNotificationService notificationService;
 
     @Scheduled(fixedDelay = 900_000L)
+    @Transactional
     public void checkBreaches() {
     List<SupportTicket> activeTickets = ticketRepository.findByStatusIn(
         EnumSet.of(

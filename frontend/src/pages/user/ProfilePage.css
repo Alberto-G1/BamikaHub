@@ -150,6 +150,32 @@
     gap: 1.5rem;
 }
 
+/* Password toggle input group */
+.password-input-group {
+    position: relative;
+}
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: var(--reporting-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.password-toggle:focus {
+    outline: none;
+    color: var(--reporting-blue);
+}
+.password-input-group .reporting-input {
+    padding-right: 40px; /* allow space so the icon doesn't overlap text */
+}
+
 .profile-form-actions {
     display: flex;
     gap: 0.75rem;
