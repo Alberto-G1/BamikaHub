@@ -11,7 +11,7 @@
     <p>Hi [[${firstName}]],</p>
     <p>Your ticket <strong>[[${ticketSubject}]]</strong> (#[[${ticketId}]]) has been marked as resolved.</p>
     <p>Resolution summary: [[${resolution}]]</p>
-    <p><a href="/support/tickets/${ticketId}">View ticket</a></p>
+    <p><a th:href="@{/support/tickets/{id}(id=${ticketId})}">View ticket</a></p>
     <p>Thanks,<br/>Support Team</p>
   </div>
 </body>
