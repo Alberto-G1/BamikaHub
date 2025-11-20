@@ -1,0 +1,315 @@
+/* Email Templates Styles */
+.email-templates-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Template Editor */
+.template-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-help {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--reporting-text-muted);
+    font-weight: normal;
+    margin-top: 0.25rem;
+}
+
+.reporting-textarea--code {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.template-variables-help {
+    background: var(--reporting-blue-light);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.help-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: var(--reporting-text-primary);
+}
+
+.help-header svg {
+    color: var(--reporting-blue);
+}
+
+.variables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.variable-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.variable-item code {
+    background: var(--reporting-surface-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    border: 1px solid var(--reporting-border);
+    color: var(--reporting-text-primary);
+}
+
+.variable-item span {
+    font-size: 0.75rem;
+    color: var(--reporting-text-muted);
+}
+
+.template-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid var(--reporting-border);
+}
+
+/* Templates List */
+.templates-count {
+    display: flex;
+    align-items: center;
+}
+
+.templates-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
+
+.template-card {
+    background: var(--reporting-surface-secondary);
+    border: 1.5px solid var(--reporting-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all var(--reporting-transition);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.template-card:hover {
+    border-color: var(--reporting-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+}
+
+.template-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.template-name {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--reporting-text-primary);
+    line-height: 1.3;
+    flex: 1;
+}
+
+.template-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.template-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.template-subject {
+    font-size: 0.9rem;
+    color: var(--reporting-text-primary);
+}
+
+.template-subject strong {
+    color: var(--reporting-text-muted);
+}
+
+.template-body-preview {
+    font-size: 0.9rem;
+    color: var(--reporting-text-secondary);
+}
+
+.body-snippet {
+    margin-top: 0.25rem;
+    padding: 0.75rem;
+    background: var(--reporting-surface-primary);
+    border-radius: 6px;
+    border: 1px solid var(--reporting-border);
+    font-family: monospace;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    max-height: 80px;
+    overflow: hidden;
+}
+
+.template-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--reporting-border);
+    font-size: 0.75rem;
+    color: var(--reporting-text-muted);
+}
+
+.template-id {
+    font-family: monospace;
+}
+
+/* Preview Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--reporting-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 1rem;
+}
+
+.modal-content {
+    background: var(--reporting-surface-primary);
+    border-radius: var(--reporting-radius);
+    border: 1px solid var(--reporting-border);
+    box-shadow: var(--reporting-shadow-soft);
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--reporting-border);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--reporting-text-primary);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--reporting-text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all var(--reporting-transition);
+}
+
+.modal-close:hover {
+    background: var(--reporting-surface-secondary);
+    color: var(--reporting-text-primary);
+}
+
+.modal-body {
+    flex: 1;
+    overflow: auto;
+    padding: 1.5rem;
+}
+
+.email-preview {
+    border: 1px solid var(--reporting-border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 1.5rem;
+    border-top: 1px solid var(--reporting-border);
+}
+
+/* Spinner Animation */
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .templates-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .template-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .template-actions {
+        align-self: stretch;
+        justify-content: flex-end;
+    }
+    
+    .template-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .variables-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .template-actions {
+        flex-direction: column;
+    }
+    
+    .modal-content {
+        margin: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .template-card {
+        padding: 1rem;
+    }
+    
+    .template-actions {
+        flex-wrap: wrap;
+    }
+}

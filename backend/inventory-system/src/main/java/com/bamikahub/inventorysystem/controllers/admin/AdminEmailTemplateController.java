@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -88,11 +90,22 @@ public class AdminEmailTemplateController {
         if (req.getVars() != null) {
             context.setVariables(req.getVars());
         }
+        // Use a StringTemplateResolver so we can process full HTML bodies stored in DB
+        // (the injected templateEngine may be configured for file/template-name resolution)
+        org.thymeleaf.TemplateEngine stringEngine = new org.thymeleaf.TemplateEngine();
+        StringTemplateResolver resolver = new StringTemplateResolver();
+        resolver.setTemplateMode("HTML");
+        resolver.setCacheable(false);
+        stringEngine.setTemplateResolver(resolver);
+
         if (req.getTemplateId() != null) {
             EmailTemplate t = templateRepository.findById(req.getTemplateId()).orElseThrow(() -> new RuntimeException("Template not found"));
-            html = templateEngine.process(t.getBody(), context);
+            String body = t.getBody();
+            body = preprocessBody(body, req.getVars());
+            html = stringEngine.process(body, context);
         } else if (req.getBody() != null) {
-            html = templateEngine.process(req.getBody(), context);
+            String body = preprocessBody(req.getBody(), req.getVars());
+            html = stringEngine.process(body, context);
         } else {
             html = "";
         }
@@ -147,13 +160,19 @@ public class AdminEmailTemplateController {
                 EmailTemplate t = templateRepository.findById(req.getTemplateId()).orElseThrow(() -> new RuntimeException("Template not found"));
                 TemplateEngine stringEngine = new TemplateEngine();
                 StringTemplateResolver resolver = new StringTemplateResolver();
+                resolver.setTemplateMode("HTML");
+                resolver.setCacheable(false);
                 stringEngine.setTemplateResolver(resolver);
-                html = stringEngine.process(t.getBody(), context);
+                String body = preprocessBody(t.getBody(), req.getTemplateVars());
+                html = stringEngine.process(body, context);
             } else if (req.getBody() != null) {
                 TemplateEngine stringEngine = new TemplateEngine();
                 StringTemplateResolver resolver = new StringTemplateResolver();
+                resolver.setTemplateMode("HTML");
+                resolver.setCacheable(false);
                 stringEngine.setTemplateResolver(resolver);
-                html = stringEngine.process(req.getBody(), context);
+                String body = preprocessBody(req.getBody(), req.getTemplateVars());
+                html = stringEngine.process(body, context);
             } else {
                 html = "";
             }
@@ -176,5 +195,41 @@ public class AdminEmailTemplateController {
         r.setCreatedAt(t.getCreatedAt());
         r.setCreatedById(t.getCreatedBy() != null ? t.getCreatedBy().getId() : null);
         return r;
+    }
+
+    // Preprocess stored template body to avoid Thymeleaf parsing errors for incorrect
+    // `th:href` / `th:src` usages and to pre-substitute ${var} patterns using provided vars.
+    private String preprocessBody(String body, Map<String, Object> vars) {
+        if (body == null) return "";
+        String result = body;
+
+        if (vars != null && !vars.isEmpty()) {
+            for (Map.Entry<String, Object> e : vars.entrySet()) {
+                String key = e.getKey();
+                Object v = e.getValue();
+                String val = v == null ? "" : escapeHtml(String.valueOf(v));
+                // Replace occurrences of ${key} with the escaped value
+                String pattern = "\\$\\{" + Pattern.quote(key) + "\\}";
+                result = result.replaceAll(pattern, Matcher.quoteReplacement(val));
+            }
+        }
+
+        // Convert attribute processors to plain attributes so Thymeleaf doesn't attempt
+        // to parse invalid expressions like th:href="/app" (should be @{/app}).
+        result = result.replaceAll("th:href\\s*=\\s*\"([^\"]*)\"", "href=\"$1\"");
+        result = result.replaceAll("th:href\\s*=\\s*'([^']*)'", "href='$1'");
+        result = result.replaceAll("th:src\\s*=\\s*\"([^\"]*)\"", "src=\"$1\"");
+        result = result.replaceAll("th:src\\s*=\\s*'([^']*)'", "src='$1'");
+
+        return result;
+    }
+
+    private String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#x27;");
     }
 }
