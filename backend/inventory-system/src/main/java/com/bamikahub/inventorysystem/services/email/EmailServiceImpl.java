@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.FileSystemResource;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import org.thymeleaf.templateresolver.StringTemplateResolver;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -52,7 +53,7 @@ public class EmailServiceImpl implements EmailService {
 
         Context context = new Context();
         context.setVariables(variables);
-        String htmlBody = templateEngine.process(template.getBody(), context);
+        String htmlBody = processStringTemplate(template.getBody(), context);
         sendEmail(to, template.getSubject(), htmlBody, attachments);
     }
 
@@ -63,7 +64,7 @@ public class EmailServiceImpl implements EmailService {
 
         Context context = new Context();
         context.setVariables(variables != null ? variables : Map.of());
-        String htmlBody = templateEngine.process(template.getBody(), context);
+        String htmlBody = processStringTemplate(template.getBody(), context);
         sendEmailWithPaths(to, template.getSubject(), htmlBody, attachmentPaths);
     }
 
@@ -95,7 +96,7 @@ public class EmailServiceImpl implements EmailService {
             emailLog.setStatus(EmailStatus.FAILED);
             emailLog.setErrorMessage(e.getMessage());
             log.error("Failed to send email", e);
-            // Optionally re-throw as a custom exception
+            throw new RuntimeException("Failed to send email: " + e.getMessage());
         } finally {
             emailLogRepository.save(emailLog);
         }
@@ -132,7 +133,7 @@ public class EmailServiceImpl implements EmailService {
             emailLog.setStatus(EmailStatus.FAILED);
             emailLog.setErrorMessage(e.getMessage());
             log.error("Failed to send email", e);
-            // Optionally re-throw as a custom exception
+            throw new RuntimeException("Failed to send email: " + e.getMessage());
         } finally {
             emailLogRepository.save(emailLog);
         }
@@ -168,5 +169,12 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void deleteTemplate(Long id) {
         emailTemplateRepository.deleteById(id);
+    }
+
+    private String processStringTemplate(String templateContent, Context context) {
+        TemplateEngine stringEngine = new TemplateEngine();
+        StringTemplateResolver resolver = new StringTemplateResolver();
+        stringEngine.setTemplateResolver(resolver);
+        return stringEngine.process(templateContent, context);
     }
 }

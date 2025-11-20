@@ -10,6 +10,7 @@ import com.bamikahub.inventorysystem.dao.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import org.thymeleaf.templateresolver.StringTemplateResolver;
 import com.bamikahub.inventorysystem.dto.email.EmailTemplatePreviewRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -144,9 +145,15 @@ public class AdminEmailTemplateController {
             String html;
             if (req.getTemplateId() != null) {
                 EmailTemplate t = templateRepository.findById(req.getTemplateId()).orElseThrow(() -> new RuntimeException("Template not found"));
-                html = templateEngine.process(t.getBody(), context);
+                TemplateEngine stringEngine = new TemplateEngine();
+                StringTemplateResolver resolver = new StringTemplateResolver();
+                stringEngine.setTemplateResolver(resolver);
+                html = stringEngine.process(t.getBody(), context);
             } else if (req.getBody() != null) {
-                html = templateEngine.process(req.getBody(), context);
+                TemplateEngine stringEngine = new TemplateEngine();
+                StringTemplateResolver resolver = new StringTemplateResolver();
+                stringEngine.setTemplateResolver(resolver);
+                html = stringEngine.process(req.getBody(), context);
             } else {
                 html = "";
             }

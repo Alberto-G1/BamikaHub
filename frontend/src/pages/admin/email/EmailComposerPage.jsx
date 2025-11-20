@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import adminApi from '../../../api/adminApi';
+import api from '../../../api/api';
+import { toast } from 'react-toastify';
 
 const EmailComposerPage = () => {
     const [emailsInput, setEmailsInput] = useState('');
@@ -12,8 +14,9 @@ const EmailComposerPage = () => {
     // templateVars as array of {key, value}
     const [templateVars, setTemplateVars] = useState([]);
     const [previewHtml, setPreviewHtml] = useState(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
     const [users, setUsers] = useState([]);
-    const [selectedUserIds, setSelectedUserIds] = useState([]);
+    const [selectedUserId, setSelectedUserId] = useState(null);
 
     const handleUpload = async (e) => {
         const file = e.target.files[0];
@@ -46,7 +49,8 @@ const EmailComposerPage = () => {
         // load users for variable auto-fill
         const loadUsers = async () => {
             try {
-                const r = await adminApi.get('/users');
+                // Use public API client for users endpoint
+                const r = await api.get('/users');
                 setUsers(r.data || []);
             } catch (err) {
                 console.error('Failed to load users', err);
@@ -65,16 +69,30 @@ const EmailComposerPage = () => {
     }
 
     const handlePreview = async () => {
+        setPreviewLoading(true);
         try {
             const varsObj = templateVars.reduce((acc, kv) => {
                 if (kv.key) acc[kv.key] = kv.value;
                 return acc;
             }, {});
-            const res = await adminApi.post('/admin/email/templates/send', { templateId: templateId, templateVars: varsObj, body: body, preview: true });
-            setPreviewHtml(res.data.previewHtml || res.data);
+            const payload = {
+                templateId: templateId ? Number(templateId) : null,
+                templateVars: varsObj,
+                body: body,
+                preview: true
+            };
+            if (selectedUserId) payload.userIds = [selectedUserId];
+            const res = await adminApi.post('/admin/email/templates/send', payload);
+            // backend returns { previewHtml: "<html>..." } or raw HTML string
+            const html = (res && res.data && (res.data.previewHtml || (typeof res.data === 'string' ? res.data : null)));
+            setPreviewHtml(html || '');
         } catch (err) {
-            console.error(err);
-            alert('Failed to load preview; ensure variables are valid');
+            console.error('Preview error', err?.response || err);
+            const serverMessage = err?.response?.data || err.message || 'Unknown error';
+            toast.error(typeof serverMessage === 'string' ? serverMessage : JSON.stringify(serverMessage));
+            setPreviewHtml(null);
+        } finally {
+            setPreviewLoading(false);
         }
     }
 
@@ -86,28 +104,31 @@ const EmailComposerPage = () => {
                 subject,
                 body,
                 attachmentPaths,
-                templateId: templateId,
+                templateId: templateId ? Number(templateId) : null,
                 templateVars: varsObj,
-                userIds: selectedUserIds
+                userIds: selectedUserId ? [selectedUserId] : []
             };
             await adminApi.post('/admin/email/templates/send', request);
-            alert('Emails sent');
+            toast.success('Emails sent successfully!');
             setEmailsInput('');
             setSubject('');
             setBody('');
             setAttachmentPaths([]);
         } catch (err) {
             console.error(err);
-            alert('Failed to send emails');
+            toast.error('Failed to send emails');
         }
     }
 
-    const handleUserSelection = async (selectedIds) => {
-        setSelectedUserIds(selectedIds);
-        if (!selectedIds || selectedIds.length === 0) return;
+    const handleUserSelection = async (userId) => {
+        setSelectedUserId(userId);
+        if (!userId) {
+            setTemplateVars([]);
+            return;
+        }
         try {
-            const res = await adminApi.post('/admin/email/templates/variables', selectedIds);
-            // if merged present and non-empty, prefill templateVars
+            // API expects an array of userIds; pass single id
+            const res = await adminApi.post('/admin/email/templates/variables', [userId]);
             const merged = res.data.merged || {};
             if (Object.keys(merged).length > 0) {
                 const kvs = Object.keys(merged).map(k => ({ key: k, value: merged[k] }));
@@ -141,11 +162,12 @@ const EmailComposerPage = () => {
                 <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8}></textarea>
             </div>
             <div>
-                <label>Users (select to auto-fill variables)</label>
-                <select multiple value={selectedUserIds} onChange={(e) => {
-                    const opts = Array.from(e.target.selectedOptions).map(o => Number(o.value));
-                    handleUserSelection(opts);
+                <label>User (select to auto-fill variables)</label>
+                <select value={selectedUserId || ''} onChange={(e) => {
+                    const id = e.target.value ? Number(e.target.value) : null;
+                    handleUserSelection(id);
                 }}>
+                    <option value="">(none)</option>
                     {users.map(u => <option key={u.id} value={u.id}>{u.fullName || u.username || u.email}</option>)}
                 </select>
 

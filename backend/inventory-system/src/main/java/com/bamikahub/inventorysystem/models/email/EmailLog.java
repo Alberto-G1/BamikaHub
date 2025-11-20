@@ -28,12 +28,12 @@ public class EmailLog {
     private String subject;
 
     @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String body;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private EmailStatus status;
+    private EmailStatus status = EmailStatus.PENDING;
 
     @CreationTimestamp
     @Column(updatable = false)

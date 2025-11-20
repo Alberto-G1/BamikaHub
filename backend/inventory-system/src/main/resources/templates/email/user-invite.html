@@ -10,7 +10,7 @@
     <h3>Invitation to join BamikaHub</h3>
     <p>Hi [[${firstName}]],</p>
     <p>[[${inviterName}]] invited you to join BamikaHub.</p>
-    <p><a class="btn" th:href="/auth/invite?token=${inviteToken}">Accept invitation</a></p>
+    <p><a class="btn" th:href="@{/auth/invite(token=${inviteToken})}">Accept invitation</a></p>
     <p>Thanks,<br/>The Team</p>
   </div>
 </body>

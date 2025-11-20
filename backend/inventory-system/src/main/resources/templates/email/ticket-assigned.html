@@ -11,7 +11,7 @@
     <p>Hi [[${firstName}]],</p>
     <p>You have been assigned a ticket: <strong>[[${ticketSubject}]]</strong> (#[[${ticketId}]])</p>
     <p>Priority: [[${ticketPriority}]]</p>
-    <p><a class="cta" th:href="/support/tickets/${ticketId}">View Ticket</a></p>
+    <p><a class="cta" th:href="@{/support/tickets/{id}(id=${ticketId})}">View Ticket</a></p>
     <p>Thanks,<br/>Support Team</p>
   </div>
 </body>
