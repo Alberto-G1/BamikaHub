@@ -1,64 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import adminApi from '../../../api/adminApi';
+import React, { useState } from 'react';
+import { FaEnvelope, FaPlus, FaEdit, FaTrash, FaEye, FaCode, FaSave, FaTimes } from 'react-icons/fa';
+import EmailTemplatesList from './EmailTemplatesList';
+import EmailTemplateEditor from './EmailTemplateEditor';
+import './EmailTemplates.css';
 
 const EmailTemplatesPage = () => {
-    const [templates, setTemplates] = useState([]);
+    const [tab, setTab] = useState('list'); // 'list' or 'create'
     const [editing, setEditing] = useState(null);
-    const [name, setName] = useState('');
-    const [subject, setSubject] = useState('');
-    const [body, setBody] = useState('');
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    useEffect(() => {
-        fetchTemplates();
-    }, []);
+    const handleSaved = () => {
+        setTab('list');
+        setEditing(null);
+        setRefreshKey(k => k + 1);
+    };
 
-    const fetchTemplates = async () => {
-        const res = await adminApi.get('/admin/email/templates');
-        setTemplates(res.data);
-    }
-
-    const handleSave = async () => {
-        const payload = { name, subject, body };
-        if (editing) {
-            await adminApi.put(`/admin/email/templates/${editing.id}`, payload);
-            setEditing(null);
-        } else {
-            await adminApi.post(`/admin/email/templates`, payload);
-        }
-        setName(''); setSubject(''); setBody('');
-        await fetchTemplates();
-    }
-
-    const editTemplate = (t) => { setEditing(t); setName(t.name); setSubject(t.subject); setBody(t.body); }
-    const deleteTemplate = async (t) => { await adminApi.delete(`/admin/email/templates/${t.id}`); await fetchTemplates(); }
+    const handleEdit = (template) => {
+        setEditing(template);
+        setTab('create');
+    };
 
     return (
-        <div>
-            <h2>Email Templates</h2>
-            <div>
-                <label>Name</label>
-                <input value={name} onChange={e => setName(e.target.value)} />
-                <label>Subject</label>
-                <input value={subject} onChange={e => setSubject(e.target.value)} />
-                <label>Body (Thymeleaf HTML)</label>
-                <textarea value={body} onChange={e => setBody(e.target.value)} rows={6}></textarea>
-                <button onClick={handleSave}>{editing ? 'Save' : 'Create'}</button>
-                {editing && <button onClick={() => { setEditing(null); setName(''); setSubject(''); setBody(''); }}>Cancel</button>}
+        <section className="reporting-page">
+            <div className="reporting-banner" data-animate="fade-up">
+                <div className="reporting-banner__content">
+                    <div className="reporting-banner__info">
+                        <span className="reporting-banner__eyebrow">
+                            <FaEnvelope /> Communication
+                        </span>
+                        <h1 className="reporting-banner__title">Email Templates</h1>
+                        <p className="reporting-banner__subtitle">
+                            Create and manage email templates for automated communications. 
+                            Use Thymeleaf syntax for dynamic content and personalization.
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div>
-                <h3>Existing Templates</h3>
-                <ul>
-                    {templates.map(t => (
-                        <li key={t.id}>
-                            <b>{t.name}</b> - {t.subject}
-                            <button onClick={() => editTemplate(t)}>Edit</button>
-                            <button onClick={() => deleteTemplate(t)}>Delete</button>
-                        </li>
-                    ))}
-                </ul>
+
+            <div className="reporting-tabs" data-animate="fade-up" data-delay="0.04">
+                <button
+                    className={`reporting-tab ${tab === 'list' ? 'is-active' : ''}`}
+                    onClick={() => { setTab('list'); setEditing(null); }}
+                >
+                    <FaEnvelope /> Template Library
+                </button>
+                <button
+                    className={`reporting-tab ${tab === 'create' ? 'is-active' : ''}`}
+                    onClick={() => { setTab('create'); setEditing(null); }}
+                >
+                    <FaPlus /> {editing ? 'Edit Template' : 'Create Template'}
+                </button>
             </div>
-        </div>
+
+            <div className="email-templates-content">
+                {tab === 'create' ? (
+                    <EmailTemplateEditor 
+                        editing={editing} 
+                        onSaved={handleSaved} 
+                        onCancel={() => { setEditing(null); setTab('list'); }} 
+                    />
+                ) : (
+                    <EmailTemplatesList key={refreshKey} onEdit={handleEdit} />
+                )}
+            </div>
+        </section>
     );
-}
+};
 
 export default EmailTemplatesPage;

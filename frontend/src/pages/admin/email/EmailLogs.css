@@ -1,0 +1,272 @@
+/* Email Logs Styles */
+.email-logs-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.email-logs-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+}
+
+/* Filters */
+.email-logs-filters {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.email-logs-filters .reporting-form-group {
+    margin-bottom: 0;
+}
+
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--reporting-text-muted);
+    font-size: 0.9rem;
+}
+
+.reporting-input--search {
+    padding-left: 2.5rem;
+}
+
+/* Messages List */
+.messages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.message-item {
+    padding: 1.25rem;
+    border: 1.5px solid var(--reporting-border);
+    border-radius: 12px;
+    background: var(--reporting-surface-secondary);
+    cursor: pointer;
+    transition: all var(--reporting-transition);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.message-item:hover {
+    border-color: var(--reporting-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+}
+
+.message-item.is-selected {
+    border-color: var(--reporting-gold);
+    background: var(--reporting-gold-light);
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.message-subject {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--reporting-text-primary);
+    line-height: 1.3;
+    flex: 1;
+}
+
+.message-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.message-date {
+    font-size: 0.8rem;
+    color: var(--reporting-text-muted);
+}
+
+.message-preview {
+    flex: 1;
+}
+
+.message-recipients {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--reporting-text-secondary);
+    line-height: 1.4;
+}
+
+.message-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Recipients List */
+.recipient-stats {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.recipients-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.recipient-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--reporting-border);
+    border-radius: 8px;
+    background: var(--reporting-surface-secondary);
+    transition: all var(--reporting-transition);
+}
+
+.recipient-item:hover {
+    border-color: var(--reporting-blue);
+}
+
+.recipient-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.recipient-email {
+    font-weight: 600;
+    color: var(--reporting-text-primary);
+    font-size: 0.9rem;
+}
+
+.recipient-meta {
+    font-size: 0.8rem;
+    color: var(--reporting-text-muted);
+}
+
+.recipient-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.recipient-error {
+    max-width: 200px;
+    text-align: right;
+}
+
+.recipient-error small {
+    color: var(--reporting-red);
+    font-size: 0.75rem;
+    line-height: 1.3;
+}
+
+/* Message Details */
+.message-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.message-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--reporting-surface-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--reporting-border);
+}
+
+.detail-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--reporting-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.detail-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--reporting-text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .email-logs-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .email-logs-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .message-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .message-meta {
+        align-items: flex-start;
+    }
+    
+    .recipient-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .recipient-status {
+        align-items: flex-start;
+        width: 100%;
+    }
+    
+    .recipient-error {
+        max-width: none;
+        text-align: left;
+    }
+    
+    .message-details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .message-item {
+        padding: 1rem;
+    }
+    
+    .recipient-item {
+        padding: 0.75rem;
+    }
+    
+    .recipient-stats {
+        justify-content: center;
+    }
+}
