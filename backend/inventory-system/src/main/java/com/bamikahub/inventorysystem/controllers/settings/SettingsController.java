@@ -26,6 +26,15 @@ public class SettingsController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.bamikahub.inventorysystem.services.settings.SettingsAuditService auditService;
+
+    @Autowired
+    private com.bamikahub.inventorysystem.services.settings.SystemHealthService healthService;
+
+    @Autowired
+    private com.bamikahub.inventorysystem.services.settings.SettingsExportImportService exportImportService;
+
     // System Settings Endpoints (Admin only)
 
     @GetMapping("/system")
@@ -78,6 +87,59 @@ public class SettingsController {
             @Valid @RequestBody UserSettingsUpdateRequest request) {
         UserSettingsDto updated = settingsService.updateUserSettings(userId, request);
         return ResponseEntity.ok(updated);
+    }
+
+    // Settings Export/Import Endpoints
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAuthority('SYSTEM_SETTINGS_READ')")
+    public ResponseEntity<?> exportSettings() {
+        try {
+            com.bamikahub.inventorysystem.dto.settings.SettingsExportDto export = exportImportService.exportSettings();
+            return ResponseEntity.ok(export);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/import")
+    @PreAuthorize("hasAuthority('SYSTEM_SETTINGS_UPDATE')")
+    public ResponseEntity<?> importSettings(
+            @RequestBody com.bamikahub.inventorysystem.dto.settings.SettingsExportDto importData,
+            @RequestParam(defaultValue = "false") boolean overwrite) {
+        try {
+            exportImportService.importSettings(importData, overwrite);
+            return ResponseEntity.ok(java.util.Map.of("message", "Settings imported successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    // System Health Monitoring
+
+    @GetMapping("/health")
+    @PreAuthorize("hasAuthority('SYSTEM_SETTINGS_READ')")
+    public ResponseEntity<com.bamikahub.inventorysystem.dto.settings.SystemHealthDto> getSystemHealth() {
+        com.bamikahub.inventorysystem.dto.settings.SystemHealthDto health = healthService.checkSystemHealth();
+        return ResponseEntity.ok(health);
+    }
+
+    // Audit History
+
+    @GetMapping("/audit")
+    @PreAuthorize("hasAuthority('SYSTEM_SETTINGS_READ')")
+    public ResponseEntity<?> getAuditHistory(
+            @RequestParam(required = false) String settingKey,
+            @RequestParam(defaultValue = "100") int limit) {
+        try {
+            if (settingKey != null && !settingKey.isEmpty()) {
+                return ResponseEntity.ok(auditService.getSettingAuditHistory(settingKey));
+            } else {
+                return ResponseEntity.ok(auditService.getAllSettingsAuditHistory(limit));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     // Helper method to get current user ID

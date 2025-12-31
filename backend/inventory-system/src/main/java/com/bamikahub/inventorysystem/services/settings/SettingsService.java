@@ -26,6 +26,15 @@ public class SettingsService {
     @Autowired
     private UserSettingsRepository userSettingsRepository;
 
+    @Autowired
+    private SettingsAuditService auditService;
+
+    @Autowired
+    private SystemHealthService healthService;
+
+    @Autowired
+    private SettingsExportImportService exportImportService;
+
     // System Settings Methods
 
     public SystemSettingsDto getSystemSettings() {
@@ -37,6 +46,12 @@ public class SettingsService {
     public SystemSettingsDto updateSystemSettings(SystemSettingsUpdateRequest request) {
         SystemSettings settings = systemSettingsRepository.findAll().stream().findFirst()
                 .orElseGet(() -> createDefaultSystemSettings());
+
+        // Capture old values for audit
+        SystemSettings oldSettings = new SystemSettings();
+        oldSettings.setCompanyName(settings.getCompanyName());
+        oldSettings.setSessionTimeoutMinutes(settings.getSessionTimeoutMinutes());
+        oldSettings.setMaxLoginAttempts(settings.getMaxLoginAttempts());
 
         // Update fields
         settings.setCompanyName(request.getCompanyName());
@@ -60,6 +75,21 @@ public class SettingsService {
         settings.setUpdatedBy(currentUser);
 
         SystemSettings saved = systemSettingsRepository.save(settings);
+
+        // Log audit trail for significant changes
+        if (!oldSettings.getCompanyName().equals(saved.getCompanyName())) {
+            auditService.logSettingsChange("companyName", "SYSTEM", 
+                oldSettings.getCompanyName(), saved.getCompanyName(), currentUser, "System settings update");
+        }
+        if (oldSettings.getSessionTimeoutMinutes() != saved.getSessionTimeoutMinutes()) {
+            auditService.logSettingsChange("sessionTimeoutMinutes", "SYSTEM",
+                oldSettings.getSessionTimeoutMinutes(), saved.getSessionTimeoutMinutes(), currentUser, "System settings update");
+        }
+        if (oldSettings.getMaxLoginAttempts() != saved.getMaxLoginAttempts()) {
+            auditService.logSettingsChange("maxLoginAttempts", "SYSTEM",
+                oldSettings.getMaxLoginAttempts(), saved.getMaxLoginAttempts(), currentUser, "System settings update");
+        }
+
         return convertToSystemSettingsDto(saved);
     }
 

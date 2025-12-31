@@ -1,729 +1,657 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext.jsx';
-import api from '../../api/api.js';
+import { 
+  FaShieldAlt, 
+  FaKey, 
+  FaMobile, 
+  FaLaptop, 
+  FaLock, 
+  FaExclamationTriangle,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaQrcode,
+  FaClock,
+  FaMapMarkerAlt,
+  FaTrash,
+  FaChrome,
+  FaFirefox,
+  FaSafari,
+  FaEdge,
+  FaDesktop,
+  FaTabletAlt,
+  FaWindows,
+  FaApple,
+  FaLinux,
+  FaAndroid
+} from 'react-icons/fa';
+import api from '../../api/api';
 import { toast } from 'react-toastify';
-import { FaCog, FaShieldAlt, FaKey, FaMobileAlt, FaBell, FaHistory, FaCheck, FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa';
+import '../reporting/ReportingStyles.css';
 import './Security.css';
 
 const Security = () => {
-    const { user, hasPermission } = useAuth();
-    const [activeTab, setActiveTab] = useState('overview');
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [loading, setLoading] = useState(true);
+  
+  // Dashboard state
+  const [dashboard, setDashboard] = useState(null);
+  
+  // Sessions state
+  const [sessions, setSessions] = useState([]);
+  
+  // 2FA state
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [setupData, setSetupData] = useState(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  
+  // Events state
+  const [events, setEvents] = useState([]);
+  const [eventDays, setEventDays] = useState(30);
 
-    // Security data states
-    const [twoFactorStatus, setTwoFactorStatus] = useState(null);
-    const [loginHistory, setLoginHistory] = useState([]);
-    const [securityAlerts, setSecurityAlerts] = useState([]);
-    const [unacknowledgedCount, setUnacknowledgedCount] = useState(0);
+  useEffect(() => {
+    loadData();
+  }, [activeTab]);
 
-    // Password change modal
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [passwordData, setPasswordData] = useState({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-    });
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      if (activeTab === 'dashboard') {
+        await loadDashboard();
+      } else if (activeTab === 'sessions') {
+        await loadSessions();
+      } else if (activeTab === '2fa') {
+        await check2FAStatus();
+      } else if (activeTab === 'events') {
+        await loadEvents();
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Failed to load security data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // 2FA setup modal
-    const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
-    const [twoFactorSetup, setTwoFactorSetup] = useState(null);
+  const loadDashboard = async () => {
+    const response = await api.get('/security/dashboard');
+    setDashboard(response.data);
+  };
 
-    // Password visibility toggles
-    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-    const [showNewPassword, setShowNewPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const loadSessions = async () => {
+    const response = await api.get('/security/sessions');
+    setSessions(response.data);
+  };
 
-    useEffect(() => {
-        loadSecurityData();
-    }, []);
+  const check2FAStatus = async () => {
+    const response = await api.get('/security/2fa/status');
+    setTwoFactorEnabled(response.data.enabled);
+  };
 
-    const loadSecurityData = async () => {
-        setLoading(true);
-        try {
-            const [twoFactorResponse, alertsResponse, countResponse] = await Promise.all([
-                api.get('/security/2fa/status'),
-                api.get('/security/alerts?page=0&size=10'),
-                api.get('/security/alerts/unacknowledged/count')
-            ]);
+  const loadEvents = async () => {
+    const response = await api.get(`/security/events?days=${eventDays}`);
+    setEvents(response.data);
+  };
 
-            setTwoFactorStatus(twoFactorResponse.data);
-            setSecurityAlerts(alertsResponse.data.content || []);
-            setUnacknowledgedCount(countResponse.data);
-
-            // Load login history
-            const historyResponse = await api.get('/security/login-history?page=0&size=10');
-            setLoginHistory(historyResponse.data.content || []);
-        } catch (error) {
-            console.error('Error loading security data:', error);
-            toast.error('Failed to load security data');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handlePasswordChange = async () => {
-        if (passwordData.newPassword !== passwordData.confirmPassword) {
-            toast.error('New passwords do not match');
-            return;
-        }
-
-        setSaving(true);
-        try {
-            await api.post('/security/password/change', passwordData);
-            toast.success('Password changed successfully');
-            setShowPasswordModal(false);
-            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        } catch (error) {
-            console.error('Error changing password:', error);
-            toast.error(error.response?.data?.message || 'Failed to change password');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleEnableTwoFactor = async () => {
-        try {
-            const response = await api.post('/security/2fa/enable');
-            setTwoFactorSetup(response.data);
-            setTwoFactorStatus(response.data);
-            toast.success('Two-factor authentication enabled');
-            setShowTwoFactorModal(false);
-        } catch (error) {
-            console.error('Error enabling 2FA:', error);
-            toast.error('Failed to enable two-factor authentication');
-        }
-    };
-
-    const handleDisableTwoFactor = async () => {
-        try {
-            await api.post('/security/2fa/disable');
-            setTwoFactorStatus({ ...twoFactorStatus, enabled: false });
-            toast.success('Two-factor authentication disabled');
-        } catch (error) {
-            console.error('Error disabling 2FA:', error);
-            toast.error('Failed to disable two-factor authentication');
-        }
-    };
-
-    const handleAcknowledgeAlert = async (alertId) => {
-        try {
-            await api.post(`/security/alerts/${alertId}/acknowledge`);
-            setSecurityAlerts(alerts =>
-                alerts.map(alert =>
-                    alert.id === alertId ? { ...alert, acknowledged: true } : alert
-                )
-            );
-            setUnacknowledgedCount(prev => Math.max(0, prev - 1));
-            toast.success('Alert acknowledged');
-        } catch (error) {
-            console.error('Error acknowledging alert:', error);
-            toast.error('Failed to acknowledge alert');
-        }
-    };
-
-    const getSeverityColor = (severity) => {
-        switch (severity?.toLowerCase()) {
-            case 'critical': return 'danger';
-            case 'high': return 'danger';
-            case 'medium': return 'warning';
-            case 'low': return 'info';
-            default: return 'secondary';
-        }
-    };
-
-    const formatDateTime = (dateTime) => {
-        return new Date(dateTime).toLocaleString();
-    };
-
-    if (loading) {
-        return (
-            <div className="reporting-loading">
-                <div className="reporting-spinner" />
-                <p>Loading security information...</p>
-            </div>
-        );
+  const handleTerminateSession = async (sessionId) => {
+    if (!window.confirm('Are you sure you want to terminate this session?')) {
+      return;
     }
 
+    try {
+      await api.delete(`/security/sessions/${sessionId}`);
+      toast.success('Session terminated successfully');
+      loadSessions();
+    } catch (error) {
+      console.error('Error terminating session:', error);
+      toast.error('Failed to terminate session');
+    }
+  };
+
+  const handleTerminateAllSessions = async () => {
+    if (!window.confirm('Are you sure you want to terminate all sessions? You will be logged out.')) {
+      return;
+    }
+
+    try {
+      await api.delete('/security/sessions');
+      toast.success('All sessions terminated');
+    } catch (error) {
+      console.error('Error terminating sessions:', error);
+      toast.error('Failed to terminate sessions');
+    }
+  };
+
+  const handleSetup2FA = async () => {
+    try {
+      const response = await api.post('/security/2fa/setup');
+      setSetupData(response.data);
+      setShowSetupModal(true);
+    } catch (error) {
+      console.error('Error setting up 2FA:', error);
+      toast.error('Failed to setup 2FA');
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    if (verificationCode.length !== 6) {
+      toast.error('Please enter a 6-digit verification code');
+      return;
+    }
+
+    try {
+      await api.post('/security/2fa/verify', {
+        secret: setupData.secret,
+        code: verificationCode
+      });
+      toast.success('Two-factor authentication enabled successfully');
+      setTwoFactorEnabled(true);
+      setShowSetupModal(false);
+      setVerificationCode('');
+      loadDashboard();
+    } catch (error) {
+      console.error('Error verifying 2FA:', error);
+      toast.error('Invalid verification code');
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (!window.confirm('Are you sure you want to disable two-factor authentication?')) {
+      return;
+    }
+
+    try {
+      await api.delete('/security/2fa');
+      toast.success('Two-factor authentication disabled');
+      setTwoFactorEnabled(false);
+      loadDashboard();
+    } catch (error) {
+      console.error('Error disabling 2FA:', error);
+      toast.error('Failed to disable 2FA');
+    }
+  };
+
+  const getDeviceIcon = (deviceType) => {
+    switch (deviceType) {
+      case 'MOBILE':
+        return <FaMobile />;
+      case 'TABLET':
+        return <FaTabletAlt />;
+      default:
+        return <FaLaptop />;
+    }
+  };
+
+  const getBrowserIcon = (browser) => {
+    const browserLower = browser?.toLowerCase() || '';
+    if (browserLower.includes('chrome')) return <FaChrome />;
+    if (browserLower.includes('firefox')) return <FaFirefox />;
+    if (browserLower.includes('safari')) return <FaSafari />;
+    if (browserLower.includes('edge')) return <FaEdge />;
+    return <FaDesktop />;
+  };
+
+  const getOSIcon = (os) => {
+    const osLower = os?.toLowerCase() || '';
+    if (osLower.includes('windows')) return <FaWindows />;
+    if (osLower.includes('mac') || osLower.includes('ios')) return <FaApple />;
+    if (osLower.includes('linux')) return <FaLinux />;
+    if (osLower.includes('android')) return <FaAndroid />;
+    return <FaDesktop />;
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString();
+  };
+
+  const renderDashboard = () => {
+    if (!dashboard) return null;
+
     return (
-        <section className="reporting-page">
-            <div className="reporting-banner" data-animate="fade-up">
-                <div className="reporting-banner__content">
-                    <div className="reporting-banner__info">
-                        <span className="reporting-banner__eyebrow">
-                            <FaShieldAlt /> Account Protection
+      <div className="reporting-page" data-animate="fade-up">
+        {/* Stats Grid */}
+        <div className="security-stats-grid">
+          <div className="reporting-metric reporting-metric--blue">
+            <div className="reporting-report-card__icon reporting-report-card__icon--blue">
+              <FaLaptop />
+            </div>
+            <div className="reporting-card__content">
+              <h3 style={{ fontSize: '2rem', margin: 0 }}>{dashboard.activeSessionsCount}</h3>
+              <p style={{ margin: 0, color: 'var(--reporting-text-secondary)' }}>Active Sessions</p>
+            </div>
+          </div>
+
+          <div className="reporting-metric reporting-metric--green">
+            <div className="reporting-report-card__icon reporting-report-card__icon--green">
+              <FaCheckCircle />
+            </div>
+            <div className="reporting-card__content">
+              <h3 style={{ fontSize: '2rem', margin: 0 }}>{dashboard.recentLoginsCount}</h3>
+              <p style={{ margin: 0, color: 'var(--reporting-text-secondary)' }}>Recent Logins</p>
+            </div>
+          </div>
+
+          <div className="reporting-metric reporting-metric--red">
+            <div className="reporting-report-card__icon reporting-report-card__icon--red">
+              <FaTimesCircle />
+            </div>
+            <div className="reporting-card__content">
+              <h3 style={{ fontSize: '2rem', margin: 0 }}>{dashboard.failedLoginsCount}</h3>
+              <p style={{ margin: 0, color: 'var(--reporting-text-secondary)' }}>Failed Logins</p>
+            </div>
+          </div>
+
+          <div className="reporting-metric reporting-metric--gold">
+            <div className="reporting-report-card__icon reporting-report-card__icon--gold">
+              <FaExclamationTriangle />
+            </div>
+            <div className="reporting-card__content">
+              <h3 style={{ fontSize: '2rem', margin: 0 }}>{dashboard.suspiciousEventsCount}</h3>
+              <p style={{ margin: 0, color: 'var(--reporting-text-secondary)' }}>Suspicious Events</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 2FA Status Card */}
+        <div className="reporting-card" data-animate="fade-up" data-delay="0.08">
+          <div className="reporting-card__header">
+            <h2 className="reporting-card__title">
+              <FaKey style={{ marginRight: '0.5rem' }} /> Two-Factor Authentication
+            </h2>
+          </div>
+          <div className="reporting-card__content">
+            <div className={`security-2fa-status ${dashboard.twoFactorEnabled ? 'security-2fa-status--enabled' : 'security-2fa-status--disabled'}`}>
+              <div className={`security-2fa-icon ${dashboard.twoFactorEnabled ? 'security-2fa-icon--enabled' : 'security-2fa-icon--disabled'}`}>
+                {dashboard.twoFactorEnabled ? <FaCheckCircle /> : <FaTimesCircle />}
+              </div>
+              <p className="security-2fa-text">
+                {dashboard.twoFactorEnabled ? 'Two-Factor Authentication is Enabled' : 'Two-Factor Authentication is Disabled'}
+              </p>
+              <p className="security-2fa-description">
+                {dashboard.twoFactorEnabled 
+                  ? 'Your account is protected with an additional layer of security' 
+                  : 'Enable 2FA to add an extra layer of security to your account'}
+              </p>
+              <button 
+                className={dashboard.twoFactorEnabled ? 'reporting-btn reporting-btn--red' : 'reporting-btn reporting-btn--blue'}
+                onClick={dashboard.twoFactorEnabled ? handleDisable2FA : handleSetup2FA}
+              >
+                {dashboard.twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Sessions */}
+        <div className="reporting-card" data-animate="fade-up" data-delay="0.12">
+          <div className="reporting-card__header">
+            <h2 className="reporting-card__title">
+              <FaLaptop style={{ marginRight: '0.5rem' }} /> Recent Sessions
+            </h2>
+          </div>
+          <div className="reporting-card__content">
+            {dashboard.activeSessions?.length === 0 ? (
+              <div className="security-empty-state">
+                <FaLaptop />
+                <p>No active sessions</p>
+              </div>
+            ) : (
+              <div className="security-session-list">
+                {dashboard.activeSessions?.slice(0, 5).map((session) => (
+                  <div key={session.id} className="security-session-item">
+                    <div className="security-session-info">
+                      <div className={`security-device-icon ${session.deviceType === 'MOBILE' ? 'security-device-icon--mobile' : ''}`}>
+                        {getDeviceIcon(session.deviceType)}
+                      </div>
+                      <div className="security-session-details">
+                        <div className="security-session-device">
+                          {getBrowserIcon(session.browser)} {session.browser} on {session.operatingSystem}
+                        </div>
+                        <div className="security-session-meta">
+                          <span><FaMapMarkerAlt /> {session.ipAddress}</span>
+                          <span><FaClock /> {formatDate(session.lastActivity)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Events */}
+        <div className="reporting-card" data-animate="fade-up" data-delay="0.16">
+          <div className="reporting-card__header">
+            <h2 className="reporting-card__title">
+              <FaExclamationTriangle style={{ marginRight: '0.5rem' }} /> Recent Security Events
+            </h2>
+          </div>
+          <div className="reporting-card__content">
+            {dashboard.recentEvents?.length === 0 ? (
+              <div className="security-empty-state">
+                <FaShieldAlt />
+                <p>No recent security events</p>
+              </div>
+            ) : (
+              <div className="security-events-list">
+                {dashboard.recentEvents?.slice(0, 5).map((event) => (
+                  <div key={event.id} className={`security-event-card ${event.isSuspicious ? 'security-event-card--suspicious' : ''}`}>
+                    <div className="security-event-header">
+                      <span className={`reporting-badge reporting-badge--${event.severity === 'CRITICAL' ? 'danger' : event.severity === 'HIGH' ? 'warning' : event.severity === 'MEDIUM' ? 'info' : 'success'}`}>
+                        {event.severity}
+                      </span>
+                      <span className="security-event-type">{event.eventType?.replace(/_/g, ' ')}</span>
+                      {event.isSuspicious && (
+                        <span className="reporting-badge reporting-badge--danger">
+                          <FaExclamationTriangle /> Suspicious
                         </span>
-                        <h1 className="reporting-banner__title">Security Center</h1>
-                        <p className="reporting-banner__subtitle">
-                            Monitor and enhance your account security. Manage passwords, 
-                            two-factor authentication, and review security activity.
-                        </p>
+                      )}
                     </div>
-                </div>
-            </div>
-
-            <div className="reporting-tabs" data-animate="fade-up" data-delay="0.04">
-                <button
-                    className={`reporting-tab ${activeTab === 'overview' ? 'is-active' : ''}`}
-                    onClick={() => setActiveTab('overview')}
-                >
-                    <FaShieldAlt /> Overview
-                </button>
-                <button
-                    className={`reporting-tab ${activeTab === 'password' ? 'is-active' : ''}`}
-                    onClick={() => setActiveTab('password')}
-                >
-                    <FaKey /> Password
-                </button>
-                <button
-                    className={`reporting-tab ${activeTab === 'twofactor' ? 'is-active' : ''}`}
-                    onClick={() => setActiveTab('twofactor')}
-                >
-                    <FaMobileAlt /> Two-Factor Auth
-                </button>
-                <button
-                    className={`reporting-tab ${activeTab === 'history' ? 'is-active' : ''}`}
-                    onClick={() => setActiveTab('history')}
-                >
-                    <FaHistory /> Login History
-                </button>
-                <button
-                    className={`reporting-tab ${activeTab === 'alerts' ? 'is-active' : ''}`}
-                    onClick={() => setActiveTab('alerts')}
-                >
-                    <FaBell /> Security Alerts
-                    {unacknowledgedCount > 0 && (
-                        <span className="security-alert-count">{unacknowledgedCount}</span>
-                    )}
-                </button>
-            </div>
-
-            <div className="security-content">
-                {activeTab === 'overview' && (
-                    <div className="security-grid" data-animate="fade-up" data-delay="0.08">
-                        {/* Security Status */}
-                        <div className="reporting-card">
-                            <div className="reporting-card__header">
-                                <div>
-                                    <h2 className="reporting-card__title">Security Status</h2>
-                                    <p className="reporting-card__subtitle">Your account security overview</p>
-                                </div>
-                            </div>
-                            <div className="reporting-card__content">
-                                <div className="security-status-grid">
-                                    <div className="security-status-item">
-                                        <div className="security-status-icon reporting-banner__meta-icon reporting-banner__meta-icon--green">
-                                            <FaCheck />
-                                        </div>
-                                        <div className="security-status-content">
-                                            <h4>Password Strength</h4>
-                                            <span className="reporting-badge reporting-badge--success">Strong</span>
-                                        </div>
-                                    </div>
-                                    <div className="security-status-item">
-                                        <div className={`security-status-icon reporting-banner__meta-icon ${
-                                            twoFactorStatus?.enabled 
-                                                ? 'reporting-banner__meta-icon--green' 
-                                                : 'reporting-banner__meta-icon--gold'
-                                        }`}>
-                                            {twoFactorStatus?.enabled ? <FaCheck /> : <FaTimes />}
-                                        </div>
-                                        <div className="security-status-content">
-                                            <h4>Two-Factor Auth</h4>
-                                            <span className={`reporting-badge ${
-                                                twoFactorStatus?.enabled 
-                                                    ? 'reporting-badge--success' 
-                                                    : 'reporting-badge--warning'
-                                            }`}>
-                                                {twoFactorStatus?.enabled ? 'Enabled' : 'Disabled'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="security-status-item">
-                                        <div className="security-status-icon reporting-banner__meta-icon reporting-banner__meta-icon--blue">
-                                            <FaHistory />
-                                        </div>
-                                        <div className="security-status-content">
-                                            <h4>Active Sessions</h4>
-                                            <span className="reporting-badge reporting-badge--info">1</span>
-                                        </div>
-                                    </div>
-                                    <div className="security-status-item">
-                                        <div className={`security-status-icon reporting-banner__meta-icon ${
-                                            unacknowledgedCount > 0 
-                                                ? 'reporting-banner__meta-icon--red' 
-                                                : 'reporting-banner__meta-icon--green'
-                                        }`}>
-                                            <FaBell />
-                                        </div>
-                                        <div className="security-status-content">
-                                            <h4>Security Alerts</h4>
-                                            <span className={`reporting-badge ${
-                                                unacknowledgedCount > 0 
-                                                    ? 'reporting-badge--danger' 
-                                                    : 'reporting-badge--success'
-                                            }`}>
-                                                {unacknowledgedCount > 0 ? `${unacknowledgedCount} Unacknowledged` : 'All Clear'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Recent Activity */}
-                        <div className="reporting-card">
-                            <div className="reporting-card__header">
-                                <div>
-                                    <h2 className="reporting-card__title">Recent Activity</h2>
-                                    <p className="reporting-card__subtitle">Latest login attempts and security events</p>
-                                </div>
-                            </div>
-                            <div className="reporting-card__content">
-                                <div className="recent-activity-list">
-                                    {loginHistory.slice(0, 5).map((login, index) => (
-                                        <div key={index} className="activity-item">
-                                            <div className={`activity-icon ${
-                                                login.successful ? 'activity-icon--success' : 'activity-icon--danger'
-                                            }`}>
-                                                {login.successful ? <FaCheck /> : <FaTimes />}
-                                            </div>
-                                            <div className="activity-details">
-                                                <div className="activity-type">
-                                                    {login.successful ? 'Successful login' : 'Failed login attempt'}
-                                                </div>
-                                                <div className="activity-meta">
-                                                    {formatDateTime(login.loginTime)} • {login.ipAddress}
-                                                    {login.deviceType && ` • ${login.deviceType}`}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {loginHistory.length === 0 && (
-                                        <div className="reporting-empty-state">
-                                            <p>No recent activity found.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Quick Actions */}
-                        <div className="reporting-card">
-                            <div className="reporting-card__header">
-                                <div>
-                                    <h2 className="reporting-card__title">Quick Actions</h2>
-                                    <p className="reporting-card__subtitle">Enhance your account security</p>
-                                </div>
-                            </div>
-                            <div className="reporting-card__content">
-                                <div className="security-actions-grid">
-                                    <button
-                                        onClick={() => setShowPasswordModal(true)}
-                                        className="security-action-btn"
-                                    >
-                                        <div className="security-action-icon">
-                                            <FaKey />
-                                        </div>
-                                        <div className="security-action-content">
-                                            <h4>Change Password</h4>
-                                            <p>Update your account password</p>
-                                        </div>
-                                    </button>
-                                    <button
-                                        onClick={() => setShowTwoFactorModal(true)}
-                                        className="security-action-btn"
-                                    >
-                                        <div className="security-action-icon">
-                                            <FaMobileAlt />
-                                        </div>
-                                        <div className="security-action-content">
-                                            <h4>Two-Factor Auth</h4>
-                                            <p>Add an extra layer of security</p>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                    <p className="security-event-description">{event.description}</p>
+                    <div className="security-event-meta">
+                      <span className="security-event-meta-item">
+                        <FaClock /> {formatDate(event.createdAt)}
+                      </span>
+                      {event.ipAddress && (
+                        <span className="security-event-meta-item">
+                          <FaMapMarkerAlt /> {event.ipAddress}
+                        </span>
+                      )}
                     </div>
-                )}
-
-                {activeTab === 'password' && (
-                    <div className="security-grid" data-animate="fade-up" data-delay="0.08">
-                        <div className="reporting-card">
-                            <div className="reporting-card__header">
-                                <div>
-                                    <h2 className="reporting-card__title">Password Management</h2>
-                                    <p className="reporting-card__subtitle">Secure your account with a strong password</p>
-                                </div>
-                            </div>
-                            <div className="reporting-card__content">
-                                <div className="password-section">
-                                    <div className="password-info">
-                                        <div className="password-strength">
-                                            <h4>Password Strength: <span className="reporting-text--positive">Strong</span></h4>
-                                            <p>Your current password meets all security requirements.</p>
-                                        </div>
-                                        <div className="password-tips">
-                                            <h5>Password Tips:</h5>
-                                            <ul>
-                                                <li>Use at least 12 characters</li>
-                                                <li>Include numbers, symbols, and mixed case letters</li>
-                                                <li>Avoid common words and personal information</li>
-                                                <li>Don't reuse passwords across different sites</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div className="password-actions">
-                                        <button
-                                            onClick={() => setShowPasswordModal(true)}
-                                            className="reporting-btn reporting-btn--gold"
-                                        >
-                                            <FaKey /> Change Password
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'twofactor' && (
-                    <div className="security-grid" data-animate="fade-up" data-delay="0.08">
-                        <div className="reporting-card">
-                            <div className="reporting-card__header">
-                                <div>
-                                    <h2 className="reporting-card__title">Two-Factor Authentication</h2>
-                                    <p className="reporting-card__subtitle">Add an extra layer of security to your account</p>
-                                </div>
-                            </div>
-                            <div className="reporting-card__content">
-                                <div className="twofactor-section">
-                                    <div className="twofactor-status">
-                                        <div className="status-indicator">
-                                            <span className={`status-dot ${twoFactorStatus?.enabled ? 'enabled' : 'disabled'}`}></span>
-                                            <span className="status-text">
-                                                Two-factor authentication is currently {twoFactorStatus?.enabled ? 'enabled' : 'disabled'}
-                                            </span>
-                                        </div>
-                                        <p className="twofactor-description">
-                                            {twoFactorStatus?.enabled
-                                                ? 'Your account is protected with an additional layer of security. You will need to enter a verification code from your authenticator app when signing in.'
-                                                : 'Add an extra layer of security to your account by enabling two-factor authentication. You will need to enter a verification code from your authenticator app in addition to your password.'
-                                            }
-                                        </p>
-                                    </div>
-
-                                    <div className="twofactor-actions">
-                                        {!twoFactorStatus?.enabled ? (
-                                            <button
-                                                onClick={() => setShowTwoFactorModal(true)}
-                                                className="reporting-btn reporting-btn--gold"
-                                            >
-                                                <FaMobileAlt /> Enable Two-Factor Auth
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={handleDisableTwoFactor}
-                                                className="reporting-btn reporting-btn--red"
-                                            >
-                                                <FaTimes /> Disable Two-Factor Auth
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'history' && (
-                    <div className="security-grid" data-animate="fade-up" data-delay="0.08">
-                        <div className="reporting-card">
-                            <div className="reporting-card__header">
-                                <div>
-                                    <h2 className="reporting-card__title">Login History</h2>
-                                    <p className="reporting-card__subtitle">Recent account access attempts</p>
-                                </div>
-                                <span className="reporting-badge reporting-badge--info">{loginHistory.length} Records</span>
-                            </div>
-                            <div className="reporting-card__content">
-                                {loginHistory.length === 0 ? (
-                                    <div className="reporting-empty-state">
-                                        <p>No login history available.</p>
-                                    </div>
-                                ) : (
-                                    <div className="reporting-table-container">
-                                        <table className="reporting-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Date & Time</th>
-                                                    <th>IP Address</th>
-                                                    <th>Device</th>
-                                                    <th>Browser</th>
-                                                    <th>Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {loginHistory.map((login, index) => (
-                                                    <tr key={index}>
-                                                        <td>{formatDateTime(login.loginTime)}</td>
-                                                        <td>{login.ipAddress}</td>
-                                                        <td>{login.deviceType || 'Unknown'}</td>
-                                                        <td>{login.browser || 'Unknown'}</td>
-                                                        <td>
-                                                            <span className={`reporting-badge ${
-                                                                login.successful 
-                                                                    ? 'reporting-badge--success' 
-                                                                    : 'reporting-badge--danger'
-                                                            }`}>
-                                                                {login.successful ? 'Success' : 'Failed'}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'alerts' && (
-                    <div className="security-grid" data-animate="fade-up" data-delay="0.08">
-                        <div className="reporting-card">
-                            <div className="reporting-card__header">
-                                <div>
-                                    <h2 className="reporting-card__title">Security Alerts</h2>
-                                    <p className="reporting-card__subtitle">Important security notifications</p>
-                                </div>
-                                {unacknowledgedCount > 0 && (
-                                    <span className="reporting-badge reporting-badge--danger">
-                                        {unacknowledgedCount} Unacknowledged
-                                    </span>
-                                )}
-                            </div>
-                            <div className="reporting-card__content">
-                                <div className="alerts-list">
-                                    {securityAlerts.map((alert) => (
-                                        <div key={alert.id} className={`alert-item ${alert.acknowledged ? 'acknowledged' : 'unacknowledged'}`}>
-                                            <div className="alert-header">
-                                                <span className={`reporting-badge reporting-badge--${getSeverityColor(alert.severity)}`}>
-                                                    {alert.severity}
-                                                </span>
-                                                <span className="alert-type">{alert.alertType?.replace(/_/g, ' ')}</span>
-                                                <span className="alert-time">{formatDateTime(alert.createdAt)}</span>
-                                            </div>
-                                            <div className="alert-message">{alert.message}</div>
-                                            {alert.ipAddress && (
-                                                <div className="alert-meta">IP Address: {alert.ipAddress}</div>
-                                            )}
-                                            {!alert.acknowledged && (
-                                                <div className="alert-actions">
-                                                    <button
-                                                        onClick={() => handleAcknowledgeAlert(alert.id)}
-                                                        className="reporting-btn reporting-btn--sm reporting-btn--blue"
-                                                    >
-                                                        Acknowledge
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                    {securityAlerts.length === 0 && (
-                                        <div className="reporting-empty-state">
-                                            <FaCheck className="empty-icon" />
-                                            <p>No security alerts found. Your account is secure.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Password Change Modal */}
-            {showPasswordModal && (
-                <div className="reporting-modal-overlay">
-                    <div className="reporting-modal" data-animate="fade-up">
-                        <div className="reporting-modal__header">
-                            <h3>Change Password</h3>
-                            <button 
-                                onClick={() => setShowPasswordModal(false)}
-                                className="reporting-modal__close"
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <div className="reporting-modal__content">
-                            <div className="reporting-form-group">
-                                <label className="reporting-form-label">Current Password</label>
-                                <div className="password-input-container">
-                                    <input
-                                        type={showCurrentPassword ? "text" : "password"}
-                                        value={passwordData.currentPassword}
-                                        onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                                        className="reporting-input"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        className="password-toggle-btn"
-                                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                        aria-label={showCurrentPassword ? "Hide password" : "Show password"}
-                                    >
-                                        {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="reporting-form-group">
-                                <label className="reporting-form-label">New Password</label>
-                                <div className="password-input-container">
-                                    <input
-                                        type={showNewPassword ? "text" : "password"}
-                                        value={passwordData.newPassword}
-                                        onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                                        className="reporting-input"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        className="password-toggle-btn"
-                                        onClick={() => setShowNewPassword(!showNewPassword)}
-                                        aria-label={showNewPassword ? "Hide password" : "Show password"}
-                                    >
-                                        {showNewPassword ? <FaEyeSlash /> : <FaEye />}
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="reporting-form-group">
-                                <label className="reporting-form-label">Confirm New Password</label>
-                                <div className="password-input-container">
-                                    <input
-                                        type={showConfirmPassword ? "text" : "password"}
-                                        value={passwordData.confirmPassword}
-                                        onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                                        className="reporting-input"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        className="password-toggle-btn"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                                    >
-                                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="reporting-modal__actions">
-                            <button 
-                                onClick={() => setShowPasswordModal(false)}
-                                className="reporting-btn reporting-btn--secondary"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handlePasswordChange}
-                                disabled={saving}
-                                className="reporting-btn reporting-btn--gold"
-                            >
-                                {saving ? 'Changing...' : 'Change Password'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                  </div>
+                ))}
+              </div>
             )}
-
-            {/* Two-Factor Setup Modal */}
-            {showTwoFactorModal && (
-                <div className="reporting-modal-overlay">
-                    <div className="reporting-modal reporting-modal--large" data-animate="fade-up">
-                        <div className="reporting-modal__header">
-                            <h3>Enable Two-Factor Authentication</h3>
-                            <button 
-                                onClick={() => setShowTwoFactorModal(false)}
-                                className="reporting-modal__close"
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <div className="reporting-modal__content">
-                            <div className="twofactor-setup">
-                                <div className="setup-intro">
-                                    <p>Two-factor authentication adds an extra layer of security to your account by requiring a verification code from your mobile device.</p>
-                                </div>
-                                
-                                <div className="setup-steps">
-                                    <div className="setup-step">
-                                        <div className="step-number">1</div>
-                                        <div className="step-content">
-                                            <h4>Install an Authenticator App</h4>
-                                            <p>Download Google Authenticator, Authy, or a similar app on your smartphone.</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="setup-step">
-                                        <div className="step-number">2</div>
-                                        <div className="step-content">
-                                            <h4>Scan QR Code</h4>
-                                            <p>Open your authenticator app and scan this QR code:</p>
-                                            {twoFactorSetup?.qrCodeUrl ? (
-                                                <div className="qr-code-container">
-                                                    {/* QR Code would be displayed here */}
-                                                    <div className="qr-placeholder">
-                                                        [QR Code Display]
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="qr-placeholder">
-                                                    QR code will appear after enabling 2FA
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="setup-step">
-                                        <div className="step-number">3</div>
-                                        <div className="step-content">
-                                            <h4>Enter Verification Code</h4>
-                                            <p>Enter the 6-digit code from your authenticator app to verify setup:</p>
-                                            <div className="verification-input">
-                                                <input
-                                                    type="text"
-                                                    placeholder="000000"
-                                                    maxLength="6"
-                                                    className="reporting-input"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="reporting-modal__actions">
-                            <button 
-                                onClick={() => setShowTwoFactorModal(false)}
-                                className="reporting-btn reporting-btn--secondary"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={handleEnableTwoFactor}
-                                className="reporting-btn reporting-btn--gold"
-                            >
-                                Enable 2FA
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </section>
+          </div>
+        </div>
+      </div>
     );
+  };
+
+  const renderSessions = () => {
+    return (
+      <div className="reporting-page" data-animate="fade-up">
+        <div className="reporting-card">
+          <div className="reporting-card__header">
+            <h2 className="reporting-card__title">Active Sessions</h2>
+            <div className="reporting-card__actions">
+              <button 
+                className="reporting-btn reporting-btn--red"
+                onClick={handleTerminateAllSessions}
+              >
+                <FaTrash /> Terminate All Sessions
+              </button>
+            </div>
+          </div>
+          <div className="reporting-card__content">
+            {sessions.length === 0 ? (
+              <div className="security-empty-state">
+                <FaLaptop />
+                <p>No active sessions</p>
+              </div>
+            ) : (
+              <div className="security-session-list">
+                {sessions.map((session) => (
+                  <div key={session.id} className="security-session-item">
+                    <div className="security-session-info">
+                      <div className={`security-device-icon ${session.deviceType === 'MOBILE' ? 'security-device-icon--mobile' : session.deviceType === 'TABLET' ? 'security-device-icon--tablet' : ''}`}>
+                        {getDeviceIcon(session.deviceType)}
+                      </div>
+                      <div className="security-session-details">
+                        <div className="security-session-device">
+                          {getBrowserIcon(session.browser)} {session.browser} on {session.operatingSystem}
+                          {session.isCurrentSession && (
+                            <span className="security-session-current" style={{ marginLeft: '0.5rem' }}>
+                              <FaCheckCircle /> Current
+                            </span>
+                          )}
+                        </div>
+                        <div className="security-session-meta">
+                          <span><FaMapMarkerAlt /> {session.ipAddress}</span>
+                          <span><FaClock /> Last activity: {formatDate(session.lastActivity)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {!session.isCurrentSession && (
+                      <button 
+                        className="reporting-btn reporting-btn--red"
+                        onClick={() => handleTerminateSession(session.id)}
+                      >
+                        <FaTrash /> Terminate
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const render2FA = () => {
+    return (
+      <div className="reporting-page" data-animate="fade-up">
+        <div className="reporting-card">
+          <div className="reporting-card__header">
+            <h2 className="reporting-card__title">
+              <FaKey style={{ marginRight: '0.5rem' }} /> Two-Factor Authentication
+            </h2>
+          </div>
+          <div className="reporting-card__content">
+            <p style={{ color: 'var(--reporting-text-secondary)', marginBottom: '2rem' }}>
+              Two-factor authentication adds an extra layer of security to your account by requiring a verification code from your authenticator app when signing in.
+            </p>
+
+            <div className={`security-2fa-status ${twoFactorEnabled ? 'security-2fa-status--enabled' : 'security-2fa-status--disabled'}`}>
+              <div className={`security-2fa-icon ${twoFactorEnabled ? 'security-2fa-icon--enabled' : 'security-2fa-icon--disabled'}`}>
+                {twoFactorEnabled ? <FaCheckCircle /> : <FaTimesCircle />}
+              </div>
+              <p className="security-2fa-text">
+                {twoFactorEnabled ? 'Two-Factor Authentication is Enabled' : 'Two-Factor Authentication is Disabled'}
+              </p>
+              <p className="security-2fa-description">
+                {twoFactorEnabled 
+                  ? 'Your account is protected with an additional layer of security' 
+                  : 'Enable 2FA to add an extra layer of security to your account'}
+              </p>
+              <button 
+                className={twoFactorEnabled ? 'reporting-btn reporting-btn--red' : 'reporting-btn reporting-btn--blue'}
+                onClick={twoFactorEnabled ? handleDisable2FA : handleSetup2FA}
+              >
+                {twoFactorEnabled ? 'Disable Two-Factor Authentication' : 'Enable Two-Factor Authentication'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {showSetupModal && (
+          <div className="security-modal-overlay" onClick={() => setShowSetupModal(false)}>
+            <div className="security-modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="security-modal-header">
+                <FaQrcode />
+                <h2>Setup Two-Factor Authentication</h2>
+              </div>
+
+              <div className="security-setup-steps">
+                <div className="security-setup-step">
+                  <h4>Step 1: Scan QR Code</h4>
+                  <p>Open your authenticator app (Google Authenticator, Microsoft Authenticator, or Authy) and scan this QR code:</p>
+                  <div className="security-qr-container">
+                    <img src={setupData?.qrCodeBase64} alt="QR Code" />
+                  </div>
+                </div>
+
+                <div className="security-setup-step">
+                  <h4>Step 2: Manual Entry (Optional)</h4>
+                  <p>Or enter this code manually in your authenticator app:</p>
+                  <div className="security-manual-code">
+                    {setupData?.manualEntryKey}
+                  </div>
+                </div>
+
+                <div className="security-setup-step">
+                  <h4>Step 3: Verify</h4>
+                  <p>Enter the 6-digit verification code from your authenticator app:</p>
+                  <input
+                    type="text"
+                    className="security-verification-input"
+                    placeholder="000000"
+                    maxLength="6"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                  />
+                </div>
+              </div>
+
+              <div className="security-modal-actions">
+                <button 
+                  className="reporting-btn reporting-btn--secondary"
+                  onClick={() => {
+                    setShowSetupModal(false);
+                    setVerificationCode('');
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="reporting-btn reporting-btn--blue"
+                  onClick={handleVerify2FA}
+                  disabled={verificationCode.length !== 6}
+                >
+                  Verify and Enable
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderEvents = () => {
+    return (
+      <div className="reporting-page" data-animate="fade-up">
+        <div className="reporting-card">
+          <div className="security-events-header">
+            <h2>Security Event Log</h2>
+            <select 
+              className="security-events-filter"
+              value={eventDays}
+              onChange={(e) => {
+                setEventDays(parseInt(e.target.value));
+                setTimeout(() => loadEvents(), 100);
+              }}
+            >
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </div>
+
+          {events.length === 0 ? (
+            <div className="security-empty-state">
+              <FaShieldAlt />
+              <p>No security events found</p>
+            </div>
+          ) : (
+            <div className="security-events-list">
+              {events.map((event) => (
+                <div key={event.id} className={`security-event-card ${event.isSuspicious ? 'security-event-card--suspicious' : ''}`}>
+                  <div className="security-event-header">
+                    <span className={`reporting-badge reporting-badge--${event.severity === 'CRITICAL' ? 'danger' : event.severity === 'HIGH' ? 'warning' : event.severity === 'MEDIUM' ? 'info' : 'success'}`}>
+                      {event.severity}
+                    </span>
+                    <span className="security-event-type">{event.eventType?.replace(/_/g, ' ')}</span>
+                    {event.isSuspicious && (
+                      <span className="reporting-badge reporting-badge--danger">
+                        <FaExclamationTriangle /> Suspicious
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="security-event-description">{event.description}</p>
+
+                  <div className="security-event-meta">
+                    <span className="security-event-meta-item">
+                      <FaClock /> {formatDate(event.createdAt)}
+                    </span>
+                    {event.ipAddress && (
+                      <span className="security-event-meta-item">
+                        <FaMapMarkerAlt /> {event.ipAddress}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="reporting-page">
+      {/* Header */}
+      <div className="reporting-banner" data-animate="fade-up">
+        <div className="reporting-banner__content">
+          <div className="reporting-banner__info">
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
+              <FaShieldAlt /> Security
+            </h1>
+            <p style={{ margin: '0.5rem 0 0 0', color: 'var(--reporting-text-secondary)' }}>
+              Manage your account security settings and monitor activity
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="security-tabs" data-animate="fade-up" data-delay="0.08">
+        <button
+          className={`security-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <FaShieldAlt /> Dashboard
+        </button>
+        <button
+          className={`security-tab ${activeTab === 'sessions' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sessions')}
+        >
+          <FaLaptop /> Sessions
+        </button>
+        <button
+          className={`security-tab ${activeTab === '2fa' ? 'active' : ''}`}
+          onClick={() => setActiveTab('2fa')}
+        >
+          <FaKey /> Two-Factor Auth
+        </button>
+        <button
+          className={`security-tab ${activeTab === 'events' ? 'active' : ''}`}
+          onClick={() => setActiveTab('events')}
+        >
+          <FaLock /> Activity Log
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {loading ? (
+        <div className="reporting-loading" data-animate="fade-up" data-delay="0.12">
+          <div className="reporting-loading__spinner"></div>
+          <p>Loading security data...</p>
+        </div>
+      ) : (
+        <>
+          {activeTab === 'dashboard' && renderDashboard()}
+          {activeTab === 'sessions' && renderSessions()}
+          {activeTab === '2fa' && render2FA()}
+          {activeTab === 'events' && renderEvents()}
+        </>
+      )}
+    </div>
+  );
 };
 
 export default Security;
