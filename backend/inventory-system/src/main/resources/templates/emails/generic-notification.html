@@ -190,15 +190,12 @@
         <div class="header">
             <!-- Logo Section -->
             <div class="logo-container">
-                <!-- Replace with your actual logo URL -->
-                <img th:if="${logoUrl}" th:src="${logoUrl}" alt="Bamika Engineering" class="logo" />
-                <div th:unless="${logoUrl}" class="logo-text">
-                    BAMIKA ENGINEERING
-                </div>
-                <p class="logo-subtitle">Innovation & Excellence</p>
+                <img th:src="${logoUrl ?: 'cid:logo'}" alt="BamikaHub Logo" class="logo" style="max-width:60px;height:60px;background:#fff;padding:8px;border-radius:12px;" />
+                <div class="logo-text">BamikaHub</div>
+                <p class="logo-subtitle">Engineering Operations Management</p>
             </div>
             
-            <h1 th:text="${companyName}">Bamika Engineering</h1>
+            <h1>Notification</h1>
             <p class="notification-type" th:text="${notificationType}">Notification</p>
             <span class="priority-badge" th:classappend="'priority-' + ${priority}" th:text="${priority}">NORMAL</span>
         </div>
@@ -230,7 +227,7 @@
             </div>
             
             <p style="margin-top: 25px; color: #7B7B7B; font-size: 14px; line-height: 1.5;">
-                This is an automated notification from <strong style="color: #D6A329;" th:text="${companyName}">Bamika Engineering</strong>. 
+                This is an automated notification from <strong style="color: #D6A329;">BamikaHub</strong>. 
                 You can manage your notification preferences in your account settings.
             </p>
         </div>
@@ -245,11 +242,11 @@
                 <div class="color-swatch color-gray" title="Neutral Gray"></div>
             </div>
             
-            <p>&copy; <span th:text="${currentYear}">2025</span> <strong th:text="${companyName}">Bamika Engineering</strong>. All rights reserved.</p>
-            <p>Inventory Management System | Engineering Excellence</p>
+            <p>&copy; <span th:text="${currentYear}">2025</span> <strong>BamikaHub</strong> by Grand Grande Technologies. All rights reserved.</p>
+            <p>Engineering Operations Management System</p>
             <p>
-                <a href="https://bamikaengineering.com" style="color: #D6A329;">Visit our website</a> | 
-                <a href="mailto:support@bamikaengineering.com" style="color: #D6A329;">Contact Support</a>
+                <a href="#" style="color: #D6A329;">Help Center</a> | 
+                <a href="mailto:support@ggt.com" style="color: #D6A329;">Contact Support</a>
             </p>
             <p style="font-size: 11px; opacity: 0.6; margin-top: 15px;">
                 This email was sent to <span th:text="${recipientEmail}">user@example.com</span>

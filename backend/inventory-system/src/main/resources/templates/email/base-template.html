@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Reset Request - BamikaHub</title>
+    <title th:text="${emailTitle ?: 'BamikaHub'}">BamikaHub</title>
     <style>
         * {
             margin: 0;
@@ -36,6 +36,10 @@
             background: linear-gradient(135deg, #D6A329 0%, #F6B41A 100%);
             padding: 40px 30px;
             text-align: center;
+            position: relative;
+        }
+        .email-logo {
+            margin-bottom: 15px;
         }
         .email-logo img {
             width: 60px;
@@ -43,13 +47,13 @@
             border-radius: 12px;
             background-color: #ffffff;
             padding: 8px;
-            margin-bottom: 15px;
         }
         .email-brand {
             font-size: 28px;
             font-weight: 800;
             color: #000000;
             margin: 10px 0 5px 0;
+            letter-spacing: -0.5px;
         }
         .email-tagline {
             font-size: 14px;
@@ -67,6 +71,7 @@
             font-weight: 700;
             color: #1e293b;
             margin-bottom: 20px;
+            line-height: 1.3;
         }
         .email-content {
             font-size: 16px;
@@ -77,46 +82,49 @@
         .email-content p {
             margin: 0 0 15px 0;
         }
+        .email-content strong {
+            color: #1e293b;
+            font-weight: 600;
+        }
         
-        /* Alert Box */
-        .alert-box {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 4px solid #ef4444;
+        /* Highlight Box */
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(214, 163, 41, 0.1), rgba(246, 180, 26, 0.1));
+            border-left: 4px solid #D6A329;
             padding: 20px;
             border-radius: 8px;
             margin: 25px 0;
         }
-        .alert-box p {
+        .highlight-box p {
             margin: 0;
-            color: #991b1b;
-            font-size: 14px;
+            color: #1e293b;
         }
         
-        /* Security Info Box */
-        .security-box {
+        /* Info Box */
+        .info-box {
             background: rgba(70, 193, 235, 0.1);
             border-left: 4px solid #46C1EB;
             padding: 20px;
             border-radius: 8px;
             margin: 25px 0;
         }
-        .security-box p {
+        .info-box p {
             margin: 0 0 10px 0;
             font-size: 14px;
             color: #334155;
         }
-        .security-box p:last-child {
+        .info-box p:last-child {
             margin-bottom: 0;
         }
         
         /* Button */
         .email-button-container {
             text-align: center;
-            margin: 35px 0;
+            margin: 30px 0;
         }
         .email-button {
             display: inline-block;
-            padding: 16px 45px;
+            padding: 16px 40px;
             background: linear-gradient(135deg, #D6A329 0%, #F6B41A 100%);
             color: #000000 !important;
             text-decoration: none;
@@ -124,7 +132,13 @@
             font-weight: 700;
             font-size: 16px;
             border: 2px solid #000000;
+            transition: all 0.3s ease;
             box-shadow: 0 4px 12px rgba(214, 163, 41, 0.3);
+        }
+        .email-button:hover {
+            background: linear-gradient(135deg, #F6B41A 0%, #D6A329 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(214, 163, 41, 0.4);
         }
         
         /* Footer */
@@ -147,11 +161,48 @@
             text-decoration: none;
             font-weight: 600;
         }
+        .email-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Divider */
+        .email-divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+            margin: 30px 0;
+        }
+        
+        /* List Styling */
+        .email-content ul,
+        .email-content ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+        .email-content li {
+            margin: 8px 0;
+            color: #475569;
+        }
         
         /* Responsive */
         @media only screen and (max-width: 600px) {
-            .email-header, .email-body, .email-footer {
+            .email-wrapper {
+                padding: 10px 5px;
+            }
+            .email-header {
                 padding: 30px 20px;
+            }
+            .email-body {
+                padding: 30px 20px;
+            }
+            .email-footer {
+                padding: 25px 20px;
+            }
+            .email-title {
+                font-size: 20px;
+            }
+            .email-button {
+                padding: 14px 30px;
+                font-size: 15px;
             }
         }
     </style>
@@ -162,63 +213,31 @@
             <!-- Header -->
             <div class="email-header">
                 <div class="email-logo">
+                    <!-- Logo placeholder - actual logo URL should be passed as parameter -->
                     <img th:src="${logoUrl ?: 'cid:logo'}" alt="BamikaHub Logo" />
                 </div>
                 <div class="email-brand">BamikaHub</div>
                 <div class="email-tagline">Engineering Operations Management</div>
             </div>
             
-            <!-- Body -->
+            <!-- Body Content (This section will be replaced by specific email content) -->
             <div class="email-body">
-                <div class="email-title">🔐 Password Reset Request</div>
-                
-                <div class="email-content">
-                    <p>Hi <strong th:text="${userName ?: 'there'}">User</strong>,</p>
-                    <p>
-                        We received a request to reset your password for your BamikaHub account. 
-                        Click the button below to choose a new password.
-                    </p>
-                </div>
-                
-                <div class="email-button-container">
-                    <a th:href="${resetLink}" class="email-button">
-                        Reset Password
-                    </a>
-                </div>
-                
-                <div class="alert-box">
-                    <p><strong>⚠️ Important:</strong> This link will expire in <strong>1 hour</strong> for security reasons.</p>
-                </div>
-                
-                <div class="security-box">
-                    <p><strong>🔒 Security Tips:</strong></p>
-                    <p>• Never share your password with anyone</p>
-                    <p>• Use a strong, unique password</p>
-                    <p>• If you didn't request this reset, please ignore this email</p>
-                    <p>• Contact support immediately if you suspect unauthorized access</p>
-                </div>
-                
-                <div class="email-content">
-                    <p style="font-size: 14px; color: #64748b; margin-top: 25px;">
-                        If the button doesn't work, copy and paste this link into your browser:<br/>
-                        <a th:href="${resetLink}" style="color: #D6A329; word-break: break-all;" th:text="${resetLink}">reset-link</a>
-                    </p>
-                </div>
-                
-                <div style="margin-top: 30px; padding-top: 25px; border-top: 1px solid #e2e8f0;">
-                    <p style="font-size: 15px; color: #475569; text-align: center;">
-                        <strong>Stay Safe!</strong><br/>
-                        The BamikaHub Security Team
-                    </p>
-                </div>
+                <!-- Main content goes here -->
+                <div th:replace="${contentFragment}"></div>
             </div>
             
             <!-- Footer -->
             <div class="email-footer">
-                <p><strong>BamikaHub</strong> - Engineering Operations Management</p>
-                <p>© <span th:text="${currentYear ?: '2025'}">2025</span> Grand Grande Technologies. All rights reserved.</p>
+                <p><strong>BamikaHub</strong> - Comprehensive Engineering Operations Management</p>
+                <p th:if="${recipientEmail}">
+                    This email was sent to <span th:text="${recipientEmail}">user@example.com</span>
+                </p>
+                <div class="email-divider" style="margin: 15px auto; width: 80%;"></div>
+                <p>
+                    © <span th:text="${currentYear ?: '2025'}">2025</span> Grand Grande Technologies. All rights reserved.
+                </p>
                 <p style="margin-top: 10px;">
-                    <a href="#">Help Center</a> • <a href="mailto:support@ggt.com">Contact Support</a>
+                    <a href="#">Privacy Policy</a> • <a href="#">Terms of Service</a> • <a href="#">Help Center</a>
                 </p>
             </div>
         </div>

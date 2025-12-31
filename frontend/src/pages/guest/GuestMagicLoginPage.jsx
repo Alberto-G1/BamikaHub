@@ -6,7 +6,7 @@ import guestApi from '../../api/guestApi.js';
 import { useGuestAuth } from '../../context/GuestAuthContext.jsx';
 import WallOfFamePanel from '../../components/auth/WallOfFamePanel';
 import logoImg from '../../assets/logo/logo.png';
-import loginBgImg from '../../assets/images/login-img.jpg';
+import loginBgImg from '../../assets/images/login-img.jpeg';
 import '../auth/Auth.css';
 
 const GuestMagicLoginPage = () => {

@@ -1,18 +1,264 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="utf-8" />
-  <title>Ticket Assigned</title>
-  <style>body{font-family:Arial,Helvetica,sans-serif;color:#111}.cta{background:#10b981;color:#fff;padding:8px 14px;border-radius:4px;text-decoration:none}</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Assigned - BamikaHub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f6f9;
+        }
+        .email-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #f4f6f9;
+            padding: 20px 10px;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Header */
+        .email-header {
+            background: linear-gradient(135deg, #D6A329 0%, #F6B41A 100%);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .email-logo img {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background-color: #ffffff;
+            padding: 8px;
+            margin-bottom: 15px;
+        }
+        .email-brand {
+            font-size: 28px;
+            font-weight: 800;
+            color: #000000;
+            margin: 10px 0 5px 0;
+        }
+        .email-tagline {
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.7);
+            margin: 0;
+            font-weight: 500;
+        }
+        
+        /* Content */
+        .email-body {
+            padding: 40px 30px;
+        }
+        .email-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+        }
+        .email-content {
+            font-size: 16px;
+            color: #475569;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+        
+        /* Ticket Info Box */
+        .ticket-box {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .ticket-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .ticket-row:last-child {
+            border-bottom: none;
+        }
+        .ticket-label {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .ticket-value {
+            font-size: 15px;
+            color: #1e293b;
+            font-weight: 700;
+            text-align: right;
+        }
+        
+        /* Priority Badge */
+        .priority-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .priority-high {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+        .priority-medium {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+        .priority-low {
+            background-color: rgba(34, 197, 94, 0.15);
+            color: #16a34a;
+        }
+        
+        /* Button */
+        .email-button-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+        .email-button {
+            display: inline-block;
+            padding: 16px 45px;
+            background: linear-gradient(135deg, #46C1EB 0%, #3ba3d6 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(70, 193, 235, 0.3);
+        }
+        
+        /* Footer */
+        .email-footer {
+            background-color: #f8fafc;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+        .email-footer p {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            color: #64748b;
+        }
+        .email-footer a {
+            color: #D6A329;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-header, .email-body, .email-footer {
+                padding: 30px 20px;
+            }
+            .ticket-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .ticket-value {
+                text-align: left;
+                margin-top: 5px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div th:inline="text">
-    <h3>Ticket Assigned: [[${ticketSubject}]]</h3>
-    <p>Hi [[${firstName}]],</p>
-    <p>You have been assigned a ticket: <strong>[[${ticketSubject}]]</strong> (#[[${ticketId}]])</p>
-    <p>Priority: [[${ticketPriority}]]</p>
-    <p><a class="cta" th:href="@{/support/tickets/{id}(id=${ticketId})}">View Ticket</a></p>
-    <p>Thanks,<br/>Support Team</p>
-  </div>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header -->
+            <div class="email-header">
+                <div class="email-logo">
+                    <img th:src="${logoUrl ?: 'cid:logo'}" alt="BamikaHub Logo" />
+                </div>
+                <div class="email-brand">BamikaHub</div>
+                <div class="email-tagline">Engineering Operations Management</div>
+            </div>
+            
+            <!-- Body -->
+            <div class="email-body">
+                <div class="email-title">🎫 New Ticket Assigned</div>
+                
+                <div class="email-content">
+                    <p>Hi <strong th:text="${firstName ?: 'there'}">User</strong>,</p>
+                    <p>
+                        A new support ticket has been assigned to you. Please review the details below 
+                        and take appropriate action as soon as possible.
+                    </p>
+                </div>
+                
+                <div class="ticket-box">
+                    <div class="ticket-row">
+                        <span class="ticket-label">Ticket ID</span>
+                        <span class="ticket-value">#<span th:text="${ticketId}">12345</span></span>
+                    </div>
+                    <div class="ticket-row">
+                        <span class="ticket-label">Subject</span>
+                        <span class="ticket-value" th:text="${ticketSubject}">Ticket Subject</span>
+                    </div>
+                    <div class="ticket-row">
+                        <span class="ticket-label">Priority</span>
+                        <span class="ticket-value">
+                            <span th:class="'priority-badge priority-' + ${#strings.toLowerCase(ticketPriority ?: 'low')}" 
+                                  th:text="${ticketPriority}">Medium</span>
+                        </span>
+                    </div>
+                    <div class="ticket-row" th:if="${category}">
+                        <span class="ticket-label">Category</span>
+                        <span class="ticket-value" th:text="${category}">Technical</span>
+                    </div>
+                    <div class="ticket-row" th:if="${assignedBy}">
+                        <span class="ticket-label">Assigned By</span>
+                        <span class="ticket-value" th:text="${assignedBy}">Admin Name</span>
+                    </div>
+                </div>
+                
+                <div class="email-button-container">
+                    <a th:href="${ticketUrl ?: '/support/tickets/' + ticketId}" class="email-button">
+                        View Ticket Details
+                    </a>
+                </div>
+                
+                <div class="email-content" style="margin-top: 25px;">
+                    <p style="font-size: 14px; color: #64748b;">
+                        <strong>What's Next?</strong><br/>
+                        • Review the ticket details and customer request<br/>
+                        • Assess the priority and required resources<br/>
+                        • Provide timely updates to the ticket creator<br/>
+                        • Resolve the issue and close the ticket when complete
+                    </p>
+                </div>
+                
+                <div style="margin-top: 30px; padding-top: 25px; border-top: 1px solid #e2e8f0;">
+                    <p style="font-size: 15px; color: #475569; text-align: center;">
+                        <strong>Need help?</strong> Contact the Support Team Lead<br/>
+                        The BamikaHub Support Team
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="email-footer">
+                <p><strong>BamikaHub</strong> - Engineering Operations Management</p>
+                <p>© <span th:text="${currentYear ?: '2025'}">2025</span> Grand Grande Technologies. All rights reserved.</p>
+                <p style="margin-top: 10px;">
+                    <a href="#">Help Center</a> • <a href="mailto:support@ggt.com">Contact Support</a>
+                </p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

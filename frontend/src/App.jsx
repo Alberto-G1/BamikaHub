@@ -103,6 +103,9 @@ import Privacy from './pages/privacy/Privacy.jsx';
 // --- HELP CENTER PAGES ---
 import HelpCenter from './pages/help/HelpCenter.jsx';
 
+// --- ABOUT PAGE ---
+import AboutPage from './pages/about/AboutPage.jsx';
+
 
 function App() {
     return (
@@ -222,6 +225,10 @@ function App() {
 
                         {/* Help Center */}
                         <Route path="help" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
+                        
+                        {/* About System */}
+                        <Route path="about" element={<ProtectedRoute><AboutPage /></ProtectedRoute>} />
+                        
                         <Route path="admin/email/compose" element={<ProtectedRoute requiredPermission="EMAIL_SEND"><EmailComposerPage /></ProtectedRoute>} />
                         <Route path="admin/email/templates" element={<ProtectedRoute requiredPermission="EMAIL_MANAGE_TEMPLATES"><EmailTemplatesPage /></ProtectedRoute>} />
                         <Route path="admin/email/logs" element={<ProtectedRoute requiredPermission="EMAIL_VIEW_LOGS"><EmailLogsPage /></ProtectedRoute>} />

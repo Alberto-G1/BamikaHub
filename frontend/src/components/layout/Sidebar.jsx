@@ -25,7 +25,7 @@ import {
     FaAward
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
-import logo from '../../assets/logo/logo2.png';
+import logo from '../../assets/logo/logo.png';
 import './Sidebar-Bootstrap.css';
 
 const Sidebar = ({ isOpen = false, onNavigate }) => {

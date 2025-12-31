@@ -4,7 +4,7 @@ import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import api from '../../api/api.js';
 import logoImg from '../../assets/logo/logo.png';
-import loginBgImg from '../../assets/images/login-img.jpg';
+import loginBgImg from '../../assets/images/login-img.jpeg';
 import './Auth.css';
 import WallOfFamePanel from '../../components/auth/WallOfFamePanel.jsx';
 

@@ -1,17 +1,265 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="utf-8" />
-  <title>You're invited</title>
-  <style>body{font-family:Arial,Helvetica,sans-serif;color:#111}.btn{background:#6366f1;color:#fff;padding:8px 12px;border-radius:4px;text-decoration:none}</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You're Invited - BamikaHub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f6f9;
+        }
+        .email-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #f4f6f9;
+            padding: 20px 10px;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Header */
+        .email-header {
+            background: linear-gradient(135deg, #D6A329 0%, #F6B41A 100%);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .email-logo img {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background-color: #ffffff;
+            padding: 8px;
+            margin-bottom: 15px;
+        }
+        .email-brand {
+            font-size: 28px;
+            font-weight: 800;
+            color: #000000;
+            margin: 10px 0 5px 0;
+        }
+        .email-tagline {
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.7);
+            margin: 0;
+            font-weight: 500;
+        }
+        
+        /* Content */
+        .email-body {
+            padding: 40px 30px;
+        }
+        .email-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+        }
+        .email-content {
+            font-size: 16px;
+            color: #475569;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+        
+        /* Invitation Box */
+        .invitation-box {
+            background: rgba(70, 193, 235, 0.1);
+            border-left: 4px solid #46C1EB;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .invitation-box p {
+            margin: 0 0 10px 0;
+            font-size: 15px;
+            color: #1e293b;
+        }
+        .invitation-box p:last-child {
+            margin-bottom: 0;
+        }
+        .inviter-name {
+            font-weight: 700;
+            color: #0369a1;
+        }
+        
+        /* Features List */
+        .features-list {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .features-list h4 {
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .features-list ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .features-list li {
+            padding: 10px 0;
+            color: #475569;
+            font-size: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+        .features-list li:before {
+            content: "✓";
+            color: #22c55e;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        
+        /* Button */
+        .email-button-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+        .email-button {
+            display: inline-block;
+            padding: 16px 45px;
+            background: linear-gradient(135deg, #D6A329 0%, #F6B41A 100%);
+            color: #000000 !important;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 16px;
+            border: 2px solid #000000;
+            box-shadow: 0 4px 12px rgba(214, 163, 41, 0.3);
+        }
+        
+        /* Footer */
+        .email-footer {
+            background-color: #f8fafc;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+        .email-footer p {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            color: #64748b;
+        }
+        .email-footer a {
+            color: #D6A329;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-header, .email-body, .email-footer {
+                padding: 30px 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div th:inline="text">
-    <h3>Invitation to join BamikaHub</h3>
-    <p>Hi [[${firstName}]],</p>
-    <p>[[${inviterName}]] invited you to join BamikaHub.</p>
-    <p><a class="btn" th:href="@{/auth/invite(token=${inviteToken})}">Accept invitation</a></p>
-    <p>Thanks,<br/>The Team</p>
-  </div>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header -->
+            <div class="email-header">
+                <div class="email-logo">
+                    <img th:src="${logoUrl ?: 'cid:logo'}" alt="BamikaHub Logo" />
+                </div>
+                <div class="email-brand">BamikaHub</div>
+                <div class="email-tagline">Engineering Operations Management</div>
+            </div>
+            
+            <!-- Body -->
+            <div class="email-body">
+                <div class="email-title">🎉 You're Invited!</div>
+                
+                <div class="email-content">
+                    <p>Hi <strong th:text="${firstName ?: 'there'}">User</strong>,</p>
+                    <p>
+                        Great news! You've been invited to join BamikaHub, the comprehensive 
+                        engineering operations management platform.
+                    </p>
+                </div>
+                
+                <div class="invitation-box">
+                    <p>
+                        <strong>Invited by:</strong> <span class="inviter-name" th:text="${inviterName}">John Doe</span>
+                    </p>
+                    <p th:if="${organizationName}">
+                        <strong>Organization:</strong> <span th:text="${organizationName}">Bamika Engineering</span>
+                    </p>
+                    <p th:if="${roleName}">
+                        <strong>Your Role:</strong> <span th:text="${roleName}">Team Member</span>
+                    </p>
+                </div>
+                
+                <div class="email-button-container">
+                    <a th:href="${inviteLink ?: '/auth/invite?token=' + inviteToken}" class="email-button">
+                        Accept Invitation
+                    </a>
+                </div>
+                
+                <div class="features-list">
+                    <h4>What you'll get access to:</h4>
+                    <ul>
+                        <li>Project & Operations Management</li>
+                        <li>Inventory Tracking & Control</li>
+                        <li>Finance & Requisition System</li>
+                        <li>Support Ticketing Platform</li>
+                        <li>Real-time Team Collaboration</li>
+                        <li>Comprehensive Reporting Tools</li>
+                    </ul>
+                </div>
+                
+                <div class="email-content" style="margin-top: 25px;">
+                    <p style="font-size: 14px; color: #64748b;">
+                        <strong>⏰ Important:</strong> This invitation link will expire in <strong>7 days</strong>. 
+                        Please accept the invitation before it expires to ensure seamless access to your workspace.
+                    </p>
+                </div>
+                
+                <div class="email-content" style="margin-top: 20px;">
+                    <p style="font-size: 14px; color: #64748b;">
+                        If the button doesn't work, copy and paste this link into your browser:<br/>
+                        <a th:href="${inviteLink ?: '/auth/invite?token=' + inviteToken}" 
+                           style="color: #D6A329; word-break: break-all;" 
+                           th:text="${inviteLink ?: '/auth/invite?token=' + inviteToken}">invite-link</a>
+                    </p>
+                </div>
+                
+                <div style="margin-top: 30px; padding-top: 25px; border-top: 1px solid #e2e8f0;">
+                    <p style="font-size: 15px; color: #475569; text-align: center;">
+                        <strong>Welcome to the Team!</strong><br/>
+                        The BamikaHub Team
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="email-footer">
+                <p><strong>BamikaHub</strong> - Engineering Operations Management</p>
+                <p>© <span th:text="${currentYear ?: '2025'}">2025</span> Grand Grande Technologies. All rights reserved.</p>
+                <p style="margin-top: 10px;">
+                    <a href="#">Help Center</a> • <a href="mailto:support@ggt.com">Contact Support</a>
+                </p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
