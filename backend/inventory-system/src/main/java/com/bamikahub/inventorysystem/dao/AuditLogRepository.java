@@ -22,6 +22,12 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     // Find by entity
     List<AuditLog> findByEntityTypeAndEntityIdOrderByTimestampDesc(String entityType, Long entityId);
 
+    // Find by entity type containing (for settings audit)
+    List<AuditLog> findByEntityTypeContainingOrderByTimestampDesc(String entityType);
+
+    // Find by entity type containing and entity name (for specific setting audit)
+    List<AuditLog> findByEntityTypeContainingAndEntityNameOrderByTimestampDesc(String entityType, String entityName);
+
     // Find by date range
     List<AuditLog> findByTimestampBetweenOrderByTimestampDesc(LocalDateTime startDate, LocalDateTime endDate);
 
