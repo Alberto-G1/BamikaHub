@@ -11,6 +11,7 @@ import com.bamikahub.inventorysystem.models.user.Status;
 import com.bamikahub.inventorysystem.models.user.User;
 import com.bamikahub.inventorysystem.services.FileStorageService;
 import com.bamikahub.inventorysystem.services.audit.AuditService;
+import com.bamikahub.inventorysystem.services.notification.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.bamikahub.inventorysystem.util.ValidationUtil;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,6 +37,7 @@ public class UserService {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private FileStorageService fileStorageService;
     @Autowired private AuditService auditService;
+    @Autowired private EmailService emailService;
 
 
     public List<UserDto> getAllUsers() {
@@ -84,7 +86,15 @@ public class UserService {
         user.setStatus(activeStatus);
 
         User savedUser = userRepository.save(user);
+// Send welcome email to the newly created user
+        try {
+            emailService.sendWelcomeEmail(savedUser, false);
+        } catch (Exception e) {
+            // Log but don't fail user creation if email fails
+            System.err.println("Failed to send welcome email: " + e.getMessage());
+        }
 
+        
         try {
             User actor = getAuthenticatedUser();
             if (actor == null) {
@@ -207,7 +217,7 @@ public class UserService {
 
         Status activeStatus = statusRepository.findByName("ACTIVE").orElseThrow(() -> new RuntimeException("Status 'ACTIVE' not found"));
         user.setStatus(activeStatus);
-
+        
         // Audit who approved it
         String approverEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User approver = userRepository.findByEmail(approverEmail).orElse(null);
@@ -215,6 +225,14 @@ public class UserService {
         user.setApprovedAt(LocalDateTime.now());
 
         User approvedUser = userRepository.save(user);
+        
+        // Send welcome email to the approved user
+        try {
+            emailService.sendWelcomeEmail(approvedUser, true);
+        } catch (Exception e) {
+            // Log but don't fail approval if email fails
+            System.err.println("Failed to send welcome email: " + e.getMessage());
+        }
         // Here you would trigger a welcome email
 
         try {

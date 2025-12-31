@@ -140,33 +140,49 @@ public class EmailService {
     }
     
     /**
-     * Send welcome email to new user
+     * Send welcome email to new user (admin created or approved)
      */
     @Async
-    public void sendWelcomeEmail(User user) {
+    public void sendWelcomeEmail(User user, boolean isApproved) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
             helper.setFrom(fromEmail, companyName);
             helper.setTo(user.getEmail());
-            helper.setSubject("Welcome to " + companyName);
+            helper.setSubject("🎉 Welcome to BamikaHub!");
             
             Context context = new Context();
-            context.setVariable("userName", user.getFirstName());
-            context.setVariable("companyName", companyName);
+            context.setVariable("firstName", user.getFirstName());
+            context.setVariable("fullName", user.getFullName());
+            context.setVariable("username", user.getUsername());
+            context.setVariable("email", user.getEmail());
+            context.setVariable("roleName", user.getRole() != null ? user.getRole().getName() : "User");
+            context.setVariable("isApproved", isApproved);
             context.setVariable("loginUrl", frontendUrl + "/login");
+            context.setVariable("frontendUrl", frontendUrl);
             context.setVariable("currentYear", java.time.Year.now().getValue());
             
-            String htmlContent = templateEngine.process("emails/welcome", context);
+            String htmlContent = templateEngine.process("email/welcome-user", context);
             helper.setText(htmlContent, true);
+            
+            // Embed logo as inline image
+            try {
+                org.springframework.core.io.ClassPathResource logoResource = 
+                    new org.springframework.core.io.ClassPathResource("static/logo.png");
+                if (logoResource.exists()) {
+                    helper.addInline("logo", logoResource);
+                }
+            } catch (Exception logoEx) {
+                log.warn("Could not embed logo in welcome email: {}", logoEx.getMessage());
+            }
             
             mailSender.send(message);
             
-            log.info("Sent welcome email to {}", user.getEmail());
+            log.info("Sent welcome email to {} (approved: {})", user.getEmail(), isApproved);
             
         } catch (Exception e) {
-            log.error("Failed to send welcome email to {}: {}", user.getEmail(), e.getMessage());
+            log.error("Failed to send welcome email to {}: {}", user.getEmail(), e.getMessage(), e);
         }
     }
     

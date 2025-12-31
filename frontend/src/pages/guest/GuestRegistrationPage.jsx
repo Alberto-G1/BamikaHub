@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaTag, FaArrowRight, FaSignInAlt, FaMagic } from 'react-icons/fa';
 import guestApi from '../../api/guestApi.js';
 import logoImg from '../../assets/logo/logo.png';
-import loginBgImg from '../../assets/images/login-img.jpg';
+import loginBgImg from '../../assets/images/login-img.jpeg';
 import '../auth/Auth.css';
 import WallOfFamePanel from '../../components/auth/WallOfFamePanel.jsx';
 

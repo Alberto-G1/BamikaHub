@@ -14,7 +14,8 @@ import {
     FaHome,
     FaChevronRight,
     FaBars,
-    FaComments
+    FaComments,
+    FaInfoCircle
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
@@ -199,6 +200,11 @@ const Header = ({ onToggleSidebar }) => {
                             </NavLink>
                         </li>
                         <li><hr className="dropdown-divider" /></li>
+                        <li>
+                            <NavLink className="dropdown-item" to="/about">
+                                <FaInfoCircle className="me-2" /> About System
+                            </NavLink>
+                        </li>
                         <li>
                             <NavLink className="dropdown-item" to="/help">
                                 <FaQuestionCircle className="me-2" /> Help Center
