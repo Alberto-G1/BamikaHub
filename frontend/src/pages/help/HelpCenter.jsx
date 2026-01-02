@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import api from '../../api/api.js';
 import { toast } from 'react-toastify';
-import { FaQuestionCircle, FaBook, FaComments, FaFileAlt, FaSearch, FaPlus, FaEye, FaThumbsUp, FaThumbsDown, FaFilter } from 'react-icons/fa';
+import { FaQuestionCircle, FaBook, FaComments, FaFileAlt, FaSearch, FaPlus, FaEye, FaThumbsUp, FaThumbsDown, FaFilter, FaClock, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
 import './HelpCenterStyles.css';
 
 const HelpCenter = () => {
@@ -485,7 +485,14 @@ const HelpCenter = () => {
                                                 {tickets.map(ticket => (
                                                     <tr key={ticket.id}>
                                                         <td><strong>{ticket.ticketNumber}</strong></td>
-                                                        <td>{ticket.subject}</td>
+                                                        <td>
+                                                            {ticket.subject}
+                                                            {(ticket.responseBreached || ticket.resolutionBreached) && (
+                                                                <span className="help-sla-breach-indicator" title="SLA breached">
+                                                                    <FaExclamationTriangle />
+                                                                </span>
+                                                            )}
+                                                        </td>
                                                         <td>{ticket.category.replace(/_/g, ' ')}</td>
                                                         <td>
                                                             <span className={`reporting-badge reporting-badge--${getPriorityColor(ticket.priority)}`}>
@@ -497,7 +504,26 @@ const HelpCenter = () => {
                                                                 {ticket.status.replace(/_/g, ' ')}
                                                             </span>
                                                         </td>
-                                                        <td>{formatDateTime(ticket.createdAt)}</td>
+                                                        <td>
+                                                            <div className="help-sla-column">
+                                                                <span>{formatDateTime(ticket.createdAt)}</span>
+                                                                {ticket.responseDueAt && ticket.status === 'OPEN' && (
+                                                                    <span className={`help-sla-tag ${ticket.responseBreached ? 'help-sla-tag--breached' : 'help-sla-tag--pending'}`}>
+                                                                        <FaClock /> Response due {formatDateTime(ticket.responseDueAt)}
+                                                                    </span>
+                                                                )}
+                                                                {ticket.resolutionDueAt && !['RESOLVED', 'CLOSED'].includes(ticket.status) && (
+                                                                    <span className={`help-sla-tag ${ticket.resolutionBreached ? 'help-sla-tag--breached' : 'help-sla-tag--pending'}`}>
+                                                                        <FaClock /> Resolution due {formatDateTime(ticket.resolutionDueAt)}
+                                                                    </span>
+                                                                )}
+                                                                {ticket.firstResponseAt && (
+                                                                    <span className="help-sla-tag help-sla-tag--success">
+                                                                        <FaCheckCircle /> First response logged
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
                                                         <td>
                                                             <span className="reporting-badge reporting-badge--neutral">
                                                                 {ticket.messageCount}

@@ -119,6 +119,23 @@ public class TicketNotificationService {
         }
     }
 
+    public void notifySlaBreached(SupportTicket ticket) {
+        if (!mailEnabled) {
+            return;
+        }
+        if (ticket.getAssignedTo() != null) {
+            sendEmail(ticket.getAssignedTo().getEmail(), "SLA Breached: Action Required",
+                    "Ticket #" + ticket.getId() + " has breached its SLA targets.", ticket);
+        }
+        
+        // Notify escalation recipients
+        List<String> recipients = parseEscalationRecipients();
+        for (String recipient : recipients) {
+            sendEmail(recipient, "SLA Breach Alert",
+                    "Ticket #" + ticket.getId() + " has breached SLA: " + ticket.getSubject(), ticket);
+        }
+    }
+
     public void notifyAttachment(SupportTicket ticket, User actor, String filename) {
         slaService.createActivity(ticket, TicketActivity.ActionType.ATTACHMENT_ADDED,
                 actor.getUsername() + " uploaded " + filename, actor);
