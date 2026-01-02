@@ -14,4 +14,5 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicket, Lo
 	long countByResolutionBreachedFalseAndStatus(SupportTicket.TicketStatus status);
 	long countByPriority(SupportTicket.TicketPriority priority);
 	List<SupportTicket> findByStatusIn(List<SupportTicket.TicketStatus> statuses);
+	List<SupportTicket> findByStatusNot(SupportTicket.TicketStatus status);
 }
